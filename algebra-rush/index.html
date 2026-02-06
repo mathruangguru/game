@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aljabar Rush: Duel 2 Pemain</title>
+    <title>Algebra Rush: Duel 2 Pemain</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -62,7 +62,7 @@
         #start-screen, #game-over-screen {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(20, 5, 40, 1); /* Made solid/darker to hide background */
+            background: rgba(20, 5, 40, 1);
             z-index: 100;
             flex-direction: column;
             text-align: center;
@@ -116,8 +116,8 @@
 
         /* --- HUD --- */
         header {
-            height: 18vh; 
-            min-height: 100px;
+            height: 20vh; 
+            min-height: 120px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -161,6 +161,13 @@
             margin-bottom: 5px;
         }
 
+        .timer-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
         .timer-display {
             font-family: 'Fredoka', monospace;
             font-size: clamp(1.5rem, 4vw, 2.2rem);
@@ -172,6 +179,24 @@
             margin-bottom: 5px;
         }
         .active-turn .timer-display { color: #fff; background: #ff3333; animation: pulse 1s infinite; }
+
+        .turn-timer-bar {
+            width: 80%;
+            height: 6px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+            margin-top: 5px;
+            overflow: hidden;
+            display: none; /* Hidden by default, shown on active */
+        }
+        .active-turn .turn-timer-bar { display: block; }
+
+        .turn-progress {
+            height: 100%;
+            width: 100%;
+            background: #ffd700;
+            transition: width 1s linear;
+        }
 
         .score-display {
             font-family: 'Fredoka', cursive;
@@ -209,8 +234,8 @@
             flex: 1;
             padding: 10px;
             display: grid;
-            grid-template-columns: repeat(5, 1fr); /* 5 kolom */
-            grid-template-rows: repeat(2, 1fr);    /* 2 baris = 10 soal */
+            grid-template-columns: repeat(5, 1fr); 
+            grid-template-rows: repeat(2, 1fr);   
             gap: 10px;
             max-width: 900px;
             width: 100%;
@@ -224,7 +249,6 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            /* Font diperkecil agar persamaan panjang muat */
             font-size: clamp(0.7rem, 1.8vw, 1.1rem); 
             font-weight: bold;
             color: var(--card-text);
@@ -242,7 +266,6 @@
         
         .card:active { transform: translateY(4px); box-shadow: 0 2px 0 #b0b0b0; }
         
-        /* MathJax font override dalam kartu */
         .card mjx-container {
             margin: 0 !important;
             pointer-events: none; 
@@ -251,13 +274,12 @@
 
         /* Logic Styles */
         .card.popped {
-            visibility: hidden; /* Hide completely to show "cleared" effect */
+            visibility: hidden;
             pointer-events: none;
         }
 
         .card.p1-hit { background: var(--p1-color) !important; color: #fff !important; }
         .card.p2-hit { background: var(--p2-color) !important; color: #fff !important; }
-        .card.neg-hit { background: #333 !important; color: #aaa !important; opacity: 0.6; }
 
         /* Floating Points */
         .floating-points {
@@ -285,19 +307,18 @@
         /* Mobile */
         @media (max-width: 768px) {
             #arena {
-                grid-template-columns: repeat(2, 1fr); /* 2 kolom di HP */
+                grid-template-columns: repeat(2, 1fr); 
                 grid-template-rows: repeat(5, 1fr);
                 gap: 8px;
                 padding: 10px;
             }
             .card {
-                /* Lebih kecil lagi di HP */
                 font-size: clamp(0.9rem, 4vw, 1.2rem); 
             }
             .player-panel { width: 45%; padding: 5px; }
             .timer-display { font-size: 1.2rem; }
             .score-display { font-size: 1.2rem; }
-            header { padding: 5px; }
+            header { padding: 5px; height: 25vh; }
         }
 
     </style>
@@ -306,7 +327,7 @@
 
     <!-- Start Screen -->
     <div id="start-screen" class="flex-center">
-        <h1>Aljabar Rush</h1>
+        <h1>Algebra Rush</h1>
         <h2 style="color:var(--gold);">Duel 2 Pemain</h2>
         
         <div class="input-group">
@@ -315,11 +336,20 @@
             <input id="input-p2" class="name-input" type="text" value="Player 2" placeholder="P2 Name" style="border-color: var(--p2-color);">
         </div>
 
-        <div style="background:rgba(255,255,255,0.1); padding:15px; border-radius:15px; max-width:500px; margin-bottom:10px;">
-            <p style="margin:5px 0;">⏱️ <strong>Chess Rule (3 Menit):</strong> Waktumu hanya berkurang saat giliranmu.</p>
-            <p style="margin:5px 0;">🎯 <strong>Misi:</strong> Jawab soal dengan nilai positif ($x > 0$) untuk tambah poin.</p>
-            <p style="margin:5px 0;">⚠️ <strong>Hati-hati:</strong> Jika menjawab soal negatif, poinmu berkurang!</p>
-            <p style="margin:5px 0;">🔄 <strong>Ganti Soal:</strong> Papan akan ganti otomatis jika semua jawaban positif habis.</p>
+        <div style="background:rgba(255,255,255,0.1); padding:15px; border-radius:15px; max-width:650px; margin-bottom:10px;">
+            <p style="margin:5px 0; color:var(--gold);"><strong>💰 Modal Awal:</strong> 10 Poin</p>
+            <p style="margin:5px 0;">🎯 <strong>Jawab Benar:</strong> Skor bertambah (+x)</p>
+            <p style="margin:5px 0;">📉 <strong>Jawab Salah/Negatif:</strong> Skor berkurang (-x)</p>
+            <p style="margin:5px 0;">⏳ <strong>Batas Giliran:</strong> 1 Menit (Lewat = Ganti Giliran)</p>
+            <hr style="border:0; border-top:1px solid rgba(255,255,255,0.3); margin:10px 0;">
+            <p style="margin:5px 0; color: #ff9999;"><strong>💀 GAME OVER JIKA:</strong></p>
+            <ul style="text-align: left; margin: 5px auto; width: fit-content; color: #ddd;">
+                <li>Kehabisan Waktu (3 Menit)</li>
+                <li>Skor menjadi Negatif (< 0)</li>
+            </ul>
+            <p style="margin-top:10px; font-weight:bold; color: #aaffaa; border: 1px solid #aaffaa; padding: 5px; border-radius: 5px;">
+                🏆 Jika skor kedua pemain positif, pemenang adalah pemain yang bertahan (TIDAK kehabisan waktu)!
+            </p>
         </div>
 
         <button class="btn-start" onclick="game.start()">MULAI DUEL</button>
@@ -328,7 +358,8 @@
     <!-- Game Over Screen -->
     <div id="game-over-screen" class="hidden flex-center">
         <h1 style="color: #ffd700;">GAME OVER!</h1>
-        <h2 id="winner-text" style="color: #fff; margin-bottom: 20px;">Player 1 Menang!</h2>
+        <h2 id="winner-text" style="color: #fff; margin-bottom: 5px; font-size: 2.5rem;">Player 1 Menang!</h2>
+        <p id="win-reason" style="color: #ddd; margin-top:0; margin-bottom: 20px; font-family:'Fredoka';">(Lawan Kehabisan Waktu)</p>
         
         <div style="display: flex; gap: 40px; margin-bottom: 30px;">
             <div style="text-align: center;">
@@ -344,39 +375,40 @@
         <button class="btn-start" onclick="game.start()">MAIN LAGI</button>
     </div>
 
-    <!-- Main HUD (Initially Hidden to prevent "0" showing on start screen) -->
+    <!-- Main HUD -->
     <header id="game-hud" class="invisible">
-        <!-- P1 Panel -->
         <div id="p1-panel" class="player-panel p1">
             <div class="turn-indicator">GILIRANMU</div>
             <div class="player-name" id="hud-name-p1">Player 1</div>
-            <div class="timer-display" id="timer-p1">03:00</div>
-            <div class="score-display">Skor: <span id="score-p1">0</span></div>
+            <div class="timer-wrapper">
+                <div class="timer-display" id="timer-p1">03:00</div>
+                <div class="turn-timer-bar"><div id="turn-bar-p1" class="turn-progress"></div></div>
+            </div>
+            <div class="score-display">Skor: <span id="score-p1">10</span></div>
         </div>
 
-        <!-- Center VS/Info -->
         <div style="text-align: center; opacity: 0.8; width: 20%;">
             <div style="font-family:'Fredoka'; font-size: 2rem; font-weight:bold; color: #fff;">VS</div>
         </div>
 
-        <!-- P2 Panel -->
         <div id="p2-panel" class="player-panel p2">
             <div class="turn-indicator">GILIRANMU</div>
             <div class="player-name" id="hud-name-p2">Player 2</div>
-            <div class="timer-display" id="timer-p2">03:00</div>
-            <div class="score-display">Skor: <span id="score-p2">0</span></div>
+            <div class="timer-wrapper">
+                <div class="timer-display" id="timer-p2">03:00</div>
+                <div class="turn-timer-bar"><div id="turn-bar-p2" class="turn-progress"></div></div>
+            </div>
+            <div class="score-display">Skor: <span id="score-p2">10</span></div>
         </div>
     </header>
 
     <div id="level-info" class="invisible">Level 1: Pemanasan</div>
 
-    <!-- Arena (10 Cards) -->
     <section id="arena">
         <!-- Cards generated by JS -->
     </section>
 
     <script>
-        // --- Audio Engine ---
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         const audioCtx = new AudioContext();
 
@@ -390,8 +422,8 @@
 
             if (type === 'correct') {
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(523, now); // C5
-                osc.frequency.setValueAtTime(659, now + 0.1); // E5
+                osc.frequency.setValueAtTime(523, now); 
+                osc.frequency.setValueAtTime(659, now + 0.1); 
                 gain.gain.setValueAtTime(0.2, now);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
                 osc.start(now);
@@ -422,7 +454,6 @@
             }
         }
 
-        // --- Question Bank (Categorized by Difficulty) ---
         const qBank = {
             easy: {
                 pos: [
@@ -471,12 +502,16 @@
         class Game {
             constructor() {
                 this.timerInterval = null;
+                // Game config
+                this.turnDuration = 60; // seconds
+
                 this.state = {
-                    level: 1, // 1=Easy, 2=Medium, 3=Hard
-                    turn: 'p1', // 'p1' or 'p2'
-                    p1: { name: 'Player 1', score: 0, time: 180 }, // 180s = 3 mins
-                    p2: { name: 'Player 2', score: 0, time: 180 },
-                    activeCards: [] // Tracks what's on board
+                    level: 1, 
+                    turn: 'p1', 
+                    turnTimer: this.turnDuration,
+                    p1: { name: 'Player 1', score: 10, time: 180 }, 
+                    p2: { name: 'Player 2', score: 10, time: 180 },
+                    activeCards: []
                 };
 
                 this.els = {
@@ -493,6 +528,8 @@
                     hudNameP2: document.getElementById('hud-name-p2'),
                     timerP1: document.getElementById('timer-p1'),
                     timerP2: document.getElementById('timer-p2'),
+                    turnBarP1: document.getElementById('turn-bar-p1'),
+                    turnBarP2: document.getElementById('turn-bar-p2'),
                     scoreP1: document.getElementById('score-p1'),
                     scoreP2: document.getElementById('score-p2'),
 
@@ -500,6 +537,7 @@
                     inputP2: document.getElementById('input-p2'),
                     
                     winnerText: document.getElementById('winner-text'),
+                    winReason: document.getElementById('win-reason'),
                     endNameP1: document.getElementById('end-name-p1'),
                     endNameP2: document.getElementById('end-name-p2'),
                     endScoreP1: document.getElementById('end-score-p1'),
@@ -508,7 +546,6 @@
             }
 
             start() {
-                // Get Names
                 const n1 = this.els.inputP1.value.trim() || "Player 1";
                 const n2 = this.els.inputP2.value.trim() || "Player 2";
                 
@@ -516,19 +553,19 @@
                 this.state = {
                     level: 1,
                     turn: 'p1',
-                    p1: { name: n1, score: 0, time: 180 },
-                    p2: { name: n2, score: 0, time: 180 },
+                    turnTimer: this.turnDuration,
+                    p1: { name: n1, score: 10, time: 180 },
+                    p2: { name: n2, score: 10, time: 180 },
                     activeCards: []
                 };
 
-                // Update UI
                 this.els.hudNameP1.textContent = n1;
                 this.els.hudNameP2.textContent = n2;
                 this.updateScoreUI();
                 this.updateTimerUI();
                 this.updateTurnUI();
+                this.updateTurnBarUI();
 
-                // Toggle Visibility
                 this.els.startScreen.classList.add('hidden');
                 this.els.gameOverScreen.classList.add('hidden');
                 this.els.gameHud.classList.remove('invisible');
@@ -536,7 +573,6 @@
 
                 this.generateLevel();
                 
-                // Start Timer Loop
                 if (this.timerInterval) clearInterval(this.timerInterval);
                 this.timerInterval = setInterval(() => this.tick(), 1000);
             }
@@ -565,10 +601,9 @@
                 levelData.forEach((q, idx) => {
                     const card = document.createElement('div');
                     card.className = 'card';
-                    // Render MathJax
                     card.innerHTML = `\\( ${q.l} \\)`;
                     card.dataset.val = q.v;
-                    card.dataset.type = q.v > 0 ? 'pos' : 'neg'; // Tag for checking logic
+                    card.dataset.type = q.v > 0 ? 'pos' : 'neg'; 
                     
                     card.onclick = (e) => this.handleCardClick(card, q.v, e);
                     this.els.arena.appendChild(card);
@@ -582,12 +617,19 @@
 
                 const player = this.state.turn;
                 
-                // Update Score
+                // Update Score logic
                 this.state[player].score += value;
                 this.updateScoreUI();
 
-                // Visuals
-                card.classList.add('popped'); // Hide card
+                // Check Negative Score Death
+                if (this.state[player].score < 0) {
+                    const loserName = this.state[player].name;
+                    const winnerName = player === 'p1' ? this.state.p2.name : this.state.p1.name;
+                    this.endGame(winnerName, `${loserName} Bangkrut (Skor Negatif)!`);
+                    return; 
+                }
+
+                card.classList.add('popped'); 
                 
                 if (value > 0) {
                     playSound('correct');
@@ -597,24 +639,23 @@
                     this.spawnFloatingText(event.clientX, event.clientY, `${value}`, '#fff');
                 }
 
-                // CHECK LOGIC: Are all Positive cards gone?
                 const remainingPos = Array.from(this.els.arena.children).filter(c => 
                     !c.classList.contains('popped') && c.dataset.type === 'pos'
                 ).length;
 
                 if (remainingPos === 0) {
-                    // All good cards taken -> Level Up / Refill
-                    this.state.level = Math.min(this.state.level + 1, 3); // Max level 3 for now, or loop logic
+                    this.state.level = Math.min(this.state.level + 1, 3); 
                     setTimeout(() => this.generateLevel(), 500);
                 }
 
-                // Switch Turn immediately after move
                 this.switchTurn();
             }
 
             switchTurn() {
                 this.state.turn = this.state.turn === 'p1' ? 'p2' : 'p1';
+                this.state.turnTimer = this.turnDuration; // Reset Turn Timer
                 this.updateTurnUI();
+                this.updateTurnBarUI(); // Reset visual bar
                 playSound('switch');
             }
 
@@ -631,12 +672,25 @@
 
             tick() {
                 const p = this.state.turn;
-                this.state[p].time--;
                 
-                this.updateTimerUI();
+                // Decrement Global Time
+                this.state[p].time--;
+                // Decrement Turn Time
+                this.state.turnTimer--;
 
+                this.updateTimerUI();
+                this.updateTurnBarUI();
+
+                // Check Game Over Conditions
                 if (this.state[p].time <= 0) {
-                    this.endGame(`${this.state[p].name} Kehabisan Waktu!`);
+                    const loserName = this.state[p].name;
+                    const winnerName = p === 'p1' ? this.state.p2.name : this.state.p1.name;
+                    this.endGame(winnerName, `${loserName} Kehabisan Waktu!`);
+                } 
+                else if (this.state.turnTimer <= 0) {
+                    // Logic updated: Timeout Turn -> Switch Turn
+                    playSound('wrong'); 
+                    this.switchTurn();
                 }
             }
 
@@ -656,6 +710,17 @@
                 this.els.timerP2.textContent = fmt(this.state.p2.time);
             }
 
+            updateTurnBarUI() {
+                const pct = (this.state.turnTimer / this.turnDuration) * 100;
+                if (this.state.turn === 'p1') {
+                    this.els.turnBarP1.style.width = `${pct}%`;
+                    this.els.turnBarP1.style.backgroundColor = pct < 20 ? '#ff3333' : '#ffd700';
+                } else {
+                    this.els.turnBarP2.style.width = `${pct}%`;
+                    this.els.turnBarP2.style.backgroundColor = pct < 20 ? '#ff3333' : '#ffd700';
+                }
+            }
+
             updateTurnUI() {
                 if (this.state.turn === 'p1') {
                     this.els.p1Panel.classList.add('active-turn');
@@ -666,16 +731,8 @@
                 }
             }
 
-            endGame(reason) {
+            endGame(winnerName, reason) {
                 clearInterval(this.timerInterval);
-                
-                let winner = "";
-                
-                if (this.state.p1.time <= 0) winner = this.state.p2.name;
-                else if (this.state.p2.time <= 0) winner = this.state.p1.name;
-                else {
-                    winner = this.state.p1.score > this.state.p2.score ? this.state.p1.name : this.state.p2.name;
-                }
                 
                 this.els.endNameP1.textContent = this.state.p1.name;
                 this.els.endScoreP1.textContent = this.state.p1.score;
@@ -683,10 +740,10 @@
                 this.els.endNameP2.textContent = this.state.p2.name;
                 this.els.endScoreP2.textContent = this.state.p2.score;
 
-                this.els.winnerText.textContent = `${winner} Menang!`;
-                this.els.gameOverScreen.classList.remove('hidden');
+                this.els.winnerText.textContent = `${winnerName} Menang!`;
+                this.els.winReason.textContent = reason;
                 
-                // Keep HUD visible in background or hide it? Let's hide it to focus on result
+                this.els.gameOverScreen.classList.remove('hidden');
                 this.els.gameHud.classList.add('invisible');
                 this.els.levelInfo.classList.add('invisible');
             }
