@@ -138,7 +138,6 @@
             background: rgba(255,255,255,0.1);
             transition: all 0.3s ease;
             position: relative;
-            /* FIX 1: Overflow visible agar badge tidak kepotong */
             overflow: visible; 
         }
 
@@ -151,7 +150,6 @@
             background: #ff0000;
             width: 0%;
             transition: width 1s linear;
-            /* Karena parent overflow visible, radius harus manual di sini */
             border-radius: 0 0 12px 12px; 
         }
 
@@ -163,7 +161,7 @@
         /* Turn Badge */
         .turn-badge {
             position: absolute;
-            top: -12px; /* Geser sedikit ke atas */
+            top: -12px;
             left: 50%;
             transform: translateX(-50%);
             background: #fff;
@@ -181,7 +179,7 @@
         }
         .active-turn .turn-badge { opacity: 1; }
 
-        /* FIX 2: Angka Hitung Mundur Per Orang */
+        /* Angka Hitung Mundur Per Orang */
         .turn-timer-text {
             position: absolute;
             top: 5px;
@@ -193,7 +191,6 @@
             transition: color 0.3s, transform 0.3s;
         }
 
-        /* Posisi timer: P1 di Kanan, P2 di Kiri (biar gak nabrak alignment text) */
         #p1-turn-time { right: 10px; }
         #p2-turn-time { left: 10px; }
 
@@ -235,6 +232,27 @@
             color: #ff3333; 
         }
         .heart.lost { opacity: 0.2; filter: grayscale(100%); }
+
+        /* Streak Badge (Visual Only) */
+        .streak-badge {
+            position: absolute;
+            bottom: -8px;
+            right: -8px;
+            background: #ffd700;
+            color: #000;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .streak-active { opacity: 1; }
 
         /* --- TARGET BOX --- */
         .target-box {
@@ -386,7 +404,6 @@
             <p style="margin:0;">🎯 Cari soal yang hasilnya sama dengan target.</p>
             <p style="margin:5px 0;">⚡ <strong>Player 1 Jalan Duluan!</strong></p>
             <p style="margin:0; color: #ff9999;">⏱️ 30 Detik per Giliran!</p>
-            <p style="margin:0;">❄️ Salah / Waktu Habis = Hilang Nyawa & Ganti Giliran!</p>
         </div>
         <button class="btn-start" onclick="game.start()">MULAI</button>
     </div>
@@ -419,6 +436,8 @@
             </div>
             <span class="player-score" id="p1-score">0</span>
             <div class="turn-timer-bar" id="p1-timer-bar"></div>
+            <!-- Streak Indicator (Visual Only) -->
+            <div id="p1-streak" class="streak-badge">0</div>
         </div>
 
         <div class="target-box">
@@ -435,6 +454,8 @@
             </div>
             <span class="player-score" id="p2-score">0</span>
             <div class="turn-timer-bar" id="p2-timer-bar"></div>
+             <!-- Streak Indicator (Visual Only) -->
+             <div id="p2-streak" class="streak-badge">0</div>
         </div>
     </header>
 
@@ -489,30 +510,40 @@
             }
         }
 
-        // --- Math Logic ---
+        // --- Math Logic (Fixed Difficulty) ---
         class MathEngine {
-            constructor() { this.operators = ['+', '-', '*', '/']; }
+            constructor() { 
+                this.operators = ['+', '-', '*', '/']; 
+            }
+
             getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
             fmt(n) { return n < 0 ? `(${n})` : `${n}`; }
+
+            // Fixed Range Limit
+            getRangeLimit() {
+                return 12; // Tetap di angka kecil
+            }
 
             generateEquationForTarget(target) {
                 const op = this.operators[this.getRandomInt(0, 3)];
                 let a, b, latex;
+                const limit = this.getRangeLimit();
                 
                 switch(op) {
                     case '+':
-                        a = this.getRandomInt(-10, 10);
+                        a = this.getRandomInt(-limit, limit);
                         b = target - a;
                         latex = `\\( ${this.fmt(a)} + ${this.fmt(b)} \\)`;
                         break;
                     case '-':
-                        b = this.getRandomInt(-10, 10);
+                        b = this.getRandomInt(-limit, limit);
                         a = target + b;
                         latex = `\\( ${this.fmt(a)} - ${this.fmt(b)} \\)`;
                         break;
                     case '*':
                         const factors = [];
-                        for(let i = -10; i <= 10; i++) {
+                        // Check factors within limit
+                        for(let i = -limit; i <= limit; i++) {
                             if (i !== 0 && target % i === 0) factors.push(i);
                         }
                         if(factors.length > 0) {
@@ -520,11 +551,13 @@
                             b = target / a;
                             latex = `\\( ${this.fmt(a)} \\times ${this.fmt(b)} \\)`;
                         } else {
+                            // Fallback if prime or no factors in range
                             return this.generateEquationForTarget(target);
                         }
                         break;
                     case '/':
-                        b = this.getRandomInt(2, 5) * (Math.random() < 0.5 ? -1 : 1);
+                        // Limit division complexity
+                        b = this.getRandomInt(2, Math.max(5, Math.floor(limit/2))) * (Math.random() < 0.5 ? -1 : 1);
                         a = target * b;
                         latex = `\\( ${this.fmt(a)} \\div ${this.fmt(b)} \\)`;
                         break;
@@ -533,7 +566,9 @@
             }
 
             generateRandomEquation() {
-                const target = this.getRandomInt(-12, 12);
+                const limit = this.getRangeLimit();
+                // Target slightly larger range than components
+                const target = this.getRandomInt(-(limit+5), limit+5);
                 return this.generateEquationForTarget(target);
             }
         }
@@ -543,12 +578,14 @@
             constructor() {
                 this.math = new MathEngine();
                 this.gameDuration = 300; 
-                this.turnDuration = 30; // 30 seconds per turn
+                this.turnDuration = 30; 
                 this.timerInterval = null;
+                this.storageKey = 'integer_duel_save';
                 
+                // Default State
                 this.state = {
-                    p1: { name: 'Player 1', score: 0, lives: 3 }, 
-                    p2: { name: 'Player 2', score: 0, lives: 3 }, 
+                    p1: { name: 'Player 1', score: 0, lives: 3, streak: 0 }, 
+                    p2: { name: 'Player 2', score: 0, lives: 3, streak: 0 }, 
                     target: 0,
                     activePlayer: 'p1',
                     cardsPerSide: 20
@@ -563,10 +600,10 @@
                     p2Panel: document.getElementById('p2-panel'),
                     p1TimerBar: document.getElementById('p1-timer-bar'),
                     p2TimerBar: document.getElementById('p2-timer-bar'),
-                    // Tambahan element timer text
                     p1TurnText: document.getElementById('p1-turn-time'),
                     p2TurnText: document.getElementById('p2-turn-time'),
-                    
+                    p1Streak: document.getElementById('p1-streak'),
+                    p2Streak: document.getElementById('p2-streak'),
                     targetDisplay: document.getElementById('target-display'),
                     timer: document.getElementById('timer'),
                     p1Score: document.getElementById('p1-score'),
@@ -579,16 +616,68 @@
                     inputP1: document.getElementById('input-p1'),
                     inputP2: document.getElementById('input-p2'),
                     hudNameP1: document.getElementById('hud-name-p1'),
-                    hudNameP2: document.getElementById('hud-name-p2')
+                    hudNameP2: document.getElementById('hud-name-p2'),
+                };
+
+                // Check for saved game on load
+                window.onload = () => {
+                    this.checkResume();
                 };
             }
 
+            saveGame() {
+                const saveData = {
+                    state: this.state,
+                    gameTimeLeft: this.gameTimeLeft,
+                    turnTimeLeft: this.turnTimeLeft
+                };
+                localStorage.setItem(this.storageKey, JSON.stringify(saveData));
+            }
+
+            clearSave() {
+                localStorage.removeItem(this.storageKey);
+            }
+
+            checkResume() {
+                const saved = localStorage.getItem(this.storageKey);
+                if (saved) {
+                    try {
+                        const data = JSON.parse(saved);
+                        // Restore logic
+                        this.state = data.state;
+                        this.gameTimeLeft = data.gameTimeLeft;
+                        this.turnTimeLeft = data.turnTimeLeft;
+
+                        // UI Setup
+                        this.els.inputP1.value = this.state.p1.name;
+                        this.els.inputP2.value = this.state.p2.name;
+                        this.els.hudNameP1.textContent = this.state.p1.name;
+                        this.els.hudNameP2.textContent = this.state.p2.name;
+
+                        this.els.startScreen.classList.add('hidden');
+                        this.updateStatsUI();
+                        this.updateTurnUI();
+                        this.updateTurnBar();
+
+                        // Resume flow
+                        this.startRound(); // Generate new cards (easier than saving card state)
+                        this.startTimer();
+                    } catch (e) {
+                        console.error("Save file corrupt", e);
+                        this.clearSave();
+                    }
+                }
+            }
+
             start(isRematch = false) {
+                if (isRematch) this.clearSave();
+
                 if (!isRematch) {
+                    // Only update names if inputs are not empty
                     const name1 = this.els.inputP1.value.trim();
                     const name2 = this.els.inputP2.value.trim();
-                    this.state.p1.name = name1 || "Player 1";
-                    this.state.p2.name = name2 || "Player 2";
+                    if(name1) this.state.p1.name = name1;
+                    if(name2) this.state.p2.name = name2;
                 }
                 this.els.hudNameP1.textContent = this.state.p1.name;
                 this.els.hudNameP2.textContent = this.state.p2.name;
@@ -596,8 +685,9 @@
                 this.els.startScreen.classList.add('hidden');
                 this.els.gameOverScreen.classList.add('hidden');
                 
-                this.state.p1.score = 0; this.state.p1.lives = 3;
-                this.state.p2.score = 0; this.state.p2.lives = 3;
+                // Reset State
+                this.state.p1.score = 0; this.state.p1.lives = 3; this.state.p1.streak = 0;
+                this.state.p2.score = 0; this.state.p2.lives = 3; this.state.p2.streak = 0;
                 this.state.activePlayer = 'p1';
 
                 this.gameTimeLeft = this.gameDuration;
@@ -605,10 +695,11 @@
                 
                 this.updateStatsUI();
                 this.updateTurnUI(); 
-                this.updateTurnBar(); // Reset numbers visual
+                this.updateTurnBar();
                 
                 this.startRound();
                 this.startTimer();
+                this.saveGame();
             }
 
             startTimer() {
@@ -616,13 +707,14 @@
                 this.updateTimerDisplay();
                 
                 this.timerInterval = setInterval(() => {
-                    // Global Game Timer
                     this.gameTimeLeft--;
                     this.updateTimerDisplay();
 
-                    // Turn Timer
                     this.turnTimeLeft--;
                     this.updateTurnBar();
+
+                    // Save periodically (every second is fine for simple localstorage)
+                    this.saveGame();
 
                     if (this.turnTimeLeft <= 0) {
                         this.handleTurnTimeout();
@@ -638,6 +730,7 @@
                 playSound('timeout');
                 const player = this.state[this.state.activePlayer];
                 player.lives--;
+                player.streak = 0; // Reset streak on timeout
                 this.updateStatsUI();
 
                 if (player.lives <= 0) {
@@ -658,7 +751,6 @@
 
             updateTurnBar() {
                 const pct = (this.turnTimeLeft / this.turnDuration) * 100;
-                // Update Text
                 const timeText = this.turnTimeLeft < 0 ? 0 : this.turnTimeLeft;
 
                 if (this.state.activePlayer === 'p1') {
@@ -675,7 +767,9 @@
             }
 
             startRound() {
-                this.state.target = this.math.getRandomInt(-12, 12);
+                const limit = this.math.getRangeLimit();
+                // Target around current limit
+                this.state.target = this.math.getRandomInt(-limit, limit);
                 this.els.targetDisplay.textContent = this.state.target;
                 this.renderGrid('p1');
                 this.renderGrid('p2');
@@ -712,31 +806,41 @@
 
                 const player = this.state[playerKey];
                 if (parseInt(value) === this.state.target) {
+                    // CORRECT
                     playSound('correct');
                     player.score++;
+                    player.streak++;
+
                     cardElement.classList.add('correct-anim');
                     this.updateStatsUI();
+                    this.saveGame();
                     setTimeout(() => { if(this.gameTimeLeft > 0) this.switchTurn(); }, 400);
+
                 } else {
+                    // WRONG
                     playSound('wrong');
                     cardElement.classList.add('wrong-anim');
                     player.lives--;
+                    player.streak = 0; // Reset streak
                     this.updateStatsUI();
+                    
                     if (player.lives <= 0) {
                         const winner = playerKey === 'p1' ? this.state.p2.name : this.state.p1.name;
                         this.endGame(`${winner} Menang!`);
                         return;
                     }
+                    this.saveGame();
                     setTimeout(() => { if(this.gameTimeLeft > 0) this.switchTurn(); }, 400);
                 }
             }
 
             switchTurn() {
                 this.state.activePlayer = this.state.activePlayer === 'p1' ? 'p2' : 'p1';
-                this.turnTimeLeft = this.turnDuration; // Reset turn timer
+                this.turnTimeLeft = this.turnDuration; 
                 this.updateTurnUI();
-                this.updateTurnBar(); // Immediate visual update
+                this.updateTurnBar(); 
                 this.startRound(); 
+                this.saveGame();
             }
 
             updateTurnUI() {
@@ -756,6 +860,13 @@
                 this.els.p2Score.textContent = this.state.p2.score;
                 this.renderHearts('p1', this.state.p1.lives);
                 this.renderHearts('p2', this.state.p2.lives);
+                
+                // Show streak if > 0
+                this.els.p1Streak.textContent = this.state.p1.streak;
+                this.els.p1Streak.classList.toggle('streak-active', this.state.p1.streak > 0);
+                
+                this.els.p2Streak.textContent = this.state.p2.streak;
+                this.els.p2Streak.classList.toggle('streak-active', this.state.p2.streak > 0);
             }
 
             renderHearts(player, count) {
@@ -769,6 +880,7 @@
 
             endGame(reason) {
                 clearInterval(this.timerInterval);
+                this.clearSave(); // Clear save on finish
                 playSound('win');
                 this.els.gameOverScreen.classList.remove('hidden');
                 this.els.finalP1.textContent = this.state.p1.score;
