@@ -5,32 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Find & Zap: Integer Duel</title>
     
-    <!-- Google Fonts: Fredoka One (Judul/Angka) & Nunito (Teks) -->
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;600&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
 
-    <!-- MathJax for Beautiful Math Rendering -->
+    <!-- MathJax -->
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
         :root {
-            /* Fun Space Theme Palette */
+            /* Palette */
             --bg-color: #2b1055; 
             --bg-gradient: radial-gradient(circle at center, #4b1d85 0%, #2b1055 100%);
-            
             --p1-color: #00d2ff; 
             --p1-dark: #009ac2;
-            --p1-bg: rgba(0, 210, 255, 0.1);
-            
+            --p1-bg: rgba(0, 210, 255, 0.15);
             --p2-color: #ff47bc; 
             --p2-dark: #c2007e;
-            --p2-bg: rgba(255, 71, 188, 0.1);
-            
+            --p2-bg: rgba(255, 71, 188, 0.15);
             --card-bg: #ffffff;
             --card-text: #2b1055;
-            
             --text-color: #ffffff;
         }
 
@@ -67,11 +63,12 @@
             z-index: 100;
             flex-direction: column;
             text-align: center;
+            padding: 20px;
         }
 
         h1 {
             font-family: 'Fredoka', cursive;
-            font-size: 4rem;
+            font-size: clamp(2rem, 5vw, 4rem);
             text-transform: uppercase;
             letter-spacing: 2px;
             margin-bottom: 20px;
@@ -82,7 +79,7 @@
 
         .input-group {
             display: flex;
-            gap: 20px;
+            gap: 15px;
             margin-bottom: 20px;
             align-items: center;
             flex-wrap: wrap;
@@ -91,121 +88,133 @@
 
         .name-input {
             font-family: 'Fredoka', cursive;
-            font-size: 1.5rem;
-            padding: 10px 20px;
+            font-size: clamp(1rem, 2.5vw, 1.5rem);
+            padding: 10px;
             border-radius: 50px;
             border: 3px solid #fff;
             background: rgba(255,255,255,0.1);
             color: #fff;
             text-align: center;
-            width: 250px;
+            width: clamp(120px, 30vw, 250px);
             transition: all 0.3s;
         }
-
-        .name-input::placeholder { color: rgba(255,255,255,0.5); }
-        .name-input:focus { outline: none; background: rgba(255,255,255,0.2); box-shadow: 0 0 15px rgba(255,255,255,0.3); }
-
-        #input-p1 { border-color: var(--p1-color); box-shadow: 0 0 10px var(--p1-bg); }
-        #input-p2 { border-color: var(--p2-color); box-shadow: 0 0 10px var(--p2-bg); }
+        .name-input:focus { outline: none; background: rgba(255,255,255,0.2); }
+        #input-p1 { border-color: var(--p1-color); }
+        #input-p2 { border-color: var(--p2-color); }
 
         .btn-start {
             font-family: 'Fredoka', cursive;
             background: linear-gradient(180deg, #ffd700, #ffaa00);
-            border: 4px solid #fff;
-            padding: 15px 50px;
-            font-size: 2rem;
+            border: 3px solid #fff;
+            padding: 10px 40px;
+            font-size: clamp(1.2rem, 3vw, 2rem);
             font-weight: 600;
             color: #5a3e00;
             border-radius: 60px;
             cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 8px 0 #b37700, 0 15px 20px rgba(0,0,0,0.4);
-            text-transform: uppercase;
+            box-shadow: 0 6px 0 #b37700;
         }
-
-        .btn-start:active { 
-            transform: translateY(8px); 
-            box-shadow: 0 0 0 #b37700, 0 5px 10px rgba(0,0,0,0.4);
-        }
+        .btn-start:active { transform: translateY(6px); box-shadow: 0 0 0 #b37700; }
 
         /* --- HUD --- */
         header {
-            height: 20vh;
+            height: 18vh; 
+            min-height: 80px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 5px 15px;
+            padding: 5px 10px;
             background: rgba(0,0,0,0.3);
-            border-bottom: 3px solid rgba(255,255,255,0.1);
+            border-bottom: 2px solid rgba(255,255,255,0.1);
             position: relative;
         }
 
         .player-stats {
             display: flex;
             flex-direction: column;
-            width: 18%;
-            min-width: 120px;
-            padding: 8px;
+            width: 22%;
+            padding: 5px;
             border-radius: 12px;
             background: rgba(255,255,255,0.1);
             transition: all 0.3s ease;
             position: relative;
+            /* FIX 1: Overflow visible agar badge tidak kepotong */
+            overflow: visible; 
         }
 
-        /* Turn Indicator Styling */
+        /* Timer Bar inside Player Panel */
+        .turn-timer-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 6px;
+            background: #ff0000;
+            width: 0%;
+            transition: width 1s linear;
+            /* Karena parent overflow visible, radius harus manual di sini */
+            border-radius: 0 0 12px 12px; 
+        }
+
+        .active-turn .turn-timer-bar {
+            width: 100%;
+            background: linear-gradient(90deg, #ff9900, #ff0000);
+        }
+
+        /* Turn Badge */
         .turn-badge {
             position: absolute;
-            top: -15px;
+            top: -12px; /* Geser sedikit ke atas */
             left: 50%;
             transform: translateX(-50%);
             background: #fff;
             color: #2b1055;
-            padding: 5px 15px;
-            border-radius: 15px;
+            padding: 2px 10px;
+            border-radius: 10px;
             font-family: 'Fredoka', cursive;
-            font-size: 0.9rem;
+            font-size: clamp(0.7rem, 1.5vw, 1rem);
             font-weight: bold;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
             white-space: nowrap;
             opacity: 0;
-            transition: opacity 0.3s;
             z-index: 20;
+            transition: opacity 0.3s;
         }
-
         .active-turn .turn-badge { opacity: 1; }
 
-        .p1-stats { 
-            border: 3px solid var(--p1-color); 
-            box-shadow: 0 0 10px var(--p1-bg);
-        }
-        .active-turn.p1-stats {
-            background: rgba(0, 210, 255, 0.2);
-            box-shadow: 0 0 25px var(--p1-color);
-            transform: scale(1.05);
-        }
-
-        .p2-stats { 
-            border: 3px solid var(--p2-color); 
-            box-shadow: 0 0 10px var(--p2-bg);
-            text-align: right; 
-        }
-        .active-turn.p2-stats {
-            background: rgba(255, 71, 188, 0.2);
-            box-shadow: 0 0 25px var(--p2-color);
-            transform: scale(1.05);
+        /* FIX 2: Angka Hitung Mundur Per Orang */
+        .turn-timer-text {
+            position: absolute;
+            top: 5px;
+            font-family: 'Fredoka', monospace;
+            font-size: clamp(1.2rem, 3vw, 2rem);
+            font-weight: bold;
+            color: rgba(255,255,255,0.3);
+            z-index: 5;
+            transition: color 0.3s, transform 0.3s;
         }
 
-        .inactive-turn {
-            opacity: 0.4;
-            filter: grayscale(80%);
-            transform: scale(0.95);
+        /* Posisi timer: P1 di Kanan, P2 di Kiri (biar gak nabrak alignment text) */
+        #p1-turn-time { right: 10px; }
+        #p2-turn-time { left: 10px; }
+
+        .active-turn .turn-timer-text {
+            color: #ff3333;
+            transform: scale(1.1);
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
+
+        .p1-stats { border: 2px solid var(--p1-color); }
+        .active-turn.p1-stats { background: var(--p1-bg); box-shadow: 0 0 15px var(--p1-color); }
+
+        .p2-stats { border: 2px solid var(--p2-color); text-align: right; }
+        .active-turn.p2-stats { background: var(--p2-bg); box-shadow: 0 0 15px var(--p2-color); }
+
+        .inactive-turn { opacity: 0.5; filter: grayscale(80%); transform: scale(0.98); }
 
         .player-name { 
             font-family: 'Fredoka', cursive;
-            font-size: 1.1rem;
+            font-size: clamp(0.8rem, 2vw, 1.2rem);
             color: #fff;
-            text-shadow: 1px 1px 0 #000;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -213,51 +222,47 @@
 
         .player-score { 
             font-family: 'Fredoka', cursive;
-            font-size: 2rem;
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
             font-weight: 600; 
             line-height: 1;
             margin: 2px 0;
         }
         
-        .hearts { display: flex; gap: 3px; margin-top: 2px; }
+        .hearts { display: flex; gap: 2px; margin-top: 2px; }
         .p2-stats .hearts { justify-content: flex-end; }
         .heart { 
-            font-size: 1.2rem;
+            font-size: clamp(0.8rem, 2vw, 1.5rem);
             color: #ff3333; 
-            filter: drop-shadow(1px 1px 0px rgba(0,0,0,0.5));
-            transition: transform 0.3s, opacity 0.3s; 
         }
-        .heart.lost { opacity: 0.2; transform: scale(0.8); filter: grayscale(100%); }
+        .heart.lost { opacity: 0.2; filter: grayscale(100%); }
 
-        /* --- TARGET BOX FIXED --- */
+        /* --- TARGET BOX --- */
         .target-box {
             flex: 1;
-            height: 85%;
-            max-width: 180px;
+            height: 90%;
+            max-width: 160px;
             background: #fff;
-            border: 5px solid #ffd700;
-            border-radius: 20px;
+            border: 4px solid #ffd700;
+            border-radius: 15px;
             display: flex;
             flex-direction: column;
             justify-content: center; 
             align-items: center;     
-            box-shadow: 0 6px 0 #b37700, 0 10px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 0 #b37700;
             margin: 0 10px;
             z-index: 10;
-            padding: 5px; 
         }
 
         .target-label { 
             font-family: 'Fredoka', cursive;
-            font-size: 1rem; 
+            font-size: clamp(0.7rem, 1.5vw, 1rem); 
             color: #888; 
-            letter-spacing: 1px;
-            margin-bottom: 2px; 
+            margin-bottom: 0;
             line-height: 1;
         }
         .target-number { 
             font-family: 'Fredoka', sans-serif;
-            font-size: 3.2rem;
+            font-size: clamp(2.5rem, 6vw, 4rem);
             font-weight: 600; 
             color: #333; 
             line-height: 1;
@@ -268,13 +273,14 @@
             flex: 1;
             display: flex;
             position: relative;
-            height: 70vh;
-            padding: 8px 15px;
+            height: 72vh;
+            padding: 5px 10px;
+            gap: 10px;
         }
 
         .divider {
-            width: 4px;
-            background: rgba(255,255,255,0.1);
+            width: 2px;
+            background: rgba(255,255,255,0.2);
             height: 95%;
             position: absolute;
             left: 50%;
@@ -286,124 +292,80 @@
 
         .play-zone {
             flex: 1;
-            padding: 5px;
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             grid-template-rows: repeat(5, 1fr);
-            gap: 8px;
-            position: relative;
-            transition: opacity 0.3s, filter 0.3s; /* Smooth transition for turn change */
+            gap: clamp(2px, 1vw, 8px);
+            transition: opacity 0.3s;
         }
 
-        /* Logic for inactive zone via CSS class */
-        .play-zone.inactive-zone {
-            opacity: 0.2;
-            pointer-events: none; /* Disable clicks */
-            filter: grayscale(100%);
-        }
+        .play-zone.inactive-zone { opacity: 0.25; pointer-events: none; }
 
         .card {
             background: var(--card-bg);
-            border-radius: 10px;
+            border-radius: 8px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 0.95rem; 
+            font-size: clamp(0.8rem, 2.5vmin, 1.4rem); 
             font-weight: bold;
             color: var(--card-text);
             cursor: pointer;
-            transition: transform 0.1s, background 0.2s, top 0.1s;
-            box-shadow: 0 3px 0 #b0b0b0, 0 5px 5px rgba(0,0,0,0.2);
+            box-shadow: 0 3px 0 #b0b0b0;
             border: none;
-            position: relative;
-            padding: 0 4px;
-            overflow: hidden; 
+            padding: 0 2px;
+            overflow: hidden;
+            white-space: nowrap;
         }
+        
+        .card:active { transform: translateY(2px); box-shadow: 0 0 0; }
 
         .card mjx-container {
-            pointer-events: none;
-            font-size: 100% !important; 
+            font-size: 100% !important;
+            margin: 0 !important;
         }
 
-        /* P1 Cards */
-        #p1-zone .card:hover { transform: translateY(-2px); box-shadow: 0 5px 0 var(--p1-dark), 0 7px 8px rgba(0,0,0,0.3); }
-        #p1-zone .card:active { transform: translateY(3px); box-shadow: 0 0 0 var(--p1-dark); }
-        
-        /* P2 Cards */
-        #p2-zone .card:hover { transform: translateY(-2px); box-shadow: 0 5px 0 var(--p2-dark), 0 7px 8px rgba(0,0,0,0.3); }
-        #p2-zone .card:active { transform: translateY(3px); box-shadow: 0 0 0 var(--p2-dark); }
+        .card.correct-anim { background: #88ff00 !important; }
+        .card.wrong-anim { background: #ff3333 !important; color: #fff !important; animation: shake 0.4s; }
 
-        .card.correct-anim {
-            animation: zapSuccess 0.4s forwards;
-            background: #88ff00 !important; 
-            box-shadow: 0 0 20px #88ff00 !important;
-            z-index: 10;
-        }
-
-        .card.wrong-anim {
-            animation: shake 0.4s;
-            background: #ff3333 !important;
-            color: white !important;
-        }
-
-        /* --- FOOTER --- */
+        /* --- FOOTER (Timer Game) --- */
         footer {
             height: 10vh;
+            min-height: 40px;
             display: flex;
             justify-content: center;
             align-items: center;
-            background: rgba(0,0,0,0.2);
         }
 
         #timer { 
             font-family: 'Fredoka', monospace;
-            font-size: 1.8rem;
+            font-size: clamp(1.2rem, 3vw, 2rem);
             color: #fff;
             background: rgba(0,0,0,0.4);
-            padding: 5px 20px;
+            padding: 2px 20px;
             border-radius: 50px;
             border: 2px solid rgba(255,255,255,0.2);
         }
-        .time-warning { color: #ff3333 !important; animation: pulse 1s infinite; border-color: #ff3333 !important; }
-
-        /* --- ANIMATIONS --- */
-        @keyframes zapSuccess {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.3) rotate(5deg); opacity: 1; }
-            100% { transform: scale(0); opacity: 0; }
-        }
+        .time-warning { color: #ff3333 !important; border-color: #ff3333 !important; }
 
         @keyframes shake {
-            0% { transform: translateX(0); }
-            20% { transform: translateX(-5px) rotate(-2deg); }
-            40% { transform: translateX(5px) rotate(2deg); }
-            60% { transform: translateX(-5px) rotate(-2deg); }
-            80% { transform: translateX(5px) rotate(2deg); }
-            100% { transform: translateX(0); }
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        /* --- RESPONSIVE ADJUSTMENTS --- */
-        @media (max-width: 768px) {
-            h1 { font-size: 2rem; }
-            .btn-start { font-size: 1.2rem; padding: 10px 30px; }
-            .name-input { font-size: 1.2rem; width: 150px; padding: 8px 15px; }
-            .target-number { font-size: 2.2rem; }
-            .target-box { max-width: 140px; }
-            .player-name { font-size: 0.8rem; }
-            .player-score { font-size: 1.3rem; }
-            .hearts .heart { font-size: 1rem; }
-            
-            .play-zone { 
-                grid-template-columns: repeat(4, 1fr); 
-                gap: 4px;
-            } 
-            .card { font-size: 0.8rem; border-radius: 6px; }
+        /* --- MOBILE LANDSCAPE SPECIFIC FIXES --- */
+        @media (max-height: 500px) {
+            header { height: 15vh; padding: 2px 10px; }
+            .target-box { max-width: 100px; height: 95%; }
+            .target-number { font-size: 2rem; }
+            .player-stats { padding: 2px; }
+            .player-score { font-size: 1.5rem; }
+            .turn-badge { top: -8px; font-size: 0.6rem; padding: 1px 5px; }
+            #arena { height: 75vh; }
+            footer { height: 10vh; }
+            h1 { font-size: 1.5rem; }
+            .card { border-radius: 4px; box-shadow: 0 2px 0 #b0b0b0; }
         }
 
     </style>
@@ -415,30 +377,31 @@
         <h1>Find & Zap<br><span style="font-size:0.5em; color:#ffd700; font-family:'Nunito';">Integer Duel</span></h1>
         
         <div class="input-group">
-            <input type="text" id="input-p1" class="name-input" placeholder="Nama Player 1" maxlength="10">
-            <span style="font-family: 'Fredoka'; font-size: 2rem; color: #fff; font-weight: bold;">VS</span>
-            <input type="text" id="input-p2" class="name-input" placeholder="Nama Player 2" maxlength="10">
+            <input type="text" id="input-p1" class="name-input" placeholder="Nama P1" maxlength="8">
+            <span style="font-family: 'Fredoka'; font-size: 1.5rem; color: #fff;">VS</span>
+            <input type="text" id="input-p2" class="name-input" placeholder="Nama P2" maxlength="8">
         </div>
 
-        <div style="margin-bottom: 20px; font-size: 1.1rem; max-width: 600px; line-height: 1.5; color: #ddd; background: rgba(0,0,0,0.4); padding: 20px; border-radius: 20px;">
+        <div style="margin-bottom: 20px; font-size: clamp(0.9rem, 2vw, 1.2rem); max-width: 600px; line-height: 1.4; color: #ddd; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 15px;">
             <p style="margin:0;">🎯 Cari soal yang hasilnya sama dengan target.</p>
-            <p style="margin:5px 0;">⚡ <strong>Game Bergiliran:</strong> Player 1 akan mulai duluan!</p>
-            <p style="margin:0;">❄️ Salah = Hilang 1 Nyawa & Ganti Giliran!</p>
+            <p style="margin:5px 0;">⚡ <strong>Player 1 Jalan Duluan!</strong></p>
+            <p style="margin:0; color: #ff9999;">⏱️ 30 Detik per Giliran!</p>
+            <p style="margin:0;">❄️ Salah / Waktu Habis = Hilang Nyawa & Ganti Giliran!</p>
         </div>
-        <button class="btn-start" onclick="game.start()">MULAI MAIN!</button>
+        <button class="btn-start" onclick="game.start()">MULAI</button>
     </div>
 
     <!-- Game Over Screen -->
     <div id="game-over-screen" class="hidden flex-center">
-        <h1 style="color: #ffd700;">GAME OVER</h1>
-        <h2 id="winner-text" style="color: #fff; margin-bottom: 20px; font-family:'Fredoka'; font-size: 2.5rem;">Player 1 Wins!</h2>
+        <h1 style="color: #ffd700;">SELESAI!</h1>
+        <h2 id="winner-text" style="color: #fff; margin-bottom: 20px; font-family:'Fredoka'; font-size: clamp(1.5rem, 4vw, 2.5rem);">Player 1 Wins!</h2>
         <div style="display: flex; gap: 40px; margin-bottom: 30px;">
             <div style="text-align: center;">
-                <p id="final-name-p1" style="color:var(--p1-color); font-weight:bold; font-size:1.2rem;">PLAYER 1</p>
+                <p id="final-name-p1" style="color:var(--p1-color); font-weight:bold;">PLAYER 1</p>
                 <p id="final-p1" style="font-size:3rem; font-family:'Fredoka'; margin:0;">0</p>
             </div>
             <div style="text-align: center;">
-                <p id="final-name-p2" style="color:var(--p2-color); font-weight:bold; font-size:1.2rem;">PLAYER 2</p>
+                <p id="final-name-p2" style="color:var(--p2-color); font-weight:bold;">PLAYER 2</p>
                 <p id="final-p2" style="font-size:3rem; font-family:'Fredoka'; margin:0;">0</p>
             </div>
         </div>
@@ -448,12 +411,14 @@
     <!-- Main Game HUD -->
     <header>
         <div id="p1-panel" class="player-stats p1-stats">
-            <div class="turn-badge">GILIRAN ANDA</div>
+            <div class="turn-badge">GILIRANMU</div>
+            <span id="p1-turn-time" class="turn-timer-text">30</span>
             <span class="player-name" id="hud-name-p1">PLAYER 1</span>
             <div class="hearts" id="p1-hearts">
                 <span class="heart">❤</span><span class="heart">❤</span><span class="heart">❤</span>
             </div>
             <span class="player-score" id="p1-score">0</span>
+            <div class="turn-timer-bar" id="p1-timer-bar"></div>
         </div>
 
         <div class="target-box">
@@ -462,70 +427,61 @@
         </div>
 
         <div id="p2-panel" class="player-stats p2-stats">
-            <div class="turn-badge">GILIRAN ANDA</div>
+            <div class="turn-badge">GILIRANMU</div>
+            <span id="p2-turn-time" class="turn-timer-text">30</span>
             <span class="player-name" id="hud-name-p2">PLAYER 2</span>
             <div class="hearts" id="p2-hearts">
                 <span class="heart">❤</span><span class="heart">❤</span><span class="heart">❤</span>
             </div>
             <span class="player-score" id="p2-score">0</span>
+            <div class="turn-timer-bar" id="p2-timer-bar"></div>
         </div>
     </header>
 
     <!-- Game Arena -->
     <section id="arena">
-        <div class="play-zone" id="p1-zone">
-            <!-- P1 Cards generated here -->
-        </div>
-        
+        <div class="play-zone" id="p1-zone"></div>
         <div class="divider"></div>
-        
-        <div class="play-zone" id="p2-zone">
-            <!-- P2 Cards generated here -->
-        </div>
+        <div class="play-zone" id="p2-zone"></div>
     </section>
 
-    <!-- Footer / Timer -->
+    <!-- Footer / Global Timer -->
     <footer>
         <span id="timer">05:00</span>
     </footer>
 
     <script>
-        // --- Audio Synthesizer ---
+        // --- Audio ---
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         const audioCtx = new AudioContext();
 
         function playSound(type) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
-            
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-
             const now = audioCtx.currentTime;
 
             if (type === 'correct') {
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(523.25, now);
-                osc.frequency.setValueAtTime(659.25, now + 0.1);
+                osc.frequency.setValueAtTime(523, now);
+                osc.frequency.setValueAtTime(659, now + 0.1);
                 gain.gain.setValueAtTime(0.2, now);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
                 osc.start(now);
                 osc.stop(now + 0.4);
-            } else if (type === 'wrong') {
+            } else if (type === 'wrong' || type === 'timeout') {
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(150, now);
-                osc.frequency.linearRampToValueAtTime(100, now + 0.3);
+                osc.frequency.linearRampToValueAtTime(80, now + 0.3);
                 gain.gain.setValueAtTime(0.2, now);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
                 osc.start(now);
                 osc.stop(now + 0.3);
             } else if (type === 'win') {
                 osc.type = 'triangle';
-                osc.frequency.setValueAtTime(523.25, now);
-                osc.frequency.setValueAtTime(659.25, now + 0.15);
-                osc.frequency.setValueAtTime(783.99, now + 0.30);
-                osc.frequency.setValueAtTime(1046.50, now + 0.45);
+                osc.frequency.setValueAtTime(523, now);
                 gain.gain.setValueAtTime(0.2, now);
                 gain.gain.linearRampToValueAtTime(0, now + 1.0);
                 osc.start(now);
@@ -533,32 +489,24 @@
             }
         }
 
-        // --- Math Logic with LaTeX ---
+        // --- Math Logic ---
         class MathEngine {
-            constructor() {
-                this.operators = ['+', '-', '*', '/'];
-            }
-
-            getRandomInt(min, max) {
-                return Math.floor(Math.random() * (max - min + 1)) + min;
-            }
-
-            fmt(n) {
-                return n < 0 ? `(${n})` : `${n}`;
-            }
+            constructor() { this.operators = ['+', '-', '*', '/']; }
+            getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+            fmt(n) { return n < 0 ? `(${n})` : `${n}`; }
 
             generateEquationForTarget(target) {
                 const op = this.operators[this.getRandomInt(0, 3)];
                 let a, b, latex;
-
+                
                 switch(op) {
                     case '+':
-                        a = this.getRandomInt(-12, 12);
+                        a = this.getRandomInt(-10, 10);
                         b = target - a;
                         latex = `\\( ${this.fmt(a)} + ${this.fmt(b)} \\)`;
                         break;
                     case '-':
-                        b = this.getRandomInt(-12, 12);
+                        b = this.getRandomInt(-10, 10);
                         a = target + b;
                         latex = `\\( ${this.fmt(a)} - ${this.fmt(b)} \\)`;
                         break;
@@ -576,17 +524,16 @@
                         }
                         break;
                     case '/':
-                        b = this.getRandomInt(2, 8) * (Math.random() < 0.5 ? -1 : 1);
+                        b = this.getRandomInt(2, 5) * (Math.random() < 0.5 ? -1 : 1);
                         a = target * b;
                         latex = `\\( ${this.fmt(a)} \\div ${this.fmt(b)} \\)`;
                         break;
                 }
-
                 return { text: latex, value: target };
             }
 
             generateRandomEquation() {
-                const target = this.getRandomInt(-15, 15);
+                const target = this.getRandomInt(-12, 12);
                 return this.generateEquationForTarget(target);
             }
         }
@@ -595,14 +542,15 @@
         class Game {
             constructor() {
                 this.math = new MathEngine();
-                this.duration = 300; 
+                this.gameDuration = 300; 
+                this.turnDuration = 30; // 30 seconds per turn
                 this.timerInterval = null;
                 
                 this.state = {
                     p1: { name: 'Player 1', score: 0, lives: 3 }, 
                     p2: { name: 'Player 2', score: 0, lives: 3 }, 
                     target: 0,
-                    activePlayer: 'p1', // New turn state
+                    activePlayer: 'p1',
                     cardsPerSide: 20
                 };
 
@@ -613,6 +561,12 @@
                     p2Zone: document.getElementById('p2-zone'),
                     p1Panel: document.getElementById('p1-panel'),
                     p2Panel: document.getElementById('p2-panel'),
+                    p1TimerBar: document.getElementById('p1-timer-bar'),
+                    p2TimerBar: document.getElementById('p2-timer-bar'),
+                    // Tambahan element timer text
+                    p1TurnText: document.getElementById('p1-turn-time'),
+                    p2TurnText: document.getElementById('p2-turn-time'),
+                    
                     targetDisplay: document.getElementById('target-display'),
                     timer: document.getElementById('timer'),
                     p1Score: document.getElementById('p1-score'),
@@ -630,32 +584,28 @@
             }
 
             start(isRematch = false) {
-                // Set names
                 if (!isRematch) {
                     const name1 = this.els.inputP1.value.trim();
                     const name2 = this.els.inputP2.value.trim();
                     this.state.p1.name = name1 || "Player 1";
                     this.state.p2.name = name2 || "Player 2";
                 }
-                
-                // Update HUD Names
                 this.els.hudNameP1.textContent = this.state.p1.name;
                 this.els.hudNameP2.textContent = this.state.p2.name;
 
                 this.els.startScreen.classList.add('hidden');
                 this.els.gameOverScreen.classList.add('hidden');
                 
-                // Reset State
-                this.state.p1.score = 0;
-                this.state.p1.lives = 3;
-                this.state.p2.score = 0;
-                this.state.p2.lives = 3;
-                this.state.activePlayer = 'p1'; // Start with P1
+                this.state.p1.score = 0; this.state.p1.lives = 3;
+                this.state.p2.score = 0; this.state.p2.lives = 3;
+                this.state.activePlayer = 'p1';
 
-                this.timeLeft = this.duration;
+                this.gameTimeLeft = this.gameDuration;
+                this.turnTimeLeft = this.turnDuration;
                 
                 this.updateStatsUI();
-                this.updateTurnUI(); // Initial visual set
+                this.updateTurnUI(); 
+                this.updateTurnBar(); // Reset numbers visual
                 
                 this.startRound();
                 this.startTimer();
@@ -666,57 +616,83 @@
                 this.updateTimerDisplay();
                 
                 this.timerInterval = setInterval(() => {
-                    this.timeLeft--;
+                    // Global Game Timer
+                    this.gameTimeLeft--;
                     this.updateTimerDisplay();
-                    if (this.timeLeft <= 0) {
+
+                    // Turn Timer
+                    this.turnTimeLeft--;
+                    this.updateTurnBar();
+
+                    if (this.turnTimeLeft <= 0) {
+                        this.handleTurnTimeout();
+                    }
+
+                    if (this.gameTimeLeft <= 0) {
                         this.endGame("Waktu Habis!");
                     }
                 }, 1000);
             }
 
-            updateTimerDisplay() {
-                const m = Math.floor(this.timeLeft / 60).toString().padStart(2, '0');
-                const s = (this.timeLeft % 60).toString().padStart(2, '0');
-                this.els.timer.textContent = `${m}:${s}`;
-                
-                if (this.timeLeft < 30) {
-                    this.els.timer.classList.add('time-warning');
+            handleTurnTimeout() {
+                playSound('timeout');
+                const player = this.state[this.state.activePlayer];
+                player.lives--;
+                this.updateStatsUI();
+
+                if (player.lives <= 0) {
+                    const winner = this.state.activePlayer === 'p1' ? this.state.p2.name : this.state.p1.name;
+                    this.endGame(`${winner} Menang!`);
                 } else {
-                    this.els.timer.classList.remove('time-warning');
+                    this.switchTurn();
+                }
+            }
+
+            updateTimerDisplay() {
+                const m = Math.floor(this.gameTimeLeft / 60).toString().padStart(2, '0');
+                const s = (this.gameTimeLeft % 60).toString().padStart(2, '0');
+                this.els.timer.textContent = `${m}:${s}`;
+                if (this.gameTimeLeft < 30) this.els.timer.classList.add('time-warning');
+                else this.els.timer.classList.remove('time-warning');
+            }
+
+            updateTurnBar() {
+                const pct = (this.turnTimeLeft / this.turnDuration) * 100;
+                // Update Text
+                const timeText = this.turnTimeLeft < 0 ? 0 : this.turnTimeLeft;
+
+                if (this.state.activePlayer === 'p1') {
+                    this.els.p1TimerBar.style.width = `${pct}%`;
+                    this.els.p2TimerBar.style.width = `0%`;
+                    this.els.p1TurnText.textContent = timeText;
+                    this.els.p2TurnText.textContent = "30";
+                } else {
+                    this.els.p2TimerBar.style.width = `${pct}%`;
+                    this.els.p1TimerBar.style.width = `0%`;
+                    this.els.p2TurnText.textContent = timeText;
+                    this.els.p1TurnText.textContent = "30";
                 }
             }
 
             startRound() {
                 this.state.target = this.math.getRandomInt(-12, 12);
                 this.els.targetDisplay.textContent = this.state.target;
-                
                 this.renderGrid('p1');
                 this.renderGrid('p2');
-
-                if (window.MathJax) {
-                    MathJax.typesetPromise().catch((err) => console.log('MathJax error:', err));
-                }
+                if (window.MathJax) MathJax.typesetPromise().catch(e => console.log(e));
             }
 
             renderGrid(player) {
                 const zone = player === 'p1' ? this.els.p1Zone : this.els.p2Zone;
                 zone.innerHTML = ''; 
-
                 let cards = [];
                 const correctCount = this.math.getRandomInt(1, 3);
-                
-                for(let i=0; i<correctCount; i++) {
-                    cards.push(this.math.generateEquationForTarget(this.state.target));
-                }
-
+                for(let i=0; i<correctCount; i++) cards.push(this.math.generateEquationForTarget(this.state.target));
                 while(cards.length < this.state.cardsPerSide) {
                     let eq = this.math.generateRandomEquation();
-                    while(eq.value === this.state.target) {
-                        eq = this.math.generateRandomEquation();
-                    }
+                    while(eq.value === this.state.target) eq = this.math.generateRandomEquation();
                     cards.push(eq);
                 }
-
                 cards.sort(() => Math.random() - 0.5);
 
                 cards.forEach(cardData => {
@@ -724,103 +700,60 @@
                     card.className = 'card';
                     card.innerHTML = cardData.text; 
                     card.dataset.value = cardData.value;
-                    
-                    const clickHandler = (e) => {
-                        e.stopPropagation(); 
-                        this.handleCardClick(player, cardData.value, card);
-                    };
-
+                    const clickHandler = (e) => { e.stopPropagation(); this.handleCardClick(player, cardData.value, card); };
                     card.addEventListener('mousedown', clickHandler);
-                    card.addEventListener('touchstart', (e) => {
-                        e.preventDefault(); 
-                        clickHandler(e);
-                    });
-
+                    card.addEventListener('touchstart', (e) => { e.preventDefault(); clickHandler(e); });
                     zone.appendChild(card);
                 });
             }
 
             handleCardClick(playerKey, value, cardElement) {
-                // Prevent click if not your turn
                 if (playerKey !== this.state.activePlayer) return;
 
                 const player = this.state[playerKey];
-                
                 if (parseInt(value) === this.state.target) {
-                    // CORRECT
                     playSound('correct');
                     player.score++;
-                    
                     cardElement.classList.add('correct-anim');
-                    
                     this.updateStatsUI();
-                    
-                    // Switch turn and start new round
-                    setTimeout(() => {
-                        if(this.timeLeft > 0) {
-                            this.switchTurn();
-                        }
-                    }, 400);
-
+                    setTimeout(() => { if(this.gameTimeLeft > 0) this.switchTurn(); }, 400);
                 } else {
-                    // WRONG
                     playSound('wrong');
                     cardElement.classList.add('wrong-anim');
-                    
                     player.lives--;
                     this.updateStatsUI();
-
                     if (player.lives <= 0) {
                         const winner = playerKey === 'p1' ? this.state.p2.name : this.state.p1.name;
                         this.endGame(`${winner} Menang!`);
                         return;
                     }
-
-                    // Punishment: Switch turn immediately
-                    setTimeout(() => {
-                        if(this.timeLeft > 0) {
-                            this.switchTurn();
-                        }
-                    }, 400);
+                    setTimeout(() => { if(this.gameTimeLeft > 0) this.switchTurn(); }, 400);
                 }
             }
 
             switchTurn() {
-                // Toggle player
                 this.state.activePlayer = this.state.activePlayer === 'p1' ? 'p2' : 'p1';
+                this.turnTimeLeft = this.turnDuration; // Reset turn timer
                 this.updateTurnUI();
-                this.startRound(); // New target every turn to refresh board
+                this.updateTurnBar(); // Immediate visual update
+                this.startRound(); 
             }
 
             updateTurnUI() {
-                if (this.state.activePlayer === 'p1') {
-                    // Activate P1
-                    this.els.p1Zone.classList.remove('inactive-zone');
-                    this.els.p2Zone.classList.add('inactive-zone');
-                    
-                    this.els.p1Panel.classList.add('active-turn');
-                    this.els.p1Panel.classList.remove('inactive-turn');
-                    
-                    this.els.p2Panel.classList.remove('active-turn');
-                    this.els.p2Panel.classList.add('inactive-turn');
-
-                } else {
-                    // Activate P2
-                    this.els.p2Zone.classList.remove('inactive-zone');
-                    this.els.p1Zone.classList.add('inactive-zone');
-                    
-                    this.els.p2Panel.classList.add('active-turn');
-                    this.els.p2Panel.classList.remove('inactive-turn');
-                    
-                    this.els.p1Panel.classList.remove('active-turn');
-                    this.els.p1Panel.classList.add('inactive-turn');
-                }
+                const isP1 = this.state.activePlayer === 'p1';
+                this.els.p1Zone.classList.toggle('inactive-zone', !isP1);
+                this.els.p2Zone.classList.toggle('inactive-zone', isP1);
+                
+                this.els.p1Panel.classList.toggle('active-turn', isP1);
+                this.els.p1Panel.classList.toggle('inactive-turn', !isP1);
+                
+                this.els.p2Panel.classList.toggle('active-turn', !isP1);
+                this.els.p2Panel.classList.toggle('inactive-turn', isP1);
             }
 
             updateStatsUI() {
                 this.els.p1Score.textContent = this.state.p1.score;
                 this.els.p2Score.textContent = this.state.p2.score;
-
                 this.renderHearts('p1', this.state.p1.lives);
                 this.renderHearts('p2', this.state.p2.lives);
             }
@@ -829,38 +762,31 @@
                 const container = document.getElementById(`${player}-hearts`);
                 const hearts = container.children;
                 for (let i = 0; i < 3; i++) {
-                    if (i < count) {
-                        hearts[i].classList.remove('lost');
-                    } else {
-                        hearts[i].classList.add('lost');
-                    }
+                    if (i < count) hearts[i].classList.remove('lost');
+                    else hearts[i].classList.add('lost');
                 }
             }
 
             endGame(reason) {
                 clearInterval(this.timerInterval);
                 playSound('win');
-                
                 this.els.gameOverScreen.classList.remove('hidden');
                 this.els.finalP1.textContent = this.state.p1.score;
                 this.els.finalP2.textContent = this.state.p2.score;
                 this.els.finalNameP1.textContent = this.state.p1.name;
                 this.els.finalNameP2.textContent = this.state.p2.name;
-
+                
                 let winnerMsg = "";
-                // Logic Menang
                 if (this.state.p1.lives === 0) winnerMsg = `${this.state.p2.name} Menang!`;
                 else if (this.state.p2.lives === 0) winnerMsg = `${this.state.p1.name} Menang!`;
                 else if (this.state.p1.score > this.state.p2.score) winnerMsg = `${this.state.p1.name} Menang!`;
                 else if (this.state.p2.score > this.state.p1.score) winnerMsg = `${this.state.p2.name} Menang!`;
                 else winnerMsg = "Seri!";
-
                 this.els.winnerText.textContent = winnerMsg;
             }
         }
 
         const game = new Game();
-
     </script>
 </body>
 </html>
