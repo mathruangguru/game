@@ -141,23 +141,6 @@
             overflow: visible; 
         }
 
-        /* Timer Bar inside Player Panel */
-        .turn-timer-bar {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            height: 6px;
-            background: #ff0000;
-            width: 0%;
-            transition: width 1s linear;
-            border-radius: 0 0 12px 12px; 
-        }
-
-        .active-turn .turn-timer-bar {
-            width: 100%;
-            background: linear-gradient(90deg, #ff9900, #ff0000);
-        }
-
         /* Turn Badge */
         .turn-badge {
             position: absolute;
@@ -179,25 +162,29 @@
         }
         .active-turn .turn-badge { opacity: 1; }
 
-        /* Angka Hitung Mundur Per Orang */
-        .turn-timer-text {
+        /* Timer Text Per Orang (Format MM:SS) */
+        .player-timer {
             position: absolute;
             top: 5px;
             font-family: 'Fredoka', monospace;
-            font-size: clamp(1.2rem, 3vw, 2rem);
+            font-size: clamp(1rem, 2.5vw, 1.5rem);
             font-weight: bold;
-            color: rgba(255,255,255,0.3);
+            color: rgba(255,255,255,0.5);
             z-index: 5;
             transition: color 0.3s, transform 0.3s;
+            background: rgba(0,0,0,0.3);
+            padding: 2px 8px;
+            border-radius: 8px;
         }
 
-        #p1-turn-time { right: 10px; }
-        #p2-turn-time { left: 10px; }
+        #p1-time-display { right: 10px; }
+        #p2-time-display { left: 10px; }
 
-        .active-turn .turn-timer-text {
-            color: #ff3333;
-            transform: scale(1.1);
-            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+        .active-turn .player-timer {
+            color: #fff;
+            background: #ff3333; /* Red when active */
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(255, 51, 51, 0.5);
         }
 
         .p1-stats { border: 2px solid var(--p1-color); }
@@ -215,6 +202,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            margin-top: 25px; /* Space for timer */
         }
 
         .player-score { 
@@ -346,7 +334,7 @@
         .card.correct-anim { background: #88ff00 !important; }
         .card.wrong-anim { background: #ff3333 !important; color: #fff !important; animation: shake 0.4s; }
 
-        /* --- FOOTER (Timer Game) --- */
+        /* --- FOOTER --- */
         footer {
             height: 10vh;
             min-height: 40px;
@@ -355,16 +343,11 @@
             align-items: center;
         }
 
-        #timer { 
-            font-family: 'Fredoka', monospace;
-            font-size: clamp(1.2rem, 3vw, 2rem);
-            color: #fff;
-            background: rgba(0,0,0,0.4);
-            padding: 2px 20px;
-            border-radius: 50px;
-            border: 2px solid rgba(255,255,255,0.2);
+        #mode-info {
+            color: rgba(255,255,255,0.5);
+            font-family: 'Fredoka', sans-serif;
+            font-size: 0.9rem;
         }
-        .time-warning { color: #ff3333 !important; border-color: #ff3333 !important; }
 
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
@@ -378,6 +361,8 @@
             .target-box { max-width: 100px; height: 95%; }
             .target-number { font-size: 2rem; }
             .player-stats { padding: 2px; }
+            .player-timer { font-size: 0.8rem; top: 2px; }
+            .player-name { margin-top: 18px; font-size: 0.8rem; }
             .player-score { font-size: 1.5rem; }
             .turn-badge { top: -8px; font-size: 0.6rem; padding: 1px 5px; }
             #arena { height: 75vh; }
@@ -403,7 +388,8 @@
         <div style="margin-bottom: 20px; font-size: clamp(0.9rem, 2vw, 1.2rem); max-width: 600px; line-height: 1.4; color: #ddd; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 15px;">
             <p style="margin:0;">🎯 Cari soal yang hasilnya sama dengan target.</p>
             <p style="margin:5px 0;">⚡ <strong>Player 1 Jalan Duluan!</strong></p>
-            <p style="margin:0; color: #ff9999;">⏱️ 30 Detik per Giliran!</p>
+            <p style="margin:0; color: #ff9999;">⏱️ <strong>3 Menit</strong> per Pemain (Chess Clock)</p>
+            <p style="margin:0;">Waktu habis = KALAH!</p>
         </div>
         <button class="btn-start" onclick="game.start()">MULAI</button>
     </div>
@@ -429,14 +415,12 @@
     <header>
         <div id="p1-panel" class="player-stats p1-stats">
             <div class="turn-badge">GILIRANMU</div>
-            <span id="p1-turn-time" class="turn-timer-text">30</span>
+            <span id="p1-time-display" class="player-timer">03:00</span>
             <span class="player-name" id="hud-name-p1">PLAYER 1</span>
             <div class="hearts" id="p1-hearts">
                 <span class="heart">❤</span><span class="heart">❤</span><span class="heart">❤</span>
             </div>
             <span class="player-score" id="p1-score">0</span>
-            <div class="turn-timer-bar" id="p1-timer-bar"></div>
-            <!-- Streak Indicator (Visual Only) -->
             <div id="p1-streak" class="streak-badge">0</div>
         </div>
 
@@ -447,14 +431,12 @@
 
         <div id="p2-panel" class="player-stats p2-stats">
             <div class="turn-badge">GILIRANMU</div>
-            <span id="p2-turn-time" class="turn-timer-text">30</span>
+            <span id="p2-time-display" class="player-timer">03:00</span>
             <span class="player-name" id="hud-name-p2">PLAYER 2</span>
             <div class="hearts" id="p2-hearts">
                 <span class="heart">❤</span><span class="heart">❤</span><span class="heart">❤</span>
             </div>
             <span class="player-score" id="p2-score">0</span>
-            <div class="turn-timer-bar" id="p2-timer-bar"></div>
-             <!-- Streak Indicator (Visual Only) -->
              <div id="p2-streak" class="streak-badge">0</div>
         </div>
     </header>
@@ -466,9 +448,9 @@
         <div class="play-zone" id="p2-zone"></div>
     </section>
 
-    <!-- Footer / Global Timer -->
+    <!-- Footer -->
     <footer>
-        <span id="timer">05:00</span>
+        <span id="mode-info">Mode: Chess Clock (3 Mins)</span>
     </footer>
 
     <script>
@@ -519,9 +501,8 @@
             getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
             fmt(n) { return n < 0 ? `(${n})` : `${n}`; }
 
-            // Fixed Range Limit
             getRangeLimit() {
-                return 12; // Tetap di angka kecil
+                return 12; 
             }
 
             generateEquationForTarget(target) {
@@ -542,7 +523,6 @@
                         break;
                     case '*':
                         const factors = [];
-                        // Check factors within limit
                         for(let i = -limit; i <= limit; i++) {
                             if (i !== 0 && target % i === 0) factors.push(i);
                         }
@@ -551,12 +531,10 @@
                             b = target / a;
                             latex = `\\( ${this.fmt(a)} \\times ${this.fmt(b)} \\)`;
                         } else {
-                            // Fallback if prime or no factors in range
                             return this.generateEquationForTarget(target);
                         }
                         break;
                     case '/':
-                        // Limit division complexity
                         b = this.getRandomInt(2, Math.max(5, Math.floor(limit/2))) * (Math.random() < 0.5 ? -1 : 1);
                         a = target * b;
                         latex = `\\( ${this.fmt(a)} \\div ${this.fmt(b)} \\)`;
@@ -567,7 +545,6 @@
 
             generateRandomEquation() {
                 const limit = this.getRangeLimit();
-                // Target slightly larger range than components
                 const target = this.getRandomInt(-(limit+5), limit+5);
                 return this.generateEquationForTarget(target);
             }
@@ -577,15 +554,15 @@
         class Game {
             constructor() {
                 this.math = new MathEngine();
-                this.gameDuration = 300; 
-                this.turnDuration = 30; 
                 this.timerInterval = null;
-                this.storageKey = 'integer_duel_save';
+                this.storageKey = 'integer_duel_save_v2';
                 
-                // Default State
+                // 3 Minutes = 180 seconds
+                this.initialTime = 180; 
+
                 this.state = {
-                    p1: { name: 'Player 1', score: 0, lives: 3, streak: 0 }, 
-                    p2: { name: 'Player 2', score: 0, lives: 3, streak: 0 }, 
+                    p1: { name: 'Player 1', score: 0, lives: 3, streak: 0, time: this.initialTime }, 
+                    p2: { name: 'Player 2', score: 0, lives: 3, streak: 0, time: this.initialTime }, 
                     target: 0,
                     activePlayer: 'p1',
                     cardsPerSide: 20
@@ -598,14 +575,13 @@
                     p2Zone: document.getElementById('p2-zone'),
                     p1Panel: document.getElementById('p1-panel'),
                     p2Panel: document.getElementById('p2-panel'),
-                    p1TimerBar: document.getElementById('p1-timer-bar'),
-                    p2TimerBar: document.getElementById('p2-timer-bar'),
-                    p1TurnText: document.getElementById('p1-turn-time'),
-                    p2TurnText: document.getElementById('p2-turn-time'),
+                    
+                    p1TimeDisplay: document.getElementById('p1-time-display'),
+                    p2TimeDisplay: document.getElementById('p2-time-display'),
+                    
                     p1Streak: document.getElementById('p1-streak'),
                     p2Streak: document.getElementById('p2-streak'),
                     targetDisplay: document.getElementById('target-display'),
-                    timer: document.getElementById('timer'),
                     p1Score: document.getElementById('p1-score'),
                     p2Score: document.getElementById('p2-score'),
                     winnerText: document.getElementById('winner-text'),
@@ -619,19 +595,13 @@
                     hudNameP2: document.getElementById('hud-name-p2'),
                 };
 
-                // Check for saved game on load
                 window.onload = () => {
                     this.checkResume();
                 };
             }
 
             saveGame() {
-                const saveData = {
-                    state: this.state,
-                    gameTimeLeft: this.gameTimeLeft,
-                    turnTimeLeft: this.turnTimeLeft
-                };
-                localStorage.setItem(this.storageKey, JSON.stringify(saveData));
+                localStorage.setItem(this.storageKey, JSON.stringify(this.state));
             }
 
             clearSave() {
@@ -642,28 +612,24 @@
                 const saved = localStorage.getItem(this.storageKey);
                 if (saved) {
                     try {
-                        const data = JSON.parse(saved);
-                        // Restore logic
-                        this.state = data.state;
-                        this.gameTimeLeft = data.gameTimeLeft;
-                        this.turnTimeLeft = data.turnTimeLeft;
+                        this.state = JSON.parse(saved);
 
-                        // UI Setup
+                        // Restore UI
                         this.els.inputP1.value = this.state.p1.name;
                         this.els.inputP2.value = this.state.p2.name;
                         this.els.hudNameP1.textContent = this.state.p1.name;
                         this.els.hudNameP2.textContent = this.state.p2.name;
+                        
+                        // Restore Times
+                        this.updateTimeDisplay();
 
                         this.els.startScreen.classList.add('hidden');
                         this.updateStatsUI();
                         this.updateTurnUI();
-                        this.updateTurnBar();
 
-                        // Resume flow
-                        this.startRound(); // Generate new cards (easier than saving card state)
+                        this.startRound(); 
                         this.startTimer();
                     } catch (e) {
-                        console.error("Save file corrupt", e);
                         this.clearSave();
                     }
                 }
@@ -673,7 +639,6 @@
                 if (isRematch) this.clearSave();
 
                 if (!isRematch) {
-                    // Only update names if inputs are not empty
                     const name1 = this.els.inputP1.value.trim();
                     const name2 = this.els.inputP2.value.trim();
                     if(name1) this.state.p1.name = name1;
@@ -686,16 +651,13 @@
                 this.els.gameOverScreen.classList.add('hidden');
                 
                 // Reset State
-                this.state.p1.score = 0; this.state.p1.lives = 3; this.state.p1.streak = 0;
-                this.state.p2.score = 0; this.state.p2.lives = 3; this.state.p2.streak = 0;
+                this.state.p1.score = 0; this.state.p1.lives = 3; this.state.p1.streak = 0; this.state.p1.time = this.initialTime;
+                this.state.p2.score = 0; this.state.p2.lives = 3; this.state.p2.streak = 0; this.state.p2.time = this.initialTime;
                 this.state.activePlayer = 'p1';
 
-                this.gameTimeLeft = this.gameDuration;
-                this.turnTimeLeft = this.turnDuration;
-                
                 this.updateStatsUI();
                 this.updateTurnUI(); 
-                this.updateTurnBar();
+                this.updateTimeDisplay();
                 
                 this.startRound();
                 this.startTimer();
@@ -704,71 +666,38 @@
 
             startTimer() {
                 if (this.timerInterval) clearInterval(this.timerInterval);
-                this.updateTimerDisplay();
                 
                 this.timerInterval = setInterval(() => {
-                    this.gameTimeLeft--;
-                    this.updateTimerDisplay();
+                    // Decrement Active Player Time
+                    const active = this.state.activePlayer; // 'p1' or 'p2'
+                    this.state[active].time--;
 
-                    this.turnTimeLeft--;
-                    this.updateTurnBar();
-
-                    // Save periodically (every second is fine for simple localstorage)
+                    this.updateTimeDisplay();
                     this.saveGame();
 
-                    if (this.turnTimeLeft <= 0) {
-                        this.handleTurnTimeout();
-                    }
-
-                    if (this.gameTimeLeft <= 0) {
-                        this.endGame("Waktu Habis!");
+                    // Check Loss Condition
+                    if (this.state[active].time <= 0) {
+                        const winner = active === 'p1' ? this.state.p2.name : this.state.p1.name;
+                        this.endGame(`${winner} Menang (Waktu Habis)!`);
                     }
                 }, 1000);
             }
 
-            handleTurnTimeout() {
-                playSound('timeout');
-                const player = this.state[this.state.activePlayer];
-                player.lives--;
-                player.streak = 0; // Reset streak on timeout
-                this.updateStatsUI();
+            updateTimeDisplay() {
+                // Format: MM:SS
+                const fmt = (s) => {
+                    if (s < 0) s = 0;
+                    const min = Math.floor(s / 60).toString().padStart(2, '0');
+                    const sec = (s % 60).toString().padStart(2, '0');
+                    return `${min}:${sec}`;
+                };
 
-                if (player.lives <= 0) {
-                    const winner = this.state.activePlayer === 'p1' ? this.state.p2.name : this.state.p1.name;
-                    this.endGame(`${winner} Menang!`);
-                } else {
-                    this.switchTurn();
-                }
-            }
-
-            updateTimerDisplay() {
-                const m = Math.floor(this.gameTimeLeft / 60).toString().padStart(2, '0');
-                const s = (this.gameTimeLeft % 60).toString().padStart(2, '0');
-                this.els.timer.textContent = `${m}:${s}`;
-                if (this.gameTimeLeft < 30) this.els.timer.classList.add('time-warning');
-                else this.els.timer.classList.remove('time-warning');
-            }
-
-            updateTurnBar() {
-                const pct = (this.turnTimeLeft / this.turnDuration) * 100;
-                const timeText = this.turnTimeLeft < 0 ? 0 : this.turnTimeLeft;
-
-                if (this.state.activePlayer === 'p1') {
-                    this.els.p1TimerBar.style.width = `${pct}%`;
-                    this.els.p2TimerBar.style.width = `0%`;
-                    this.els.p1TurnText.textContent = timeText;
-                    this.els.p2TurnText.textContent = "30";
-                } else {
-                    this.els.p2TimerBar.style.width = `${pct}%`;
-                    this.els.p1TimerBar.style.width = `0%`;
-                    this.els.p2TurnText.textContent = timeText;
-                    this.els.p1TurnText.textContent = "30";
-                }
+                this.els.p1TimeDisplay.textContent = fmt(this.state.p1.time);
+                this.els.p2TimeDisplay.textContent = fmt(this.state.p2.time);
             }
 
             startRound() {
                 const limit = this.math.getRangeLimit();
-                // Target around current limit
                 this.state.target = this.math.getRandomInt(-limit, limit);
                 this.els.targetDisplay.textContent = this.state.target;
                 this.renderGrid('p1');
@@ -814,31 +743,31 @@
                     cardElement.classList.add('correct-anim');
                     this.updateStatsUI();
                     this.saveGame();
-                    setTimeout(() => { if(this.gameTimeLeft > 0) this.switchTurn(); }, 400);
+                    // Just switch turn, no need to check timer here as interval handles it
+                    setTimeout(() => { this.switchTurn(); }, 400);
 
                 } else {
                     // WRONG
                     playSound('wrong');
                     cardElement.classList.add('wrong-anim');
                     player.lives--;
-                    player.streak = 0; // Reset streak
+                    player.streak = 0; 
                     this.updateStatsUI();
                     
                     if (player.lives <= 0) {
                         const winner = playerKey === 'p1' ? this.state.p2.name : this.state.p1.name;
-                        this.endGame(`${winner} Menang!`);
+                        this.endGame(`${winner} Menang (Habis Nyawa)!`);
                         return;
                     }
                     this.saveGame();
-                    setTimeout(() => { if(this.gameTimeLeft > 0) this.switchTurn(); }, 400);
+                    // Lose Life = Switch Turn? In previous iteration yes. Let's keep it.
+                    setTimeout(() => { this.switchTurn(); }, 400);
                 }
             }
 
             switchTurn() {
                 this.state.activePlayer = this.state.activePlayer === 'p1' ? 'p2' : 'p1';
-                this.turnTimeLeft = this.turnDuration; 
                 this.updateTurnUI();
-                this.updateTurnBar(); 
                 this.startRound(); 
                 this.saveGame();
             }
@@ -861,7 +790,6 @@
                 this.renderHearts('p1', this.state.p1.lives);
                 this.renderHearts('p2', this.state.p2.lives);
                 
-                // Show streak if > 0
                 this.els.p1Streak.textContent = this.state.p1.streak;
                 this.els.p1Streak.classList.toggle('streak-active', this.state.p1.streak > 0);
                 
@@ -880,7 +808,7 @@
 
             endGame(reason) {
                 clearInterval(this.timerInterval);
-                this.clearSave(); // Clear save on finish
+                this.clearSave();
                 playSound('win');
                 this.els.gameOverScreen.classList.remove('hidden');
                 this.els.finalP1.textContent = this.state.p1.score;
@@ -889,11 +817,15 @@
                 this.els.finalNameP2.textContent = this.state.p2.name;
                 
                 let winnerMsg = "";
-                if (this.state.p1.lives === 0) winnerMsg = `${this.state.p2.name} Menang!`;
-                else if (this.state.p2.lives === 0) winnerMsg = `${this.state.p1.name} Menang!`;
-                else if (this.state.p1.score > this.state.p2.score) winnerMsg = `${this.state.p1.name} Menang!`;
-                else if (this.state.p2.score > this.state.p1.score) winnerMsg = `${this.state.p2.name} Menang!`;
-                else winnerMsg = "Seri!";
+                // If lives/time logic handled externally, we just display winner based on reason or scores
+                if (reason.includes(this.state.p1.name)) winnerMsg = reason;
+                else if (reason.includes(this.state.p2.name)) winnerMsg = reason;
+                else {
+                    // Generic fallback
+                    if (this.state.p1.score > this.state.p2.score) winnerMsg = `${this.state.p1.name} Menang!`;
+                    else winnerMsg = `${this.state.p2.name} Menang!`;
+                }
+                
                 this.els.winnerText.textContent = winnerMsg;
             }
         }
