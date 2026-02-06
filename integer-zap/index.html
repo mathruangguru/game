@@ -436,8 +436,8 @@
             <div class="hearts" id="p2-hearts">
                 <span class="heart">❤</span><span class="heart">❤</span><span class="heart">❤</span>
             </div>
-            <span class="player-score" id="p2-score">0</span>
-             <div id="p2-streak" class="streak-badge">0</div>
+            <span class="player-score" id="p2-score">0</span> 
+            <div id="p2-streak" class="streak-badge">0</div>
         </div>
     </header>
 
@@ -594,10 +594,6 @@
                     hudNameP1: document.getElementById('hud-name-p1'),
                     hudNameP2: document.getElementById('hud-name-p2'),
                 };
-
-                window.onload = () => {
-                    this.checkResume();
-                };
             }
 
             saveGame() {
@@ -610,9 +606,17 @@
 
             checkResume() {
                 const saved = localStorage.getItem(this.storageKey);
+                // Cek apakah ada save DAN apakah gamenya belum selesai (waktu masih ada)
                 if (saved) {
                     try {
-                        this.state = JSON.parse(saved);
+                        const parsed = JSON.parse(saved);
+                        // Validasi sederhana: jangan resume kalau waktu sudah habis
+                        if (parsed.p1.time <= 0 || parsed.p2.time <= 0) {
+                            this.clearSave();
+                            return;
+                        }
+
+                        this.state = parsed;
 
                         // Restore UI
                         this.els.inputP1.value = this.state.p1.name;
@@ -620,16 +624,20 @@
                         this.els.hudNameP1.textContent = this.state.p1.name;
                         this.els.hudNameP2.textContent = this.state.p2.name;
                         
-                        // Restore Times
-                        this.updateTimeDisplay();
-
+                        // Hide Start Screen Immediately
                         this.els.startScreen.classList.add('hidden');
+                        
+                        // Update UI Elements
                         this.updateStatsUI();
                         this.updateTurnUI();
+                        this.updateTimeDisplay();
 
-                        this.startRound(); 
+                        // Start Round with RESUME flag (TRUE)
+                        this.startRound(true); 
                         this.startTimer();
+                        console.log("Game Resumed");
                     } catch (e) {
+                        console.error("Save corrupted", e);
                         this.clearSave();
                     }
                 }
@@ -659,7 +667,8 @@
                 this.updateTurnUI(); 
                 this.updateTimeDisplay();
                 
-                this.startRound();
+                // Start NEW Round (Resume = False)
+                this.startRound(false);
                 this.startTimer();
                 this.saveGame();
             }
@@ -673,6 +682,8 @@
                     this.state[active].time--;
 
                     this.updateTimeDisplay();
+                    
+                    // Save game state every second
                     this.saveGame();
 
                     // Check Loss Condition
@@ -696,13 +707,21 @@
                 this.els.p2TimeDisplay.textContent = fmt(this.state.p2.time);
             }
 
-            startRound() {
-                const limit = this.math.getRangeLimit();
-                this.state.target = this.math.getRandomInt(-limit, limit);
+            startRound(isResume = false) {
+                // KUNCI PERBAIKAN:
+                // Jika isResume = true, JANGAN generate target baru. Gunakan yang tersimpan.
+                if (!isResume) {
+                    const limit = this.math.getRangeLimit();
+                    this.state.target = this.math.getRandomInt(-limit, limit);
+                }
+                
                 this.els.targetDisplay.textContent = this.state.target;
                 this.renderGrid('p1');
                 this.renderGrid('p2');
                 if (window.MathJax) MathJax.typesetPromise().catch(e => console.log(e));
+                
+                // Save state agar target tersimpan
+                this.saveGame();
             }
 
             renderGrid(player) {
@@ -760,7 +779,6 @@
                         return;
                     }
                     this.saveGame();
-                    // Lose Life = Switch Turn? In previous iteration yes. Let's keep it.
                     setTimeout(() => { this.switchTurn(); }, 400);
                 }
             }
@@ -768,7 +786,7 @@
             switchTurn() {
                 this.state.activePlayer = this.state.activePlayer === 'p1' ? 'p2' : 'p1';
                 this.updateTurnUI();
-                this.startRound(); 
+                this.startRound(false); // Ganti giliran = ronde baru = target baru
                 this.saveGame();
             }
 
@@ -817,11 +835,9 @@
                 this.els.finalNameP2.textContent = this.state.p2.name;
                 
                 let winnerMsg = "";
-                // If lives/time logic handled externally, we just display winner based on reason or scores
                 if (reason.includes(this.state.p1.name)) winnerMsg = reason;
                 else if (reason.includes(this.state.p2.name)) winnerMsg = reason;
                 else {
-                    // Generic fallback
                     if (this.state.p1.score > this.state.p2.score) winnerMsg = `${this.state.p1.name} Menang!`;
                     else winnerMsg = `${this.state.p2.name} Menang!`;
                 }
@@ -831,6 +847,12 @@
         }
 
         const game = new Game();
+        
+        // Memastikan Check Resume dijalankan saat DOM siap
+        document.addEventListener('DOMContentLoaded', () => {
+            game.checkResume();
+        });
+
     </script>
 </body>
 </html>
