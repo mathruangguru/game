@@ -229,6 +229,24 @@
             position: relative;
         }
 
+        /* Message Overlay (e.g. "Dilempar ke Lawan") */
+        #message-overlay {
+            position: absolute;
+            top: 10%;
+            background: rgba(255, 0, 0, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-family: 'Fredoka', cursive;
+            font-size: 1.5rem;
+            z-index: 50;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s;
+        }
+        #message-overlay.show { opacity: 1; transform: translateY(0); }
+
         /* Countdown Bar for the 40s turn limit */
         .turn-timer-bar {
             width: 80%;
@@ -316,13 +334,14 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-family: 'Fredoka', cursive;
-            font-size: clamp(1.5rem, 4vw, 2.5rem);
-            font-weight: bold;
+            /* Font update for LaTeX look */
+            font-family: 'Times New Roman', serif; 
+            font-size: clamp(1.8rem, 4.5vw, 3rem);
+            font-weight: normal;
             color: #5a3e00;
             cursor: grab;
             box-shadow: 0 4px 0 #b37700;
-            touch-action: none; /* Critical for custom drag */
+            touch-action: none; 
             position: relative;
             z-index: 10;
         }
@@ -347,6 +366,15 @@
             z-index: 1000;
             opacity: 0.9;
             transform: scale(1.2);
+            /* Ensure clone also has serif font */
+            font-family: 'Times New Roman', serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5rem;
+            color: #5a3e00;
+            background: #ffd700;
+            border-radius: 50%;
         }
 
         .op-in-slot {
@@ -355,8 +383,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-family: 'Fredoka', cursive;
-            font-size: clamp(1.5rem, 4vw, 2rem);
+            font-family: 'Times New Roman', serif;
+            font-size: clamp(1.8rem, 4.5vw, 2.5rem);
             color: #ffd700;
             font-weight: bold;
             cursor: pointer;
@@ -403,9 +431,10 @@
         <div style="margin-bottom: 20px; font-size: clamp(0.9rem, 2vw, 1.1rem); max-width: 600px; line-height: 1.5; color: #ddd; background: rgba(0,0,0,0.5); padding: 20px; border-radius: 15px;">
             <p>🧮 <strong>Aturan Main:</strong></p>
             <ul style="text-align: left; margin: 10px auto; max-width: 300px;">
-                <li>Isi operator (+, -, x, :) agar hasilnya benar.</li>
+                <!-- Updated symbols to HTML entities for proper rendering -->
+                <li>Isi operator (+, &minus;, &times;, &divide;) agar hasilnya benar.</li>
                 <li>Setiap operator hanya boleh dipakai <strong>sekali</strong>.</li>
-                <li>Ganti-gantian setiap soal.</li>
+                <li><strong>RULE BARU:</strong> Jika salah, soal <strong>dilempar ke lawan</strong>!</li>
                 <li>Max <strong>40 detik</strong> per soal.</li>
                 <li>Total waktu main <strong>3 menit</strong> per pemain.</li>
             </ul>
@@ -454,6 +483,7 @@
 
     <!-- Game Arena -->
     <section id="arena">
+        <div id="message-overlay">LEMPAR KE LAWAN!</div>
         <div class="turn-timer-text">Waktu Soal: <span id="turn-timer-val">40</span>s</div>
         <div class="turn-timer-bar">
             <div id="turn-fill" class="turn-timer-fill"></div>
@@ -461,15 +491,20 @@
 
         <!-- The Puzzle -->
         <div class="equation-board" id="equation-container">
-            <!-- Dynamically generated slots go here: 3 [] 4 [] 7 [] 5 = 14 -->
+            <!-- Dynamically generated slots go here -->
         </div>
 
         <!-- Draggable Operators -->
         <div class="operator-bank" id="operator-bank">
+            <!-- Using HTML entities for LaTeX-like appearance -->
+            <!-- Plus -->
             <div class="draggable-op" data-op="+" onmousedown="dragStart(event)" ontouchstart="dragStart(event)">+</div>
-            <div class="draggable-op" data-op="-" onmousedown="dragStart(event)" ontouchstart="dragStart(event)">-</div>
-            <div class="draggable-op" data-op="*" onmousedown="dragStart(event)" ontouchstart="dragStart(event)">x</div>
-            <div class="draggable-op" data-op="/" onmousedown="dragStart(event)" ontouchstart="dragStart(event)">:</div>
+            <!-- Minus -->
+            <div class="draggable-op" data-op="-" onmousedown="dragStart(event)" ontouchstart="dragStart(event)">&minus;</div>
+            <!-- Times (x) -->
+            <div class="draggable-op" data-op="*" onmousedown="dragStart(event)" ontouchstart="dragStart(event)">&times;</div>
+            <!-- Divide (:) -->
+            <div class="draggable-op" data-op="/" onmousedown="dragStart(event)" ontouchstart="dragStart(event)">&divide;</div>
         </div>
     </section>
 
@@ -508,6 +543,12 @@
                 gain.gain.setValueAtTime(0.2, now);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
                 osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'pass') { // Tone for passing turn
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.linearRampToValueAtTime(400, now + 0.3);
+                gain.gain.setValueAtTime(0.1, now);
+                osc.start(now); osc.stop(now + 0.3);
             }
         }
 
@@ -522,11 +563,13 @@
             p1: { name: 'Player 1', time: GameConfig.totalTime, lives: GameConfig.lives, streak: 0 },
             p2: { name: 'Player 2', time: GameConfig.totalTime, lives: GameConfig.lives, streak: 0 },
             activePlayer: 'p1',
-            currentSolution: [], // Array of operators needed e.g. ['+', '*', '-']
-            placedOperators: { 0: null, 1: null, 2: null }, // Slot Index -> Op
+            currentSolution: [], 
+            currentPuzzle: null,
+            placedOperators: { 0: null, 1: null, 2: null }, 
             turnTimer: GameConfig.turnTime,
             intervals: { global: null, turn: null },
-            isProcessing: false
+            isProcessing: false,
+            isRebound: false // New Flag: Is this turn a "throw" from opponent?
         };
 
         const els = {
@@ -536,8 +579,17 @@
             fill: document.getElementById('turn-fill'),
             timerText: document.getElementById('turn-timer-val'),
             p1Panel: document.getElementById('p1-panel'),
-            p2Panel: document.getElementById('p2-panel')
+            p2Panel: document.getElementById('p2-panel'),
+            msgOverlay: document.getElementById('message-overlay')
         };
+
+        // Helper to convert Code Operators to LaTeX-style visual
+        function getVisualOp(op) {
+            if (op === '*') return '&times;';
+            if (op === '/') return '&divide;';
+            if (op === '-') return '&minus;';
+            return op;
+        }
 
         const game = {
             init: () => {
@@ -558,6 +610,7 @@
 
             newRound: () => {
                 state.isProcessing = false;
+                state.isRebound = false; // Reset rebound flag on brand new puzzle
                 state.turnTimer = GameConfig.turnTime;
                 state.placedOperators = { 0: null, 1: null, 2: null };
                 
@@ -569,15 +622,13 @@
                 
                 // Start Turn Timer
                 if(state.intervals.turn) clearInterval(state.intervals.turn);
-                state.intervals.turn = setInterval(game.tickTurn, 100); // Fast tick for smooth bar
+                state.intervals.turn = setInterval(game.tickTurn, 100); 
             },
 
             tickGlobal: () => {
-                // Decrement bank of active player
                 const p = state.activePlayer;
                 state[p].time--;
                 
-                // Update UI
                 const min = Math.floor(state[p].time / 60).toString().padStart(2, '0');
                 const sec = (state[p].time % 60).toString().padStart(2, '0');
                 document.getElementById(`${p}-time-display`).innerText = `${min}:${sec}`;
@@ -593,7 +644,6 @@
                 els.fill.style.width = `${pct}%`;
                 els.timerText.innerText = Math.ceil(state.turnTimer);
 
-                // Color warning
                 els.fill.style.background = pct < 25 ? '#ff3333' : '#00ff88';
 
                 if(state.turnTimer <= 0) {
@@ -601,30 +651,43 @@
                 }
             },
 
-            switchTurn: () => {
+            // Modified: switchTurn now takes a param to decide if we generate new puzzle
+            switchTurn: (newPuzzle = true) => {
                 state.activePlayer = state.activePlayer === 'p1' ? 'p2' : 'p1';
-                game.newRound();
+                
+                if (newPuzzle) {
+                    game.newRound();
+                } else {
+                    // Logic for Rebound (Throw to opponent)
+                    state.isProcessing = false;
+                    state.turnTimer = GameConfig.turnTime; // Reset time for opponent
+                    state.placedOperators = { 0: null, 1: null, 2: null }; // Opponent must fill
+                    
+                    game.updateTurnUI();
+                    game.renderBoard(); // Re-render empty board
+                    game.resetBank(); // Reset buttons
+                    
+                    if(state.intervals.turn) clearInterval(state.intervals.turn);
+                    state.intervals.turn = setInterval(game.tickTurn, 100);
+                    
+                    // Show Overlay Message
+                    els.msgOverlay.classList.add('show');
+                    setTimeout(() => els.msgOverlay.classList.remove('show'), 2000);
+                }
             },
 
             generatePuzzle: () => {
-                // Logic: Generate 4 numbers and 3 unique operators such that result is integer
                 const opsPool = ['+', '-', '*', '/'];
                 let valid = false;
                 let payload = {};
 
                 while(!valid) {
-                    // 1. Shuffle operators and take 3
                     const shuffledOps = opsPool.sort(() => 0.5 - Math.random()).slice(0, 3);
-                    
-                    // 2. Generate 4 numbers (1-9)
                     const nums = Array.from({length: 4}, () => Math.floor(Math.random() * 9) + 1);
                     
-                    // 3. Construct expression string
-                    // Note: Just using eval on `n1 op1 n2 op2 n3 op3 n4` follows BODMAS naturally
                     const expr = `${nums[0]} ${shuffledOps[0]} ${nums[1]} ${shuffledOps[1]} ${nums[2]} ${shuffledOps[2]} ${nums[3]}`;
-                    const res = eval(expr);
+                    const res = eval(expr); // Safe logic eval
 
-                    // 4. Validate: Result is integer, between -10 and 50 (manageable)
                     if (Number.isInteger(res) && res >= 0 && res <= 50) {
                         valid = true;
                         payload = { nums, ops: shuffledOps, res };
@@ -636,7 +699,6 @@
             renderBoard: () => {
                 const { nums, res } = state.currentPuzzle;
                 let html = '';
-                // Structure: N1 [Slot0] N2 [Slot1] N3 [Slot2] N4 = Res
                 html += `<div class="num-slot">${nums[0]}</div>`;
                 html += `<div class="operator-slot" data-idx="0" onmouseup="drop(event)" ontouchend="drop(event)"></div>`;
                 html += `<div class="num-slot">${nums[1]}</div>`;
@@ -659,18 +721,17 @@
             },
 
             checkSolution: () => {
-                // Check if all slots filled
                 if(Object.values(state.placedOperators).some(x => x === null)) return;
 
                 state.isProcessing = true;
-                clearInterval(state.intervals.turn); // Pause timer
+                clearInterval(state.intervals.turn); 
 
                 const p = state.activePlayer;
                 const { nums, res } = state.currentPuzzle;
                 const userOps = [state.placedOperators[0], state.placedOperators[1], state.placedOperators[2]];
                 
                 const expr = `${nums[0]} ${userOps[0]} ${nums[1]} ${userOps[1]} ${nums[2]} ${userOps[2]} ${nums[3]}`;
-                const userRes = eval(expr); // Safe eval of generated numbers and ops
+                const userRes = eval(expr);
 
                 if (userRes === res) {
                     // Correct!
@@ -682,11 +743,11 @@
                     els.board.classList.add('pop');
                     setTimeout(() => els.board.classList.remove('pop'), 300);
 
-                    // Check Win Condition
                     if(state[p].streak >= 3) {
                         game.endGame(p, "Winstreak 3x!");
                     } else {
-                        setTimeout(game.switchTurn, 1000);
+                        // If correct, round always ends, even if it was a rebound
+                        setTimeout(() => game.switchTurn(true), 1000);
                     }
                 } else {
                     // Wrong
@@ -700,19 +761,28 @@
                 state[p].lives--;
                 state[p].streak = 0;
                 
-                // Update Hearts
                 const hearts = document.getElementById(`${p}-hearts`).children;
-                hearts[state[p].lives].classList.add('lost');
+                if(hearts[state[p].lives]) hearts[state[p].lives].classList.add('lost');
                 document.getElementById(`${p}-streak`).classList.remove('streak-active');
 
-                // Shake Board
                 els.board.classList.add('shake');
                 setTimeout(() => els.board.classList.remove('shake'), 500);
 
                 if(state[p].lives <= 0) {
                     game.endGame(p === 'p1' ? 'p2' : 'p1', "Lawan Kehabisan Nyawa!");
                 } else {
-                    setTimeout(game.switchTurn, 1000);
+                    // RULES UPDATE: Throw to opponent logic
+                    if (!state.isRebound) {
+                        // First mistake on this puzzle -> throw to opponent
+                        state.isRebound = true; 
+                        setTimeout(() => {
+                            playTone('pass');
+                            game.switchTurn(false); // false = keep same puzzle
+                        }, 1000);
+                    } else {
+                        // Second mistake (opponent also failed) -> New Round
+                        setTimeout(() => game.switchTurn(true), 1000);
+                    }
                 }
             },
 
@@ -735,7 +805,6 @@
                 document.getElementById('winner-text').innerText = `${winnerName} Menang!`;
                 document.getElementById('end-reason').innerText = reason;
                 
-                // Set color
                 document.getElementById('end-title').style.color = winnerKey === 'p1' ? 'var(--p1-color)' : 'var(--p2-color)';
             }
         };
@@ -748,9 +817,8 @@
         function dragStart(e) {
             if(state.isProcessing) return;
             
-            // Allow mouse or touch
             const evt = e.type === 'touchstart' ? e.touches[0] : e;
-            const target = e.currentTarget; // The draggable div
+            const target = e.currentTarget; 
             
             if(target.classList.contains('used')) return;
 
@@ -763,7 +831,6 @@
             dragClone.style.height = target.offsetHeight + 'px';
             document.body.appendChild(dragClone);
 
-            // Center clone on finger/cursor
             const rect = target.getBoundingClientRect();
             const centerX = rect.left + rect.width/2;
             const centerY = rect.top + rect.height/2;
@@ -773,7 +840,6 @@
 
             updateClonePos(evt.clientX, evt.clientY);
 
-            // Attach Global Move/Up listeners
             if (e.type === 'touchstart') {
                 document.addEventListener('touchmove', dragMove, {passive: false});
                 document.addEventListener('touchend', dragEnd);
@@ -784,7 +850,7 @@
         }
 
         function dragMove(e) {
-            e.preventDefault(); // Prevent scrolling
+            e.preventDefault(); 
             const evt = e.type === 'touchmove' ? e.touches[0] : e;
             updateClonePos(evt.clientX, evt.clientY);
         }
@@ -797,14 +863,10 @@
         }
 
         function drop(e) {
-            // Identified via elementFromPoint in dragEnd usually, 
-            // but we can also use event bubbling if mouseup happens on element.
-            // However, for Touch, 'touchend' happens on the start element, not the drop target.
-            // So logic moves to dragEnd.
+            // Handled in dragEnd
         }
 
         function dragEnd(e) {
-            // Clean listeners
             document.removeEventListener('touchmove', dragMove);
             document.removeEventListener('touchend', dragEnd);
             document.removeEventListener('mousemove', dragMove);
@@ -812,56 +874,46 @@
 
             if (!dragClone || !dragSrc) return;
 
-            // Find drop target
             const evt = e.type === 'touchend' ? e.changedTouches[0] : e;
             
-            // Temporarily hide clone to find element underneath
             dragClone.style.display = 'none';
             let elemBelow = document.elementFromPoint(evt.clientX, evt.clientY);
             dragClone.style.display = 'flex';
 
-            // Traverse up to find operator-slot class
             let dropZone = elemBelow ? elemBelow.closest('.operator-slot') : null;
 
-            // Logic: Is it a valid slot?
             if (dropZone && !dropZone.classList.contains('filled')) {
                 const op = dragSrc.dataset.op;
                 const idx = dropZone.dataset.idx;
 
-                // Place Operator
                 playTone('snap');
                 state.placedOperators[idx] = op;
                 
-                // Mark Source Used
                 dragSrc.classList.add('used');
 
-                // Fill Slot UI
-                dropZone.innerHTML = `<div class="op-in-slot" onclick="removeOp(${idx})">${dragSrc.innerText}</div>`;
+                // Use helper to display LaTeX-style symbol in the slot
+                const visualOp = getVisualOp(op);
+                dropZone.innerHTML = `<div class="op-in-slot" onclick="removeOp(${idx})">${visualOp}</div>`;
                 dropZone.classList.add('filled');
                 
-                // Check if full
                 game.checkSolution();
             }
 
-            // Cleanup
             dragClone.remove();
             dragClone = null;
             dragSrc = null;
         }
 
-        // Allow removing an operator to fix mistakes
         window.removeOp = (idx) => {
             if(state.isProcessing) return;
 
             const op = state.placedOperators[idx];
             if(!op) return;
 
-            // Restore source button
             const bank = document.getElementById('operator-bank');
             const srcBtn = Array.from(bank.children).find(el => el.dataset.op === op);
             if(srcBtn) srcBtn.classList.remove('used');
 
-            // Clear slot
             const slot = document.querySelector(`.operator-slot[data-idx="${idx}"]`);
             slot.innerHTML = '';
             slot.classList.remove('filled');
