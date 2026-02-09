@@ -199,34 +199,26 @@
         .player-name {
             font-family: 'Fredoka', cursive;
             font-size: clamp(0.8rem, 2vw, 1.2rem);
-            margin-top: 15px;
+            margin-top: 25px;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            font-weight: bold;
         }
 
-        .hearts { display: flex; gap: 2px; margin-top: 2px; }
+        .hearts { display: flex; gap: 4px; margin-top: 5px; }
         .p2-panel .hearts { justify-content: flex-end; }
-        
-        .score {
-            position: absolute; bottom: 0;
-            font-size: clamp(1.5rem, 4vw, 2.5rem);
-            font-weight: bold; font-family: 'Fredoka';
-            line-height: 1;
-        }
-        .p1-panel .score { right: 10px; }
-        .p2-panel .score { left: 10px; }
 
         .streak-badge {
-            position: absolute; bottom: -5px;
-            width: 24px; height: 24px;
+            position: absolute; bottom: 10px;
+            width: 30px; height: 30px;
             background: #ffd700; color: black;
             border-radius: 50%;
-            font-weight: bold; font-size: 0.8rem;
+            font-weight: bold; font-size: 0.9rem;
             display: flex; align-items: center; justify-content: center;
             border: 2px solid white;
             animation: bounce 1s infinite;
         }
-        .p1-panel .streak-badge { left: -5px; }
-        .p2-panel .streak-badge { right: -5px; }
+        .p1-panel .streak-badge { right: 10px; bottom: 10px; }
+        .p2-panel .streak-badge { left: 10px; bottom: 10px; }
 
         /* --- TARGET BOX --- */
         .target-box {
@@ -311,7 +303,7 @@
         }
 
         /* --- SVG ICONS --- */
-        .icon-heart { width: 14px; height: 14px; fill: #666; }
+        .icon-heart { width: 18px; height: 18px; fill: #666; }
         .icon-heart.filled { fill: #ff3333; }
     </style>
 </head>
@@ -327,10 +319,16 @@
             <input type="text" id="p2-name" class="name-input" placeholder="Nama P2" value="Player 2">
         </div>
 
-        <div style="background:rgba(0,0,0,0.4); padding:20px; border-radius:15px; margin-bottom:30px; border:1px solid rgba(255,255,255,0.1); max-width:400px;">
-            <p style="margin:5px 0">🎯 Cari <strong>Kelipatan Persekutuan</strong>.</p>
-            <p style="margin:5px 0">⚡ <strong>Perfect 3x</strong> = Menang Instan.</p>
-            <p style="margin:5px 0; color:#ff9999">⏱️ Waktu Total: 3 Menit/Orang.</p>
+        <!-- Rules Box -->
+        <div style="background:rgba(0,0,0,0.4); padding:20px; border-radius:15px; margin-bottom:30px; border:1px solid rgba(255,255,255,0.1); max-width:500px; text-align:left; width:90%;">
+            <h3 style="margin-top:0; text-align:center; color:var(--gold); font-family:'Fredoka'; letter-spacing:1px; margin-bottom:15px;">ATURAN MAIN</h3>
+            <ul style="padding-left:20px; margin:0; font-size:0.95rem; line-height:1.5;">
+                <li style="margin-bottom:8px;">🎯 <strong>Misi:</strong> Temukan <u>SEMUA</u> angka di papan (1-100) yang merupakan kelipatan persekutuan dari dua angka target.</li>
+                <li style="margin-bottom:8px;">❤️ <strong>Nyawa:</strong> Salah klik = -1 Nyawa. Habis nyawa = Kalah.</li>
+                <li style="margin-bottom:8px;">⏱️ <strong>Waktu:</strong> Total 3 menit per pemain. Waktu habis = Kalah.</li>
+                <li style="margin-bottom:8px;">🏆 <strong>Menang Instan:</strong> Dapatkan hasil <strong>PERFECT</strong> (semua benar tanpa salah) 3x berturut-turut.</li>
+                <li>✅ <strong>Giliran:</strong> Tekan "Selesai Giliran" jika yakin sudah menemukan semua angka.</li>
+            </ul>
         </div>
 
         <button class="btn-primary" onclick="Game.start()">MULAI BATTLE</button>
@@ -349,17 +347,6 @@
         <h1>SELESAI!</h1>
         <h2 id="winner-text" style="color:var(--p1-color); margin-bottom:10px;">Player 1 Menang!</h2>
         <p id="win-reason" style="background:rgba(255,255,255,0.1); padding:5px 15px; border-radius:10px; margin-bottom:30px;">Alasan</p>
-
-        <div style="display:flex; gap:30px; margin-bottom:30px;">
-            <div>
-                <div id="end-p1-name" style="color:var(--p1-color); font-weight:bold;">P1</div>
-                <div id="end-p1-score" style="font-size:3rem; font-family:'Fredoka';">0</div>
-            </div>
-            <div>
-                <div id="end-p2-name" style="color:var(--p2-color); font-weight:bold;">P2</div>
-                <div id="end-p2-score" style="font-size:3rem; font-family:'Fredoka';">0</div>
-            </div>
-        </div>
 
         <button class="btn-primary" onclick="Game.setup()">MAIN LAGI</button>
     </div>
@@ -385,7 +372,6 @@
                 <div class="hearts" id="p1-hearts"></div>
             </div>
             
-            <div id="p1-score" class="score">0</div>
             <div id="p1-streak" class="streak-badge hidden">x0</div>
         </div>
 
@@ -410,7 +396,6 @@
                 <div class="hearts" id="p2-hearts"></div>
             </div>
             
-            <div id="p2-score" class="score">0</div>
             <div id="p2-streak" class="streak-badge hidden">x0</div>
         </div>
     </header>
@@ -475,8 +460,8 @@
         const Game = {
             state: {
                 players: [
-                    { name: 'P1', score: 0, lives: 3, time: 180, streak: 0 },
-                    { name: 'P2', score: 0, lives: 3, time: 180, streak: 0 }
+                    { name: 'P1', lives: 3, time: 180, streak: 0 },
+                    { name: 'P2', lives: 3, time: 180, streak: 0 }
                 ],
                 activePlayer: 0,
                 question: { a: 0, b: 0 },
@@ -523,8 +508,8 @@
                 const p2Name = document.getElementById('p2-name').value || 'Player 2';
                 
                 this.state.players = [
-                    { name: p1Name, score: 0, lives: 3, time: 180, streak: 0 },
-                    { name: p2Name, score: 0, lives: 3, time: 180, streak: 0 }
+                    { name: p1Name, lives: 3, time: 180, streak: 0 },
+                    { name: p2Name, lives: 3, time: 180, streak: 0 }
                 ];
                 this.state.activePlayer = 0;
                 
@@ -582,7 +567,7 @@
                 if (isCorrect) {
                     AudioEngine.play('correct');
                     this.state.gridStatus[num] = 'correct';
-                    player.score += 10;
+                    // No score increment
                     btn.className = "grid-cell cell-correct";
                 } else {
                     AudioEngine.play('wrong');
@@ -638,7 +623,6 @@
             endGame(winnerIdx, reason) {
                 this.stopTimer();
                 const winner = this.state.players[winnerIdx];
-                const loserIdx = winnerIdx === 0 ? 1 : 0;
                 
                 document.getElementById('gameover-screen').classList.remove('hidden');
                 document.getElementById('game-hud').classList.add('hidden');
@@ -651,11 +635,6 @@
                 document.getElementById('winner-text').textContent = `${winner.name} Menang!`;
                 document.getElementById('winner-text').style.color = winnerIdx === 0 ? 'var(--p1-color)' : 'var(--p2-color)';
                 document.getElementById('win-reason').textContent = reason;
-
-                document.getElementById('end-p1-name').textContent = this.state.players[0].name;
-                document.getElementById('end-p1-score').textContent = this.state.players[0].score;
-                document.getElementById('end-p2-name').textContent = this.state.players[1].name;
-                document.getElementById('end-p2-score').textContent = this.state.players[1].score;
             },
 
             // --- RENDERING ---
@@ -667,8 +646,6 @@
                     btn.id = `cell-${i}`;
                     btn.className = 'grid-cell';
                     btn.textContent = i;
-                    // Pre-check disabled state if viewing history? (Not needed for this flow)
-                    // If already clicked in this turn? (Reset on turn start, so fresh)
                     btn.onclick = () => this.handleGridClick(i);
                     grid.appendChild(btn);
                 }
@@ -698,10 +675,6 @@
                     document.getElementById('p1-timer').classList.remove('active-timer');
                     document.getElementById('p2-timer').classList.add('active-timer');
                 }
-
-                // Scores
-                document.getElementById('p1-score').textContent = p1.score;
-                document.getElementById('p2-score').textContent = p2.score;
 
                 // Lives (Hearts)
                 this.renderHearts('p1-hearts', p1.lives);
