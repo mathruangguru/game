@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Rocket Rounding: Duel Pembulatan</title>
+    <style>
+        :root {
+            --p1-color: #3B82F6; /* Blue */
+            --p1-dark: #1E40AF;
+            --p2-color: #EF4444; /* Red */
+            --p2-dark: #991B1B;
+            --bg-color: #111827;
+            --text-color: #F3F4F6;
+            --accent: #F59E0B;
+        }
+
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            touch-action: manipulation; /* Optimasi touch screen */
+        }
+
+        /* --- LAYOUT UTAMA --- */
+        #game-container {
+            display: flex;
+            flex: 1;
+            position: relative;
+        }
+
+        .player-zone {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            border-right: 2px solid #374151;
+            position: relative;
+            transition: background 0.3s;
+        }
+
+        .player-zone:last-child { border-right: none; }
+        
+        .p1-zone { background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%); }
+        .p2-zone { background: radial-gradient(circle at center, #2e1010 0%, #1a0505 100%); }
+
+        /* --- HUD & SCORE --- */
+        .hud-container {
+            display: flex;
+            justify-content: space-between;
+            width: 80%;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .score-board {
+            font-size: 3rem;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .p1-score { color: var(--p1-color); }
+        .p2-score { color: var(--p2-color); }
+
+        .lives-container {
+            font-size: 1.5rem;
+            letter-spacing: 5px;
+        }
+
+        .fuel-gauge {
+            width: 80%;
+            height: 20px;
+            background: #374151;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+        .fuel-fill {
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease-out;
+        }
+        .p1-fuel { background: var(--p1-color); box-shadow: 0 0 15px var(--p1-color); }
+        .p2-fuel { background: var(--p2-color); box-shadow: 0 0 15px var(--p2-color); }
+
+        /* --- PERTANYAAN --- */
+        .question-box {
+            background: white;
+            color: #111827;
+            padding: 20px 30px;
+            border-radius: 15px;
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            width: 90%;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        
+        .question-label {
+            font-size: 1rem;
+            color: #6B7280;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* --- TOMBOL JAWABAN --- */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            width: 90%;
+        }
+
+        .btn-option {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 25px 10px;
+            font-size: 1.8rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+
+        .btn-option:active { transform: scale(0.95); }
+        .btn-option:disabled { opacity: 0.5; cursor: not-allowed; background: #333; }
+
+        .p1-zone .btn-option:hover:not(:disabled) { background: var(--p1-color); border-color: white; }
+        .p2-zone .btn-option:hover:not(:disabled) { background: var(--p2-color); border-color: white; }
+
+        /* --- VISUAL HINT (CPA) --- */
+        .hint-btn {
+            margin-top: 20px;
+            background: transparent;
+            border: 1px solid #6B7280;
+            color: #9CA3AF;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        /* Style saat disabled (Score < 25) */
+        .hint-btn:disabled { 
+            opacity: 0.3; 
+            cursor: not-allowed; 
+            border-color: #4B5563;
+            color: #4B5563;
+        }
+        .hint-btn:not(:disabled):hover {
+            border-color: white;
+            color: white;
+        }
+
+        .hint-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 10;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .number-line-canvas {
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* --- HEADER & TIMER --- */
+        header {
+            height: 80px;
+            background: #0f172a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 2px solid #374151;
+            position: relative;
+        }
+        .timer {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--accent);
+            font-family: monospace;
+            background: #111827;
+            padding: 5px 20px;
+            border-radius: 10px;
+            border: 2px solid var(--accent);
+        }
+
+        /* --- START & END SCREENS --- */
+        .overlay-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(17, 24, 39, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            text-align: center;
+        }
+        .title { font-size: 4rem; margin-bottom: 10px; color: var(--accent); }
+        .subtitle { font-size: 1.5rem; margin-bottom: 40px; color: #9CA3AF; }
+        .btn-start {
+            background: var(--accent);
+            color: #111827;
+            font-size: 2rem;
+            padding: 20px 60px;
+            border: none;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(245, 158, 11, 0.4);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* --- FEEDBACK ANIMATION --- */
+        .feedback {
+            position: absolute;
+            font-size: 8rem;
+            font-weight: bold;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 50;
+            transition: opacity 0.5s;
+            top: 40%;
+        }
+        .correct { color: #10B981; text-shadow: 0 0 20px black; }
+        .wrong { color: #EF4444; text-shadow: 0 0 20px black; }
+
+        /* Mode pemilihan level */
+        .level-select { display: flex; gap: 20px; margin-bottom: 30px; }
+        .btn-level {
+            padding: 15px 30px;
+            background: #374151;
+            border: 2px solid #4B5563;
+            color: white;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        .btn-level.active { border-color: var(--accent); background: #4B5563; color: var(--accent); }
+
+    </style>
+</head>
+<body>
+
+    <!-- START SCREEN -->
+    <div id="startScreen" class="overlay-screen">
+        <h1 class="title">ROCKET ROUNDING</h1>
+        <p class="subtitle">Misi Penyelamatan Angka: Duel Kelas 4 SD</p>
+        
+        <div class="level-select">
+            <button class="btn-level active" onclick="setLevel('puluhan')">Puluhan & Ratusan</button>
+            <button class="btn-level" onclick="setLevel('desimal')">Desimal (Koma)</button>
+            <button class="btn-level" onclick="setLevel('campuran')">Campuran (Hard)</button>
+        </div>
+
+        <button class="btn-start" onclick="startGame()">MULAI MISI</button>
+    </div>
+
+    <!-- END SCREEN -->
+    <div id="endScreen" class="overlay-screen" style="display: none;">
+        <h1 class="title">MISI SELESAI!</h1>
+        <h2 id="winnerText" style="font-size: 3rem; margin: 20px 0;">Pemenang: Tim Biru</h2>
+        <div style="display: flex; gap: 50px; font-size: 2rem;">
+            <div style="color: var(--p1-color)">Biru: <span id="finalScoreP1">0</span></div>
+            <div style="color: var(--p2-color)">Merah: <span id="finalScoreP2">0</span></div>
+        </div>
+        <button class="btn-start" style="margin-top: 40px; font-size: 1.5rem;" onclick="location.reload()">MAIN LAGI</button>
+    </div>
+
+    <!-- GAME UI -->
+    <header>
+        <div id="timerDisplay" class="timer">60</div>
+    </header>
+
+    <div id="game-container">
+        
+        <!-- PLAYER 1 ZONE (LEFT) -->
+        <div class="player-zone p1-zone" id="p1Zone">
+            <div class="hud-container">
+                <div class="score-board p1-score" id="scoreP1">0</div>
+                <div class="lives-container" id="livesP1">❤️❤️❤️</div>
+            </div>
+            <div class="feedback" id="p1Feedback">✓</div>
+            
+            <div class="fuel-gauge"><div class="fuel-fill p1-fuel" id="fuelP1"></div></div>
+            
+            <div class="question-box">
+                <div class="question-label" id="qLabelP1">Bulatkan ke Puluhan</div>
+                <div id="qTextP1">45</div>
+            </div>
+
+            <div class="options-grid" id="optionsP1">
+                <!-- Buttons injected by JS -->
+            </div>
+
+            <button class="hint-btn" id="hintBtnP1" onclick="showHint(1)">Bantuan Visual (-25 Poin)</button>
+        </div>
+
+        <!-- PLAYER 2 ZONE (RIGHT) -->
+        <div class="player-zone p2-zone" id="p2Zone">
+            <div class="hud-container">
+                <div class="score-board p2-score" id="scoreP2">0</div>
+                <div class="lives-container" id="livesP2">❤️❤️❤️</div>
+            </div>
+            <div class="feedback" id="p2Feedback">✓</div>
+
+            <div class="fuel-gauge"><div class="fuel-fill p2-fuel" id="fuelP2"></div></div>
+            
+            <div class="question-box">
+                <div class="question-label" id="qLabelP2">Bulatkan ke Puluhan</div>
+                <div id="qTextP2">45</div>
+            </div>
+
+            <div class="options-grid" id="optionsP2">
+                <!-- Buttons injected by JS -->
+            </div>
+
+            <button class="hint-btn" id="hintBtnP2" onclick="showHint(2)">Bantuan Visual (-25 Poin)</button>
+        </div>
+
+    </div>
+
+    <!-- HINT OVERLAY -->
+    <div id="hintOverlay" class="hint-overlay" onclick="closeHint()">
+        <h2 style="color: white; margin-bottom: 10px;">Visualisasi Garis Bilangan</h2>
+        <canvas id="hintCanvas" width="600" height="300" class="number-line-canvas"></canvas>
+        <p style="color: #9CA3AF;">Ketuk layar untuk kembali</p>
+    </div>
+
+<script>
+    // --- GAME STATE ---
+    let state = {
+        isPlaying: false,
+        time: 60,
+        level: 'puluhan',
+        questionSequence: [], // Menyimpan urutan jenis soal agar adil
+        p1: { score: 0, currentQ: null, fuel: 0, lives: 3, qIndex: 0 },
+        p2: { score: 0, currentQ: null, fuel: 0, lives: 3, qIndex: 0 }
+    };
+
+    const WINNING_SCORE = 1000; 
+
+    // --- CONFIG ---
+    function setLevel(lvl) {
+        state.level = lvl;
+        document.querySelectorAll('.btn-level').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+
+    // --- HELPER RANDOM ---
+    const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+    // --- LOGIKA SOAL (FAIRNESS) ---
+    // Kita generate urutan tipe soal di awal agar P1 dan P2 dapat "jenis" soal yang sama di urutan yang sama
+    function generateQuestionSequence() {
+        state.questionSequence = [];
+        const count = 100; // Generate 100 urutan soal (cukup untuk 60 detik)
+        
+        for (let i = 0; i < count; i++) {
+            let type = '';
+            let r = Math.random();
+
+            if (state.level === 'puluhan') {
+                // 50% Puluhan, 50% Ratusan
+                type = (r < 0.5) ? 'puluhan' : 'ratusan';
+            } else if (state.level === 'desimal') {
+                // 50% Sepersepuluhan, 50% Satuan
+                type = (r < 0.5) ? 'desimal_tenth' : 'desimal_one';
+            } else { // Campuran
+                if (r < 0.33) type = 'campuran_ribuan';
+                else if (r < 0.66) type = 'campuran_puluhan';
+                else type = 'campuran_desimal';
+            }
+            state.questionSequence.push(type);
+        }
+    }
+
+    // --- QUESTION GENERATOR ---
+    // Sekarang menerima 'type' spesifik, bukan random di dalam fungsi
+    function generateQuestionData(type) {
+        let number, roundTo, label;
+
+        if (type === 'puluhan' || type === 'campuran_puluhan') {
+            roundTo = 10;
+            number = randInt(11, 99);
+            while (number % 10 === 0) number = randInt(11, 99);
+            label = "Ke Puluhan Terdekat";
+            
+        } else if (type === 'ratusan') {
+            roundTo = 100;
+            number = randInt(101, 999);
+            while (number % 100 === 0) number = randInt(101, 999);
+            label = "Ke Ratusan Terdekat";
+            
+        } else if (type === 'campuran_ribuan') {
+            roundTo = 1000;
+            number = randInt(1100, 9900);
+            while (number % 1000 === 0) number = randInt(1100, 9900);
+            label = "Ke Ribuan Terdekat";
+            
+        } else if (type === 'desimal_tenth' || type === 'campuran_desimal') {
+            // Sepersepuluhan (Harus 2 desimal)
+            let intPart = randInt(0, 20);
+            let tenth = randInt(0, 9);
+            let hundredth = randInt(1, 9); 
+            number = intPart + (tenth/10) + (hundredth/100);
+            number = parseFloat(number.toFixed(2));
+            roundTo = 0.1;
+            label = "Ke Sepersepuluhan Terdekat";
+            
+        } else if (type === 'desimal_one') {
+            // Satuan terdekat
+            let intPart = randInt(0, 20);
+            let decimalPart = randInt(1, 99);
+            number = intPart + (decimalPart/100);
+            number = parseFloat(number.toFixed(2));
+            roundTo = 1;
+            label = "Ke Satuan Terdekat";
+        }
+
+        // Hitung Jawaban Benar
+        let answer;
+        if (roundTo >= 1) {
+            answer = Math.round(number / roundTo) * roundTo;
+        } else {
+            let factor = 1 / roundTo;
+            answer = Math.round(number * factor) / factor;
+            if (roundTo === 0.1) answer = parseFloat(answer.toFixed(1));
+        }
+
+        // Generate Pilihan Jawaban
+        let options = new Set();
+        options.add(answer);
+
+        while(options.size < 4) {
+            let fake;
+            if (roundTo >= 1) {
+                let offset = (Math.floor(Math.random() * 5) - 2) * roundTo; 
+                fake = answer + offset;
+                if(fake < 0) fake = 0;
+            } else {
+                let factor = 1 / roundTo;
+                let offset = (Math.floor(Math.random() * 5) - 2) / factor;
+                fake = answer + offset;
+                fake = parseFloat(fake.toFixed(1));
+                if(fake < 0) fake = 0;
+            }
+            if(fake !== answer) options.add(fake);
+        }
+
+        return {
+            qText: number,
+            qLabel: label,
+            answer: answer,
+            options: Array.from(options).sort(() => Math.random() - 0.5),
+            roundTo: roundTo
+        };
+    }
+
+    // --- GAME ENGINE ---
+    function startGame() {
+        document.getElementById('startScreen').style.display = 'none';
+        state.isPlaying = true;
+        
+        // Reset State Player
+        state.p1 = { score: 0, currentQ: null, fuel: 0, lives: 3, qIndex: 0 };
+        state.p2 = { score: 0, currentQ: null, fuel: 0, lives: 3, qIndex: 0 };
+        
+        // Generate Fairness Sequence
+        generateQuestionSequence();
+
+        // Reset Visuals
+        document.getElementById('p1Zone').style.opacity = '1';
+        document.getElementById('p2Zone').style.opacity = '1';
+        
+        // Enable buttons awalnya (kecuali score 0 nanti dihandle updateUI)
+        document.getElementById('hintBtnP1').disabled = true; // Score awal 0, jadi disable
+        document.getElementById('hintBtnP2').disabled = true;
+        
+        updateUI();
+        
+        // Berikan soal pertama
+        newQuestion(1);
+        newQuestion(2);
+
+        // Timer
+        let timerInterval = setInterval(() => {
+            if (!state.isPlaying) {
+                clearInterval(timerInterval);
+                return;
+            }
+            state.time--;
+            document.getElementById('timerDisplay').innerText = state.time;
+            
+            if (state.time <= 0) {
+                clearInterval(timerInterval);
+                endGame();
+            }
+        }, 1000);
+    }
+
+    function newQuestion(playerNum) {
+        if (!state.isPlaying) return;
+        const playerState = playerNum === 1 ? state.p1 : state.p2;
+        
+        if (playerState.lives <= 0) return;
+
+        // Ambil tipe soal dari urutan yang sudah digenerate (Fairness Logic)
+        let type = state.questionSequence[playerState.qIndex];
+        // Naikkan index untuk soal berikutnya
+        playerState.qIndex++;
+
+        // Jika index melebihi array (sangat jarang terjadi dlm 60 detik), recycle
+        if (!type) type = state.questionSequence[0]; 
+
+        const q = generateQuestionData(type);
+        playerState.currentQ = q;
+
+        // Render UI
+        const labelEl = document.getElementById(`qLabelP${playerNum}`);
+        const textEl = document.getElementById(`qTextP${playerNum}`);
+        const optsEl = document.getElementById(`optionsP${playerNum}`);
+
+        labelEl.innerText = q.qLabel;
+        textEl.innerText = q.qText;
+        optsEl.innerHTML = '';
+
+        q.options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-option';
+            btn.innerText = opt;
+            btn.onclick = () => handleAnswer(playerNum, opt);
+            optsEl.appendChild(btn);
+        });
+    }
+
+    function handleAnswer(playerNum, selectedVal) {
+        const playerState = playerNum === 1 ? state.p1 : state.p2;
+        if (playerState.lives <= 0) return; 
+
+        const q = playerState.currentQ;
+        const isCorrect = selectedVal === q.answer;
+
+        showFeedback(playerNum, isCorrect);
+
+        if (isCorrect) {
+            playerState.score += 100;
+            playerState.fuel = Math.min(100, playerState.fuel + 10);
+            updateUI(); // Cek logic tombol hint disini
+            newQuestion(playerNum);
+        } else {
+            // Wrong Answer
+            playerState.score = Math.max(0, playerState.score - 50); // Penalti Skor juga
+            playerState.lives--;
+            updateUI();
+            
+            if (playerState.lives <= 0) {
+                handlePlayerOut(playerNum);
+            } else {
+                // Meskipun salah, lanjut ke soal berikutnya di urutan agar flow tetap jalan
+                setTimeout(() => newQuestion(playerNum), 500);
+            }
+        }
+    }
+
+    function handlePlayerOut(playerNum) {
+        const opts = document.getElementById(`optionsP${playerNum}`);
+        const hintBtn = document.getElementById(`hintBtnP${playerNum}`);
+        
+        opts.innerHTML = '<h2 style="color:#EF4444; font-size:2rem;">ROKET RUSAK!</h2><p>Nyawa Habis</p>';
+        hintBtn.disabled = true;
+        
+        if (state.p1.lives <= 0 && state.p2.lives <= 0) {
+            endGame();
+        }
+    }
+
+    function showFeedback(playerNum, isCorrect) {
+        const targetEl = playerNum === 1 ? document.getElementById('p1Feedback') : document.getElementById('p2Feedback');
+        
+        targetEl.innerText = isCorrect ? "✓" : "X";
+        targetEl.className = `feedback ${isCorrect ? 'correct' : 'wrong'}`;
+        targetEl.style.opacity = '1';
+        targetEl.style.transform = 'scale(1.5)';
+
+        setTimeout(() => {
+            targetEl.style.opacity = '0';
+            targetEl.style.transform = 'scale(1)';
+        }, 500);
+    }
+
+    function updateUI() {
+        document.getElementById('scoreP1').innerText = state.p1.score;
+        document.getElementById('scoreP2').innerText = state.p2.score;
+        
+        // Update Lives
+        document.getElementById('livesP1').innerText = "❤️".repeat(state.p1.lives);
+        document.getElementById('livesP2').innerText = "❤️".repeat(state.p2.lives);
+        
+        // Update Fuel
+        const maxScore = 2000; 
+        const p1Pct = Math.min(100, (state.p1.score / maxScore) * 100);
+        const p2Pct = Math.min(100, (state.p2.score / maxScore) * 100);
+        document.getElementById('fuelP1').style.width = `${p1Pct}%`;
+        document.getElementById('fuelP2').style.width = `${p2Pct}%`;
+
+        // Update Hint Buttons State (Disable if score < 25)
+        const btnP1 = document.getElementById('hintBtnP1');
+        const btnP2 = document.getElementById('hintBtnP2');
+
+        // Logic P1
+        if (state.p1.score < 25 || state.p1.lives <= 0) {
+            btnP1.disabled = true;
+            btnP1.innerText = "Bantuan (Butuh 25 Poin)";
+        } else {
+            btnP1.disabled = false;
+            btnP1.innerText = "Bantuan Visual (-25 Poin)";
+        }
+
+        // Logic P2
+        if (state.p2.score < 25 || state.p2.lives <= 0) {
+            btnP2.disabled = true;
+            btnP2.innerText = "Bantuan (Butuh 25 Poin)";
+        } else {
+            btnP2.disabled = false;
+            btnP2.innerText = "Bantuan Visual (-25 Poin)";
+        }
+    }
+
+    function endGame() {
+        state.isPlaying = false;
+        document.getElementById('endScreen').style.display = 'flex';
+        document.getElementById('finalScoreP1').innerText = state.p1.score;
+        document.getElementById('finalScoreP2').innerText = state.p2.score;
+        
+        let winner = "SERI!";
+        if (state.p1.score > state.p2.score) winner = "PEMENANG: TIM BIRU!";
+        if (state.p2.score > state.p1.score) winner = "PEMENANG: TIM MERAH!";
+        
+        document.getElementById('winnerText').innerText = winner;
+    }
+
+    // --- VISUALIZATION ---
+    function showHint(playerNum) {
+        const pState = playerNum === 1 ? state.p1 : state.p2;
+        if (pState.lives <= 0) return;
+        if (pState.score < 25) return; // Double check logic
+
+        const q = pState.currentQ;
+        
+        pState.score -= 25; // Score pasti >= 25
+        updateUI();
+
+        const canvas = document.getElementById('hintCanvas');
+        const ctx = canvas.getContext('2d');
+        const overlay = document.getElementById('hintOverlay');
+        
+        overlay.style.display = 'flex';
+        drawNumberLine(ctx, q.qText, q.roundTo);
+    }
+
+    function closeHint() {
+        document.getElementById('hintOverlay').style.display = 'none';
+    }
+
+    function drawNumberLine(ctx, number, step) {
+        ctx.clearRect(0, 0, 600, 300);
+        ctx.fillStyle = "#1F2937";
+        ctx.font = "bold 24px Arial";
+
+        let lower, upper;
+        if (step >= 1) {
+            lower = Math.floor(number / step) * step;
+            upper = lower + step;
+        } else {
+            let factor = 1 / step;
+            lower = Math.floor(number * factor) / factor;
+            upper = lower + step;
+            lower = parseFloat(lower.toFixed(1));
+            upper = parseFloat(upper.toFixed(1));
+        }
+        
+        const mid = (lower + upper) / 2;
+
+        ctx.beginPath();
+        ctx.moveTo(50, 150);
+        ctx.lineTo(550, 150);
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "#374151";
+        ctx.stroke();
+
+        function drawTick(x, val, isMain) {
+            ctx.beginPath();
+            ctx.moveTo(x, 140);
+            ctx.lineTo(x, 160);
+            ctx.lineWidth = isMain ? 4 : 2;
+            ctx.stroke();
+            ctx.fillText(val, x - 20, 190);
+        }
+
+        drawTick(50, lower, true);
+        drawTick(300, mid, false);
+        drawTick(550, upper, true);
+
+        let percent = (number - lower) / step;
+        let xPos = 50 + (percent * 500);
+
+        ctx.beginPath();
+        ctx.arc(xPos, 150, 15, 0, 2 * Math.PI);
+        ctx.fillStyle = "#EF4444";
+        ctx.fill();
+        ctx.fillStyle = "#EF4444";
+        ctx.fillText(number, xPos - 15, 120);
+    }
+</script>
+</body>
+</html>
