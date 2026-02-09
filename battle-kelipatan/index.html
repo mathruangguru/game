@@ -199,7 +199,7 @@
         .player-name {
             font-family: 'Fredoka', cursive;
             font-size: clamp(0.8rem, 2vw, 1.2rem);
-            margin-top: 25px;
+            margin-top: 5px;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
             font-weight: bold;
         }
@@ -207,18 +207,23 @@
         .hearts { display: flex; gap: 4px; margin-top: 5px; }
         .p2-panel .hearts { justify-content: flex-end; }
 
-        .streak-badge {
-            position: absolute; bottom: 10px;
-            width: 30px; height: 30px;
-            background: #ffd700; color: black;
-            border-radius: 50%;
-            font-weight: bold; font-size: 0.9rem;
-            display: flex; align-items: center; justify-content: center;
-            border: 2px solid white;
-            animation: bounce 1s infinite;
+        /* Streak Styles */
+        .streak-container {
+            position: absolute; bottom: 8px;
+            display: flex; align-items: center; gap: 4px;
+            font-weight: bold; font-size: 0.8rem;
+            color: var(--gold);
         }
-        .p1-panel .streak-badge { right: 10px; bottom: 10px; }
-        .p2-panel .streak-badge { left: 10px; bottom: 10px; }
+        .p1-panel .streak-container { right: 10px; }
+        /* P2 container reversed manually in HTML, just set position */
+        .p2-panel .streak-container { left: 10px; }
+        
+        .streak-dot {
+            width: 12px; height: 12px; border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+        .streak-active { background: var(--gold); box-shadow: 0 0 5px var(--gold); border-color: #fff; }
 
         /* --- TARGET BOX --- */
         .target-box {
@@ -372,7 +377,12 @@
                 <div class="hearts" id="p1-hearts"></div>
             </div>
             
-            <div id="p1-streak" class="streak-badge hidden">x0</div>
+            <div class="streak-container">
+                <span>Streak:</span>
+                <div id="p1-s1" class="streak-dot"></div>
+                <div id="p1-s2" class="streak-dot"></div>
+                <div id="p1-s3" class="streak-dot"></div>
+            </div>
         </div>
 
         <!-- Target Center -->
@@ -396,7 +406,12 @@
                 <div class="hearts" id="p2-hearts"></div>
             </div>
             
-            <div id="p2-streak" class="streak-badge hidden">x0</div>
+            <div class="streak-container">
+                <div id="p2-s3" class="streak-dot"></div>
+                <div id="p2-s2" class="streak-dot"></div>
+                <div id="p2-s1" class="streak-dot"></div>
+                <span>:Streak</span>
+            </div>
         </div>
     </header>
 
@@ -681,14 +696,8 @@
                 this.renderHearts('p2-hearts', p2.lives);
 
                 // Streaks
-                const s1 = document.getElementById('p1-streak');
-                const s2 = document.getElementById('p2-streak');
-                
-                if (p1.streak > 0) { s1.classList.remove('hidden'); s1.textContent = `x${p1.streak}`; } 
-                else s1.classList.add('hidden');
-
-                if (p2.streak > 0) { s2.classList.remove('hidden'); s2.textContent = `x${p2.streak}`; } 
-                else s2.classList.add('hidden');
+                this.renderStreakDots('p1', p1.streak);
+                this.renderStreakDots('p2', p2.streak);
 
                 this.updateTimers();
             },
@@ -702,6 +711,16 @@
                     span.innerHTML = svgIcon;
                     if (i < count) span.querySelector('svg').classList.add('filled');
                     container.appendChild(span);
+                }
+            },
+
+            renderStreakDots(playerPrefix, streakCount) {
+                for (let i = 1; i <= 3; i++) {
+                    const dot = document.getElementById(`${playerPrefix}-s${i}`);
+                    if (dot) {
+                        if (i <= streakCount) dot.classList.add('streak-active');
+                        else dot.classList.remove('streak-active');
+                    }
                 }
             },
 
