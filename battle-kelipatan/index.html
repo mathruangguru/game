@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Battle Kelipatan</title>
+    <title>Battle Kelipatan (Rebound Rules)</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,7 +12,7 @@
 
     <style>
         :root {
-            /* Palette */
+            /* Palette - Menggunakan Tema Kelipatan (Ungu) */
             --bg-color: #2b1055; 
             --bg-gradient: radial-gradient(circle at center, #4b1d85 0%, #2b1055 100%);
             --p1-color: #00d2ff; 
@@ -25,6 +25,7 @@
             --card-bg: #ffffff;
             --card-text: #2b1055;
             --text-color: #ffffff;
+            --danger: #ff3333;
         }
 
         * {
@@ -53,7 +54,7 @@
         .font-fredoka { font-family: 'Fredoka', cursive; }
 
         /* --- SCREENS --- */
-        #setup-screen, #gameover-screen, #summary-screen {
+        #setup-screen, #gameover-screen, #summary-screen, #turn-alert {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             background: var(--bg-gradient);
@@ -69,9 +70,33 @@
         }
 
         #summary-screen {
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(5px);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
             z-index: 50;
+        }
+
+        /* --- POP UP REBOUND ALERT --- */
+        #turn-alert {
+            background: rgba(0,0,0,0.7);
+            z-index: 200;
+            display: none; /* Controlled by JS */
+            pointer-events: none;
+        }
+        .alert-box {
+            background: white;
+            color: #2b1055;
+            padding: 20px 40px;
+            border-radius: 20px;
+            border: 5px solid var(--gold);
+            font-family: 'Fredoka';
+            font-size: 2rem;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
         }
 
         h1 {
@@ -133,6 +158,7 @@
             border-radius: 15px;
             padding: 15px 30px;
             font-size: 1.2rem;
+            cursor: pointer;
         }
         .btn-green:active { transform: translateY(4px); box-shadow: none; }
 
@@ -178,6 +204,18 @@
             white-space: nowrap;
         }
 
+        .rebound-badge {
+            background: #ff3333 !important;
+            color: white !important;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.1); }
+            100% { transform: translateX(-50%) scale(1); }
+        }
+
         .timer-badge {
             position: absolute; top: 5px;
             font-family: 'Fredoka', monospace;
@@ -201,22 +239,18 @@
             font-size: clamp(0.8rem, 2vw, 1.2rem);
             margin-top: 5px;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            font-weight: bold;
         }
 
-        .hearts { display: flex; gap: 4px; margin-top: 5px; }
+        .hearts { display: flex; gap: 2px; margin-top: 5px; }
         .p2-panel .hearts { justify-content: flex-end; }
-
+        
         /* Streak Styles */
         .streak-container {
-            position: absolute; bottom: 8px;
-            display: flex; align-items: center; gap: 4px;
-            font-weight: bold; font-size: 0.8rem;
+            display: flex; align-items: center; gap: 5px;
+            margin-top: 10px; font-weight: bold; font-size: 0.9rem;
             color: var(--gold);
         }
-        .p1-panel .streak-container { right: 10px; }
-        /* P2 container reversed manually in HTML, just set position */
-        .p2-panel .streak-container { left: 10px; }
+        .p2-panel .streak-container { justify-content: flex-end; }
         
         .streak-dot {
             width: 12px; height: 12px; border-radius: 50%;
@@ -302,21 +336,26 @@
         .btn-finish:hover { background: rgba(255,255,255,0.2); }
         .btn-finish:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
-        }
-
         /* --- SVG ICONS --- */
-        .icon-heart { width: 18px; height: 18px; fill: #666; }
+        .icon-heart { width: 14px; height: 14px; fill: #666; }
         .icon-heart.filled { fill: #ff3333; }
+
     </style>
 </head>
 <body>
 
+    <!-- ALERT OVERLAY (For Turn Switching) -->
+    <div id="turn-alert" class="flex-center">
+        <div class="alert-box">
+            <div id="alert-icon" style="font-size: 3rem; margin-bottom: 10px;">⚠️</div>
+            <div id="alert-msg">SALAH!</div>
+            <div id="alert-sub" style="font-size: 1rem; color:#666; margin-top:5px;">Giliran dilempar ke lawan</div>
+        </div>
+    </div>
+
     <!-- SETUP SCREEN -->
     <div id="setup-screen" class="flex-center">
-        <h1>Battle<br><span style="color:var(--gold); font-size:0.6em; font-family:'Nunito'">Kelipatan</span></h1>
+        <h1>Battle<br><span style="color:var(--gold); font-size:0.6em; font-family:'Nunito'">KELIPATAN</span></h1>
         
         <div class="input-group">
             <input type="text" id="p1-name" class="name-input" placeholder="Nama P1" value="Player 1">
@@ -324,15 +363,14 @@
             <input type="text" id="p2-name" class="name-input" placeholder="Nama P2" value="Player 2">
         </div>
 
-        <!-- Rules Box -->
+        <!-- Rules Box Updated -->
         <div style="background:rgba(0,0,0,0.4); padding:20px; border-radius:15px; margin-bottom:30px; border:1px solid rgba(255,255,255,0.1); max-width:500px; text-align:left; width:90%;">
-            <h3 style="margin-top:0; text-align:center; color:var(--gold); font-family:'Fredoka'; letter-spacing:1px; margin-bottom:15px;">ATURAN MAIN</h3>
-            <ul style="padding-left:20px; margin:0; font-size:0.95rem; line-height:1.5;">
-                <li style="margin-bottom:8px;">🎯 <strong>Misi:</strong> Temukan <u>SEMUA</u> angka di papan (1-100) yang merupakan kelipatan persekutuan dari dua angka target.</li>
-                <li style="margin-bottom:8px;">❤️ <strong>Nyawa:</strong> Salah klik = -1 Nyawa. Habis nyawa = Kalah.</li>
-                <li style="margin-bottom:8px;">⏱️ <strong>Waktu:</strong> Total 3 menit per pemain. Waktu habis = Kalah.</li>
-                <li style="margin-bottom:8px;">🏆 <strong>Menang Instan:</strong> Dapatkan hasil <strong>PERFECT</strong> (semua benar tanpa salah) 3x berturut-turut.</li>
-                <li>✅ <strong>Giliran:</strong> Tekan "Selesai Giliran" jika yakin sudah menemukan semua angka.</li>
+            <h3 style="margin-top:0; text-align:center; color:var(--gold); font-family:'Fredoka'; letter-spacing:1px; margin-bottom:15px;">ATURAN REBOUND</h3>
+            <ul style="padding-left:20px; margin:0; font-size:0.95rem; line-height:1.5; color:#eee;">
+                <li style="margin-bottom:8px;">🎯 <strong>Misi:</strong> Temukan semua KELIPATAN PERSEKUTUAN (1-100).</li>
+                <li style="margin-bottom:8px;">⚠️ <strong>SALAH = LEMPAR:</strong> Jika salah klik, nyawa -1 dan giliran <strong>dilempar ke lawan</strong>.</li>
+                <li style="margin-bottom:8px;">🚫 <strong>GAGAL TOTAL:</strong> Jika lawan yang menerima lemparan juga salah, <strong>soal hangus</strong>.</li>
+                <li style="margin-bottom:8px;">🏆 <strong>Menang Instan:</strong> Dapatkan Streak <strong>PERFECT</strong> (Menjawab Benar) 3x berturut-turut.</li>
             </ul>
         </div>
 
@@ -351,7 +389,7 @@
         </svg>
         <h1>SELESAI!</h1>
         <h2 id="winner-text" style="color:var(--p1-color); margin-bottom:10px;">Player 1 Menang!</h2>
-        <p id="win-reason" style="background:rgba(255,255,255,0.1); padding:5px 15px; border-radius:10px; margin-bottom:30px;">Alasan</p>
+        <p id="win-reason" style="background:rgba(255,255,255,0.1); padding:10px 20px; border-radius:10px; margin-bottom:30px; font-size:1.2rem; max-width: 80%;">Alasan</p>
 
         <button class="btn-primary" onclick="Game.setup()">MAIN LAGI</button>
     </div>
@@ -361,7 +399,7 @@
         <div style="background:white; color:#2b1055; padding:30px; border-radius:20px; max-width:90%; border:4px solid var(--gold);">
             <h2 class="font-fredoka" style="margin-top:0;">RONDE SELESAI</h2>
             <p id="summary-msg" style="font-size:1.2rem; font-weight:bold; margin-bottom:20px;">Pesan</p>
-            <button class="btn-green font-fredoka" onclick="Game.nextTurn()">LANJUT GILIRAN ▶</button>
+            <button class="btn-green font-fredoka" onclick="Game.nextRound(true)">LANJUT SOAL BARU ▶</button>
         </div>
     </div>
 
@@ -449,24 +487,27 @@
                     osc.frequency.setValueAtTime(523, now); // C5
                     osc.frequency.setValueAtTime(659, now + 0.1); // E5
                     gain.gain.setValueAtTime(0.2, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
-                    osc.start(now);
-                    osc.stop(now + 0.4);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now); osc.stop(now + 0.3);
                 } else if (type === 'wrong') {
                     osc.type = 'sawtooth';
                     osc.frequency.setValueAtTime(150, now);
                     osc.frequency.linearRampToValueAtTime(80, now + 0.3);
                     gain.gain.setValueAtTime(0.2, now);
                     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-                    osc.start(now);
-                    osc.stop(now + 0.3);
+                    osc.start(now); osc.stop(now + 0.3);
                 } else if (type === 'win') {
                     osc.type = 'triangle';
                     osc.frequency.setValueAtTime(523, now);
-                    gain.gain.setValueAtTime(0.2, now);
-                    gain.gain.linearRampToValueAtTime(0, now + 1.0);
-                    osc.start(now);
-                    osc.stop(now + 1.0);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 1.5);
+                    osc.start(now); osc.stop(now + 1.5);
+                } else if (type === 'pass') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+                    gain.gain.setValueAtTime(0.1, now);
+                    osc.start(now); osc.stop(now + 0.3);
                 }
             }
         };
@@ -480,15 +521,14 @@
                 ],
                 activePlayer: 0,
                 question: { a: 0, b: 0 },
-                gridStatus: {}, // { 12: 'correct', 5: 'wrong' }
-                wrongInTurn: false,
+                gridStatus: {},
+                isRebound: false, // Rebound Logic
                 intervalId: null
             },
             
-            // Constants
-            GRID_SIZE: 100,
+            // LOGIC CONSTANTS
+            GRID_SIZE: 100, // Tetap 100 untuk Kelipatan
             TARGET_STREAK: 3,
-            MAX_LIVES: 3,
 
             // Math Helpers
             gcd(x, y) { return !y ? x : this.gcd(y, x % y); },
@@ -501,7 +541,8 @@
                     b = Math.floor(Math.random() * 9) + 2;
                     if (a === b) continue;
                     lcmVal = this.lcm(a, b);
-                } while (lcmVal > 50);
+                } while (lcmVal > 50); // Pastikan ada jawaban selain angka besar
+                
                 this.state.question = { a, b };
                 document.getElementById('target-a').textContent = a;
                 document.getElementById('target-b').textContent = b;
@@ -509,7 +550,6 @@
 
             // Game Flow
             setup() {
-                // Show Setup, Hide others
                 document.getElementById('setup-screen').classList.remove('hidden');
                 document.getElementById('gameover-screen').classList.add('hidden');
                 document.getElementById('game-hud').classList.add('hidden');
@@ -528,28 +568,29 @@
                 ];
                 this.state.activePlayer = 0;
                 
-                // Update UI Names
                 document.getElementById('hud-p1-name').textContent = p1Name;
                 document.getElementById('hud-p2-name').textContent = p2Name;
 
-                // Hide setup, Show Game
                 document.getElementById('setup-screen').classList.add('hidden');
                 document.getElementById('game-hud').classList.remove('hidden');
                 document.getElementById('game-area').classList.remove('hidden');
                 document.getElementById('game-footer').classList.remove('hidden');
 
-                this.startTurn();
+                this.nextRound(true); // Start new round
                 this.startTimer();
             },
 
-            startTurn() {
+            // New Round = Soal Baru
+            nextRound(isNewQuestion = true) {
                 this.state.gridStatus = {};
-                this.state.wrongInTurn = false;
-                this.generateQuestion();
+                this.state.isRebound = false; // Reset rebound status
+                
+                if (isNewQuestion) this.generateQuestion();
+                
                 this.renderGrid();
                 this.updateHUD();
                 document.getElementById('summary-screen').classList.add('hidden');
-                // Re-enable interactions
+                
                 const grid = document.getElementById('grid');
                 grid.style.pointerEvents = 'auto';
             },
@@ -571,28 +612,66 @@
                 if (this.state.intervalId) clearInterval(this.state.intervalId);
             },
 
+            showAlert(icon, msg, sub, callback) {
+                const box = document.getElementById('turn-alert');
+                document.getElementById('alert-icon').textContent = icon;
+                document.getElementById('alert-msg').textContent = msg;
+                document.getElementById('alert-sub').textContent = sub;
+                
+                box.style.display = 'flex';
+                
+                setTimeout(() => {
+                    box.style.display = 'none';
+                    if (callback) callback();
+                }, 1500);
+            },
+
             handleGridClick(num) {
                 if (this.state.gridStatus[num]) return;
 
                 const { a, b } = this.state.question;
+                // LOGIC KELIPATAN
                 const isCorrect = (num % a === 0 && num % b === 0);
+                
                 const player = this.state.players[this.state.activePlayer];
                 const btn = document.getElementById(`cell-${num}`);
 
                 if (isCorrect) {
                     AudioEngine.play('correct');
                     this.state.gridStatus[num] = 'correct';
-                    // No score increment
                     btn.className = "grid-cell cell-correct";
                 } else {
+                    // LOGIKA SALAH JAWAB (Sama Persis dengan Battle Faktor)
                     AudioEngine.play('wrong');
                     this.state.gridStatus[num] = 'wrong';
-                    this.state.wrongInTurn = true;
                     player.lives--;
+                    player.streak = 0; // Reset streak
                     btn.className = "grid-cell cell-wrong";
 
+                    // Cek Kalah
                     if (player.lives <= 0) {
-                        this.endGame(this.state.activePlayer === 0 ? 1 : 0, "Kehabisan Nyawa!");
+                        this.endGame(this.state.activePlayer === 0 ? 1 : 0, "Lawan Kehabisan Nyawa!");
+                        return;
+                    }
+
+                    // LOGIKA REBOUND / LEMPARAN
+                    if (this.state.isRebound) {
+                        // Jika sudah rebound dan salah lagi -> SOAL HANGUS
+                        this.showAlert("☠️", "DUA-DUANYA SALAH!", "Soal Hangus. Ganti Soal Baru.", () => {
+                            // Tukar pemain dulu agar yang salah terakhir tidak jalan duluan (opsional, tapi adil)
+                            this.state.activePlayer = this.state.activePlayer === 0 ? 1 : 0;
+                            this.nextRound(true);
+                        });
+                    } else {
+                        // Baru salah pertama kali -> LEMPAR KE LAWAN
+                        this.state.isRebound = true;
+                        const nextPlayerName = this.state.players[this.state.activePlayer === 0 ? 1 : 0].name;
+                        
+                        this.showAlert("🔄", "SALAH TEBAK!", `Giliran dilempar ke ${nextPlayerName}`, () => {
+                            this.state.activePlayer = this.state.activePlayer === 0 ? 1 : 0;
+                            AudioEngine.play('pass');
+                            this.updateHUD(); // Update UI ganti player
+                        });
                     }
                 }
                 this.updateHUD();
@@ -608,31 +687,36 @@
                 }
 
                 const player = this.state.players[this.state.activePlayer];
-                const isPerfect = missed.length === 0 && !this.state.wrongInTurn;
+                
+                // LOGIKA: Streak tetap bertambah jika berhasil menyelesaikan
+                const isComplete = missed.length === 0;
+                
                 let msg = "";
 
-                if (isPerfect) {
+                if (isComplete) {
                     player.streak++;
-                    msg = `PERFECT! Streak: ${player.streak}`;
+                    // Pesan berbeda untuk Rebound vs Normal
+                    msg = this.state.isRebound 
+                        ? `REBOUND SUKSES! Streak: ${player.streak}` 
+                        : `PERFECT! Streak: ${player.streak}`;
+                    
                     if (player.streak >= this.TARGET_STREAK) {
-                        this.endGame(this.state.activePlayer, "3x PERFECT BERTURUT-TURUT!");
+                        this.endGame(this.state.activePlayer, "Mencapai 3x PERFECT STREAK!");
                         return;
                     }
                 } else {
-                    player.streak = 0;
-                    msg = missed.length > 0 ? `Terlewat: ${missed.slice(0, 3).join(', ')}...` : "Streak Reset (Ada Salah)";
+                    if (missed.length > 0) {
+                        msg = `Terlewat: ${missed.slice(0, 3).join(', ')}${missed.length>3?'...':''}`;
+                        player.streak = 0; // Reset streak kalau ada yang kurang
+                    }
                 }
 
                 document.getElementById('summary-msg').textContent = msg;
                 document.getElementById('summary-screen').classList.remove('hidden');
-                
-                // Disable grid interaction
                 document.getElementById('grid').style.pointerEvents = 'none';
-            },
-
-            nextTurn() {
+                
+                // Switch turn for next round normally
                 this.state.activePlayer = this.state.activePlayer === 0 ? 1 : 0;
-                this.startTurn();
             },
 
             endGame(winnerIdx, reason) {
@@ -660,6 +744,10 @@
                     const btn = document.createElement('button');
                     btn.id = `cell-${i}`;
                     btn.className = 'grid-cell';
+                    // Jika rebound, pertahankan status merah/salah pemain sebelumnya
+                    if (this.state.isRebound && this.state.gridStatus[i] === 'wrong') {
+                        btn.classList.add('cell-wrong');
+                    }
                     btn.textContent = i;
                     btn.onclick = () => this.handleGridClick(i);
                     grid.appendChild(btn);
@@ -674,28 +762,37 @@
                 // Panels
                 const p1Panel = document.getElementById('p1-panel');
                 const p2Panel = document.getElementById('p2-panel');
+                const p1Badge = document.getElementById('p1-turn-badge');
+                const p2Badge = document.getElementById('p2-turn-badge');
 
                 if (active === 0) {
                     p1Panel.classList.add('active-p1'); p1Panel.classList.remove('inactive');
                     p2Panel.classList.remove('active-p2'); p2Panel.classList.add('inactive');
-                    document.getElementById('p1-turn-badge').classList.remove('hidden');
-                    document.getElementById('p2-turn-badge').classList.add('hidden');
+                    p1Badge.classList.remove('hidden'); p2Badge.classList.add('hidden');
                     document.getElementById('p1-timer').classList.add('active-timer');
                     document.getElementById('p2-timer').classList.remove('active-timer');
                 } else {
                     p1Panel.classList.remove('active-p1'); p1Panel.classList.add('inactive');
                     p2Panel.classList.add('active-p2'); p2Panel.classList.remove('inactive');
-                    document.getElementById('p1-turn-badge').classList.add('hidden');
-                    document.getElementById('p2-turn-badge').classList.remove('hidden');
+                    p1Badge.classList.add('hidden'); p2Badge.classList.remove('hidden');
                     document.getElementById('p1-timer').classList.remove('active-timer');
                     document.getElementById('p2-timer').classList.add('active-timer');
+                }
+
+                // Rebound Badge Style
+                if (this.state.isRebound) {
+                    if (active === 0) { p1Badge.textContent = "DAPAT LEMPARAN!"; p1Badge.classList.add('rebound-badge'); }
+                    else { p2Badge.textContent = "DAPAT LEMPARAN!"; p2Badge.classList.add('rebound-badge'); }
+                } else {
+                    p1Badge.textContent = "GILIRANMU"; p1Badge.classList.remove('rebound-badge');
+                    p2Badge.textContent = "GILIRANMU"; p2Badge.classList.remove('rebound-badge');
                 }
 
                 // Lives (Hearts)
                 this.renderHearts('p1-hearts', p1.lives);
                 this.renderHearts('p2-hearts', p2.lives);
 
-                // Streaks
+                // Streaks Dots Update
                 this.renderStreakDots('p1', p1.streak);
                 this.renderStreakDots('p2', p2.streak);
 
