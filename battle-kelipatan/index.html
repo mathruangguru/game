@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Battle Kelipatan</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;600&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Palette */
+            --bg-color: #2b1055; 
+            --bg-gradient: radial-gradient(circle at center, #4b1d85 0%, #2b1055 100%);
+            --p1-color: #00d2ff; 
+            --p1-dark: #009ac2;
+            --p1-bg: rgba(0, 210, 255, 0.15);
+            --p2-color: #ff47bc; 
+            --p2-dark: #c2007e;
+            --p2-bg: rgba(255, 71, 188, 0.15);
+            --gold: #ffd700;
+            --card-bg: #ffffff;
+            --card-text: #2b1055;
+            --text-color: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            background-image: var(--bg-gradient);
+            color: var(--text-color);
+            font-family: 'Nunito', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- UTILS --- */
+        .hidden { display: none !important; }
+        .flex-center { display: flex; justify-content: center; align-items: center; }
+        .font-fredoka { font-family: 'Fredoka', cursive; }
+
+        /* --- SCREENS --- */
+        #setup-screen, #gameover-screen, #summary-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-gradient);
+            z-index: 100;
+            flex-direction: column;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #gameover-screen {
+            background: rgba(20, 5, 40, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        #summary-screen {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 50;
+        }
+
+        h1 {
+            font-family: 'Fredoka', cursive;
+            font-size: clamp(2rem, 5vw, 4rem);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            color: #fff;
+            text-shadow: 4px 4px 0px #000;
+            line-height: 1.1;
+        }
+
+        /* --- INPUTS & BUTTONS --- */
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .name-input {
+            font-family: 'Fredoka', cursive;
+            font-size: clamp(1rem, 2.5vw, 1.5rem);
+            padding: 10px;
+            border-radius: 50px;
+            border: 3px solid #fff;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            text-align: center;
+            width: clamp(150px, 30vw, 250px);
+            outline: none;
+        }
+        #input-p1 { border-color: var(--p1-color); }
+        #input-p2 { border-color: var(--p2-color); }
+
+        .btn-primary {
+            font-family: 'Fredoka', cursive;
+            background: linear-gradient(180deg, #ffd700, #ffaa00);
+            border: 3px solid #fff;
+            padding: 10px 40px;
+            font-size: clamp(1.2rem, 3vw, 2rem);
+            font-weight: 600;
+            color: #5a3e00;
+            border-radius: 60px;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #b37700;
+            transition: transform 0.1s;
+        }
+        .btn-primary:active { transform: translateY(6px); box-shadow: 0 0 0 #b37700; }
+
+        .btn-green {
+            background: #00cc00;
+            color: white;
+            box-shadow: 0 4px 0 #008000;
+            border: none;
+            border-radius: 15px;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+        }
+        .btn-green:active { transform: translateY(4px); box-shadow: none; }
+
+        /* --- HUD --- */
+        header {
+            height: 15vh; 
+            min-height: 80px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 10px;
+            background: rgba(0,0,0,0.3);
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+        }
+
+        .player-panel {
+            width: 28%;
+            height: 100%;
+            border-radius: 12px;
+            padding: 5px;
+            position: relative;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .p1-panel { border-color: var(--p1-color); background: rgba(255,255,255,0.05); }
+        .p2-panel { border-color: var(--p2-color); background: rgba(255,255,255,0.05); text-align: right; }
+
+        .active-p1 { background: var(--p1-bg); box-shadow: 0 0 15px var(--p1-color); }
+        .active-p2 { background: var(--p2-bg); box-shadow: 0 0 15px var(--p2-color); }
+        .inactive { opacity: 0.6; filter: grayscale(80%); }
+
+        .turn-badge {
+            position: absolute;
+            top: -10px; left: 50%; transform: translateX(-50%);
+            background: white; color: #2b1055;
+            font-size: 0.7rem; font-weight: bold;
+            padding: 2px 8px; border-radius: 10px;
+            z-index: 10;
+            white-space: nowrap;
+        }
+
+        .timer-badge {
+            position: absolute; top: 5px;
+            font-family: 'Fredoka', monospace;
+            font-size: clamp(0.8rem, 2vw, 1.2rem);
+            font-weight: bold;
+            padding: 2px 6px; border-radius: 6px;
+            background: rgba(0,0,0,0.3); color: rgba(255,255,255,0.5);
+        }
+        .p1-panel .timer-badge { right: 5px; }
+        .p2-panel .timer-badge { left: 5px; }
+        
+        .active-timer {
+            background: #ff3333 !important;
+            color: white !important;
+            box-shadow: 0 0 8px red;
+            transform: scale(1.1);
+        }
+
+        .player-name {
+            font-family: 'Fredoka', cursive;
+            font-size: clamp(0.8rem, 2vw, 1.2rem);
+            margin-top: 15px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .hearts { display: flex; gap: 2px; margin-top: 2px; }
+        .p2-panel .hearts { justify-content: flex-end; }
+        
+        .score {
+            position: absolute; bottom: 0;
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            font-weight: bold; font-family: 'Fredoka';
+            line-height: 1;
+        }
+        .p1-panel .score { right: 10px; }
+        .p2-panel .score { left: 10px; }
+
+        .streak-badge {
+            position: absolute; bottom: -5px;
+            width: 24px; height: 24px;
+            background: #ffd700; color: black;
+            border-radius: 50%;
+            font-weight: bold; font-size: 0.8rem;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid white;
+            animation: bounce 1s infinite;
+        }
+        .p1-panel .streak-badge { left: -5px; }
+        .p2-panel .streak-badge { right: -5px; }
+
+        /* --- TARGET BOX --- */
+        .target-box {
+            flex: 1; height: 90%; max-width: 160px;
+            background: white; border: 4px solid var(--gold);
+            border-radius: 15px;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            box-shadow: 0 4px 0 #b37700;
+            margin: 0 10px;
+            z-index: 5;
+        }
+        .target-label { color: #888; font-size: 0.7rem; font-weight: bold; letter-spacing: 1px; }
+        .target-nums { color: #333; font-size: clamp(1.5rem, 4vw, 2.5rem); font-weight: bold; line-height: 1; display: flex; align-items: center; gap: 5px; }
+        .num-pill { background: #eee; px: 5px; border-radius: 5px; padding: 0 5px; }
+
+        /* --- GRID --- */
+        #game-area {
+            flex: 1;
+            display: flex; justify-content: center; align-items: center;
+            padding: 10px;
+            overflow: hidden;
+        }
+
+        .grid-container {
+            width: 100%; height: 100%; max-width: 600px;
+            background: rgba(0,0,0,0.2);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 5px;
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(10, 1fr);
+            gap: 2px;
+        }
+
+        .grid-cell {
+            background: white;
+            color: #2b1055;
+            border-radius: 4px;
+            border: none;
+            font-family: 'Fredoka', sans-serif;
+            font-weight: bold;
+            font-size: clamp(0.6rem, 2vmin, 1.2rem);
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer;
+            box-shadow: 0 2px 0 #b0b0b0;
+            transition: all 0.1s;
+            padding: 0;
+        }
+        
+        .grid-cell:active { transform: translateY(2px); box-shadow: none; }
+        .grid-cell:disabled { cursor: default; }
+
+        .cell-correct { background: #88ff00 !important; box-shadow: 0 2px 0 #55aa00 !important; transform: scale(1.05); z-index: 2; }
+        .cell-wrong { background: #ff3333 !important; color: white !important; box-shadow: 0 2px 0 #990000 !important; opacity: 0.5; transform: scale(0.9); }
+        .cell-inactive { opacity: 0.5; }
+
+        /* --- FOOTER --- */
+        footer {
+            height: 10vh; min-height: 50px;
+            display: flex; justify-content: center; align-items: center;
+            background: rgba(0,0,0,0.4);
+        }
+
+        .btn-finish {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.2);
+            padding: 10px 40px;
+            border-radius: 30px;
+            font-family: 'Fredoka';
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        .btn-finish:hover { background: rgba(255,255,255,0.2); }
+        .btn-finish:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        /* --- SVG ICONS --- */
+        .icon-heart { width: 14px; height: 14px; fill: #666; }
+        .icon-heart.filled { fill: #ff3333; }
+    </style>
+</head>
+<body>
+
+    <!-- SETUP SCREEN -->
+    <div id="setup-screen" class="flex-center">
+        <h1>Battle<br><span style="color:var(--gold); font-size:0.6em; font-family:'Nunito'">Kelipatan</span></h1>
+        
+        <div class="input-group">
+            <input type="text" id="p1-name" class="name-input" placeholder="Nama P1" value="Player 1">
+            <span style="font-size:2rem; font-weight:bold">VS</span>
+            <input type="text" id="p2-name" class="name-input" placeholder="Nama P2" value="Player 2">
+        </div>
+
+        <div style="background:rgba(0,0,0,0.4); padding:20px; border-radius:15px; margin-bottom:30px; border:1px solid rgba(255,255,255,0.1); max-width:400px;">
+            <p style="margin:5px 0">🎯 Cari <strong>Kelipatan Persekutuan</strong>.</p>
+            <p style="margin:5px 0">⚡ <strong>Perfect 3x</strong> = Menang Instan.</p>
+            <p style="margin:5px 0; color:#ff9999">⏱️ Waktu Total: 3 Menit/Orang.</p>
+        </div>
+
+        <button class="btn-primary" onclick="Game.start()">MULAI BATTLE</button>
+    </div>
+
+    <!-- GAME OVER SCREEN -->
+    <div id="gameover-screen" class="flex-center hidden">
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="gold" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:20px; filter:drop-shadow(0 0 10px gold);">
+            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+            <path d="M4 22h16"></path>
+            <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
+            <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
+            <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+        </svg>
+        <h1>SELESAI!</h1>
+        <h2 id="winner-text" style="color:var(--p1-color); margin-bottom:10px;">Player 1 Menang!</h2>
+        <p id="win-reason" style="background:rgba(255,255,255,0.1); padding:5px 15px; border-radius:10px; margin-bottom:30px;">Alasan</p>
+
+        <div style="display:flex; gap:30px; margin-bottom:30px;">
+            <div>
+                <div id="end-p1-name" style="color:var(--p1-color); font-weight:bold;">P1</div>
+                <div id="end-p1-score" style="font-size:3rem; font-family:'Fredoka';">0</div>
+            </div>
+            <div>
+                <div id="end-p2-name" style="color:var(--p2-color); font-weight:bold;">P2</div>
+                <div id="end-p2-score" style="font-size:3rem; font-family:'Fredoka';">0</div>
+            </div>
+        </div>
+
+        <button class="btn-primary" onclick="Game.setup()">MAIN LAGI</button>
+    </div>
+
+    <!-- SUMMARY POPUP -->
+    <div id="summary-screen" class="flex-center hidden">
+        <div style="background:white; color:#2b1055; padding:30px; border-radius:20px; max-width:90%; border:4px solid var(--gold);">
+            <h2 class="font-fredoka" style="margin-top:0;">RONDE SELESAI</h2>
+            <p id="summary-msg" style="font-size:1.2rem; font-weight:bold; margin-bottom:20px;">Pesan</p>
+            <button class="btn-green font-fredoka" onclick="Game.nextTurn()">LANJUT GILIRAN ▶</button>
+        </div>
+    </div>
+
+    <!-- MAIN HUD -->
+    <header id="game-hud" class="hidden">
+        <!-- P1 Panel -->
+        <div id="p1-panel" class="player-panel p1-panel">
+            <div id="p1-turn-badge" class="turn-badge hidden">GILIRANMU</div>
+            <div id="p1-timer" class="timer-badge">03:00</div>
+            
+            <div>
+                <div id="hud-p1-name" class="player-name">Player 1</div>
+                <div class="hearts" id="p1-hearts"></div>
+            </div>
+            
+            <div id="p1-score" class="score">0</div>
+            <div id="p1-streak" class="streak-badge hidden">x0</div>
+        </div>
+
+        <!-- Target Center -->
+        <div class="target-box">
+            <span class="target-label">CARI KELIPATAN</span>
+            <div class="target-nums">
+                <span id="target-a" class="num-pill">?</span>
+                <span style="font-size:1rem; color:#888">&</span>
+                <span id="target-b" class="num-pill">?</span>
+            </div>
+            <span style="font-size:0.6rem; font-weight:bold; color:#aaa; margin-top:2px;">PERSEKUTUAN</span>
+        </div>
+
+        <!-- P2 Panel -->
+        <div id="p2-panel" class="player-panel p2-panel">
+            <div id="p2-turn-badge" class="turn-badge hidden">GILIRANMU</div>
+            <div id="p2-timer" class="timer-badge">03:00</div>
+            
+            <div style="display:flex; flex-direction:column; align-items:flex-end;">
+                <div id="hud-p2-name" class="player-name">Player 2</div>
+                <div class="hearts" id="p2-hearts"></div>
+            </div>
+            
+            <div id="p2-score" class="score">0</div>
+            <div id="p2-streak" class="streak-badge hidden">x0</div>
+        </div>
+    </header>
+
+    <!-- GRID AREA -->
+    <section id="game-area" class="hidden">
+        <div class="grid-container" id="grid">
+            <!-- JS will inject buttons here -->
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer id="game-footer" class="hidden">
+        <button id="btn-finish-turn" class="btn-finish" onclick="Game.finishTurn()">Selesai Giliran Ini</button>
+    </footer>
+
+    <script>
+        // --- AUDIO ENGINE ---
+        const AudioEngine = {
+            ctx: null,
+            init() {
+                if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            },
+            play(type) {
+                if (!this.ctx) this.init();
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                const now = this.ctx.currentTime;
+
+                if (type === 'correct') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523, now); // C5
+                    osc.frequency.setValueAtTime(659, now + 0.1); // E5
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.linearRampToValueAtTime(80, now + 0.3);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'win') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523, now);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 1.0);
+                    osc.start(now);
+                    osc.stop(now + 1.0);
+                }
+            }
+        };
+
+        // --- GAME LOGIC ---
+        const Game = {
+            state: {
+                players: [
+                    { name: 'P1', score: 0, lives: 3, time: 180, streak: 0 },
+                    { name: 'P2', score: 0, lives: 3, time: 180, streak: 0 }
+                ],
+                activePlayer: 0,
+                question: { a: 0, b: 0 },
+                gridStatus: {}, // { 12: 'correct', 5: 'wrong' }
+                wrongInTurn: false,
+                intervalId: null
+            },
+            
+            // Constants
+            GRID_SIZE: 100,
+            TARGET_STREAK: 3,
+            MAX_LIVES: 3,
+
+            // Math Helpers
+            gcd(x, y) { return !y ? x : this.gcd(y, x % y); },
+            lcm(x, y) { return (x * y) / this.gcd(x, y); },
+            
+            generateQuestion() {
+                let a, b, lcmVal;
+                do {
+                    a = Math.floor(Math.random() * 9) + 2; // 2-10
+                    b = Math.floor(Math.random() * 9) + 2;
+                    if (a === b) continue;
+                    lcmVal = this.lcm(a, b);
+                } while (lcmVal > 50);
+                this.state.question = { a, b };
+                document.getElementById('target-a').textContent = a;
+                document.getElementById('target-b').textContent = b;
+            },
+
+            // Game Flow
+            setup() {
+                // Show Setup, Hide others
+                document.getElementById('setup-screen').classList.remove('hidden');
+                document.getElementById('gameover-screen').classList.add('hidden');
+                document.getElementById('game-hud').classList.add('hidden');
+                document.getElementById('game-area').classList.add('hidden');
+                document.getElementById('game-footer').classList.add('hidden');
+                this.stopTimer();
+            },
+
+            start() {
+                const p1Name = document.getElementById('p1-name').value || 'Player 1';
+                const p2Name = document.getElementById('p2-name').value || 'Player 2';
+                
+                this.state.players = [
+                    { name: p1Name, score: 0, lives: 3, time: 180, streak: 0 },
+                    { name: p2Name, score: 0, lives: 3, time: 180, streak: 0 }
+                ];
+                this.state.activePlayer = 0;
+                
+                // Update UI Names
+                document.getElementById('hud-p1-name').textContent = p1Name;
+                document.getElementById('hud-p2-name').textContent = p2Name;
+
+                // Hide setup, Show Game
+                document.getElementById('setup-screen').classList.add('hidden');
+                document.getElementById('game-hud').classList.remove('hidden');
+                document.getElementById('game-area').classList.remove('hidden');
+                document.getElementById('game-footer').classList.remove('hidden');
+
+                this.startTurn();
+                this.startTimer();
+            },
+
+            startTurn() {
+                this.state.gridStatus = {};
+                this.state.wrongInTurn = false;
+                this.generateQuestion();
+                this.renderGrid();
+                this.updateHUD();
+                document.getElementById('summary-screen').classList.add('hidden');
+                // Re-enable interactions
+                const grid = document.getElementById('grid');
+                grid.style.pointerEvents = 'auto';
+            },
+
+            startTimer() {
+                this.stopTimer();
+                this.state.intervalId = setInterval(() => {
+                    const p = this.state.players[this.state.activePlayer];
+                    p.time--;
+                    
+                    if (p.time <= 0) {
+                        this.endGame(this.state.activePlayer === 0 ? 1 : 0, "Waktu Habis!");
+                    }
+                    this.updateTimers();
+                }, 1000);
+            },
+
+            stopTimer() {
+                if (this.state.intervalId) clearInterval(this.state.intervalId);
+            },
+
+            handleGridClick(num) {
+                if (this.state.gridStatus[num]) return;
+
+                const { a, b } = this.state.question;
+                const isCorrect = (num % a === 0 && num % b === 0);
+                const player = this.state.players[this.state.activePlayer];
+                const btn = document.getElementById(`cell-${num}`);
+
+                if (isCorrect) {
+                    AudioEngine.play('correct');
+                    this.state.gridStatus[num] = 'correct';
+                    player.score += 10;
+                    btn.className = "grid-cell cell-correct";
+                } else {
+                    AudioEngine.play('wrong');
+                    this.state.gridStatus[num] = 'wrong';
+                    this.state.wrongInTurn = true;
+                    player.lives--;
+                    btn.className = "grid-cell cell-wrong";
+
+                    if (player.lives <= 0) {
+                        this.endGame(this.state.activePlayer === 0 ? 1 : 0, "Kehabisan Nyawa!");
+                    }
+                }
+                this.updateHUD();
+            },
+
+            finishTurn() {
+                const { a, b } = this.state.question;
+                const missed = [];
+                for (let i = 1; i <= this.GRID_SIZE; i++) {
+                    if (i % a === 0 && i % b === 0 && this.state.gridStatus[i] !== 'correct') {
+                        missed.push(i);
+                    }
+                }
+
+                const player = this.state.players[this.state.activePlayer];
+                const isPerfect = missed.length === 0 && !this.state.wrongInTurn;
+                let msg = "";
+
+                if (isPerfect) {
+                    player.streak++;
+                    msg = `PERFECT! Streak: ${player.streak}`;
+                    if (player.streak >= this.TARGET_STREAK) {
+                        this.endGame(this.state.activePlayer, "3x PERFECT BERTURUT-TURUT!");
+                        return;
+                    }
+                } else {
+                    player.streak = 0;
+                    msg = missed.length > 0 ? `Terlewat: ${missed.slice(0, 3).join(', ')}...` : "Streak Reset (Ada Salah)";
+                }
+
+                document.getElementById('summary-msg').textContent = msg;
+                document.getElementById('summary-screen').classList.remove('hidden');
+                
+                // Disable grid interaction
+                document.getElementById('grid').style.pointerEvents = 'none';
+            },
+
+            nextTurn() {
+                this.state.activePlayer = this.state.activePlayer === 0 ? 1 : 0;
+                this.startTurn();
+            },
+
+            endGame(winnerIdx, reason) {
+                this.stopTimer();
+                const winner = this.state.players[winnerIdx];
+                const loserIdx = winnerIdx === 0 ? 1 : 0;
+                
+                document.getElementById('gameover-screen').classList.remove('hidden');
+                document.getElementById('game-hud').classList.add('hidden');
+                document.getElementById('game-area').classList.add('hidden');
+                document.getElementById('game-footer').classList.add('hidden');
+                document.getElementById('summary-screen').classList.add('hidden');
+
+                AudioEngine.play('win');
+
+                document.getElementById('winner-text').textContent = `${winner.name} Menang!`;
+                document.getElementById('winner-text').style.color = winnerIdx === 0 ? 'var(--p1-color)' : 'var(--p2-color)';
+                document.getElementById('win-reason').textContent = reason;
+
+                document.getElementById('end-p1-name').textContent = this.state.players[0].name;
+                document.getElementById('end-p1-score').textContent = this.state.players[0].score;
+                document.getElementById('end-p2-name').textContent = this.state.players[1].name;
+                document.getElementById('end-p2-score').textContent = this.state.players[1].score;
+            },
+
+            // --- RENDERING ---
+            renderGrid() {
+                const grid = document.getElementById('grid');
+                grid.innerHTML = '';
+                for (let i = 1; i <= this.GRID_SIZE; i++) {
+                    const btn = document.createElement('button');
+                    btn.id = `cell-${i}`;
+                    btn.className = 'grid-cell';
+                    btn.textContent = i;
+                    // Pre-check disabled state if viewing history? (Not needed for this flow)
+                    // If already clicked in this turn? (Reset on turn start, so fresh)
+                    btn.onclick = () => this.handleGridClick(i);
+                    grid.appendChild(btn);
+                }
+            },
+
+            updateHUD() {
+                const p1 = this.state.players[0];
+                const p2 = this.state.players[1];
+                const active = this.state.activePlayer;
+
+                // Panels
+                const p1Panel = document.getElementById('p1-panel');
+                const p2Panel = document.getElementById('p2-panel');
+
+                if (active === 0) {
+                    p1Panel.classList.add('active-p1'); p1Panel.classList.remove('inactive');
+                    p2Panel.classList.remove('active-p2'); p2Panel.classList.add('inactive');
+                    document.getElementById('p1-turn-badge').classList.remove('hidden');
+                    document.getElementById('p2-turn-badge').classList.add('hidden');
+                    document.getElementById('p1-timer').classList.add('active-timer');
+                    document.getElementById('p2-timer').classList.remove('active-timer');
+                } else {
+                    p1Panel.classList.remove('active-p1'); p1Panel.classList.add('inactive');
+                    p2Panel.classList.add('active-p2'); p2Panel.classList.remove('inactive');
+                    document.getElementById('p1-turn-badge').classList.add('hidden');
+                    document.getElementById('p2-turn-badge').classList.remove('hidden');
+                    document.getElementById('p1-timer').classList.remove('active-timer');
+                    document.getElementById('p2-timer').classList.add('active-timer');
+                }
+
+                // Scores
+                document.getElementById('p1-score').textContent = p1.score;
+                document.getElementById('p2-score').textContent = p2.score;
+
+                // Lives (Hearts)
+                this.renderHearts('p1-hearts', p1.lives);
+                this.renderHearts('p2-hearts', p2.lives);
+
+                // Streaks
+                const s1 = document.getElementById('p1-streak');
+                const s2 = document.getElementById('p2-streak');
+                
+                if (p1.streak > 0) { s1.classList.remove('hidden'); s1.textContent = `x${p1.streak}`; } 
+                else s1.classList.add('hidden');
+
+                if (p2.streak > 0) { s2.classList.remove('hidden'); s2.textContent = `x${p2.streak}`; } 
+                else s2.classList.add('hidden');
+
+                this.updateTimers();
+            },
+
+            renderHearts(id, count) {
+                const container = document.getElementById(id);
+                container.innerHTML = '';
+                const svgIcon = `<svg class="icon-heart" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+                for (let i = 0; i < 3; i++) {
+                    const span = document.createElement('span');
+                    span.innerHTML = svgIcon;
+                    if (i < count) span.querySelector('svg').classList.add('filled');
+                    container.appendChild(span);
+                }
+            },
+
+            updateTimers() {
+                const fmt = (s) => {
+                    const m = Math.floor(s/60).toString().padStart(2,'0');
+                    const sec = (s%60).toString().padStart(2,'0');
+                    return `${m}:${sec}`;
+                };
+                document.getElementById('p1-timer').textContent = fmt(this.state.players[0].time);
+                document.getElementById('p2-timer').textContent = fmt(this.state.players[1].time);
+            }
+        };
+
+        // Initialize
+        window.onload = () => Game.setup();
+
+    </script>
+</body>
+</html>
