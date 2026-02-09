@@ -59,9 +59,23 @@
             background: rgba(20, 5, 40, 0.95);
             backdrop-filter: blur(10px);
             z-index: 100;
+            /* Scroll improvements */
+            overflow-y: auto; 
+            overflow-x: hidden;
+            display: flex;
+            align-items: flex-start; /* Allows margin:auto to center vertically safely */
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Wrapper to handle safe vertical centering + scrolling */
+        .content-wrapper {
+            margin: auto;
+            width: 100%;
+            display: flex;
             flex-direction: column;
+            align-items: center;
+            padding: 40px 20px; /* Extra padding for scroll UX */
             text-align: center;
-            padding: 20px;
         }
 
         h1 {
@@ -419,36 +433,40 @@
 <body>
 
     <!-- Start Screen -->
-    <div id="start-screen" class="flex-center">
-        <h1>Substitute<br><span style="font-size:0.5em; color:#ffd700; font-family:'Nunito';">The Operator</span></h1>
-        
-        <div class="input-group">
-            <input type="text" id="input-p1" class="name-input" placeholder="Player 1" maxlength="8">
-            <span style="font-family: 'Fredoka'; font-size: 1.5rem; color: #fff;">VS</span>
-            <input type="text" id="input-p2" class="name-input" placeholder="Player 2" maxlength="8">
-        </div>
+    <div id="start-screen">
+        <div class="content-wrapper">
+            <h1>Substitute<br><span style="font-size:0.5em; color:#ffd700; font-family:'Nunito';">The Operator</span></h1>
+            
+            <div class="input-group">
+                <input type="text" id="input-p1" class="name-input" placeholder="Player 1" maxlength="8">
+                <span style="font-family: 'Fredoka'; font-size: 1.5rem; color: #fff;">VS</span>
+                <input type="text" id="input-p2" class="name-input" placeholder="Player 2" maxlength="8">
+            </div>
 
-        <div style="margin-bottom: 20px; font-size: clamp(0.9rem, 2vw, 1.1rem); max-width: 600px; line-height: 1.5; color: #ddd; background: rgba(0,0,0,0.5); padding: 20px; border-radius: 15px;">
-            <p>🧮 <strong>Aturan Main:</strong></p>
-            <ul style="text-align: left; margin: 10px auto; max-width: 300px;">
-                <!-- Updated symbols to HTML entities for proper rendering -->
-                <li>Isi operator (+, &minus;, &times;, &divide;) agar hasilnya benar.</li>
-                <li>Setiap operator hanya boleh dipakai <strong>sekali</strong>.</li>
-                <li><strong>RULE BARU:</strong> Jika salah, soal <strong>dilempar ke lawan</strong>!</li>
-                <li>Max <strong>40 detik</strong> per soal.</li>
-                <li>Total waktu main <strong>3 menit</strong> per pemain.</li>
-            </ul>
-            <p style="color:#ffd700; font-weight:bold;">🏆 Menang = Winstreak 3x atau Bertahan Hidup!</p>
+            <div style="margin-bottom: 20px; font-size: clamp(0.9rem, 2vw, 1.1rem); max-width: 600px; line-height: 1.6; color: #ddd; background: rgba(0,0,0,0.5); padding: 20px; border-radius: 15px; text-align: left;">
+                <p style="text-align: center; margin-top: 0;">🧮 <strong>Aturan Main:</strong></p>
+                <ul style="margin: 10px 0 10px 20px; padding: 0;">
+                    <!-- Updated symbols to HTML entities for proper rendering -->
+                    <li>Isi operator (+, &minus;, &times;, &divide;) agar hasilnya benar.</li>
+                    <li>Setiap operator hanya boleh dipakai <strong>sekali</strong>.</li>
+                    <li><strong>RULE BARU:</strong> Jika salah, soal <strong>dilempar ke lawan</strong>!</li>
+                    <li>Max <strong>40 detik</strong> per soal.</li>
+                    <li>Total waktu main <strong>3 menit</strong> per pemain.</li>
+                </ul>
+                <p style="color:#ffd700; font-weight:bold; text-align: center; margin-bottom: 0;">🏆 Menang = Winstreak 3x atau Bertahan Hidup!</p>
+            </div>
+            <button class="btn-start" onclick="game.init()">MULAI</button>
         </div>
-        <button class="btn-start" onclick="game.init()">MULAI</button>
     </div>
 
     <!-- Game Over Screen -->
-    <div id="game-over-screen" class="hidden flex-center">
-        <h1 id="end-title" style="color: #ffd700;">GAME OVER</h1>
-        <h2 id="winner-text" style="color: #fff; margin-bottom: 20px; font-family:'Fredoka'; font-size: clamp(1.2rem, 3vw, 2rem);">Player 1 Wins!</h2>
-        <div id="end-reason" style="color: #ccc; margin-bottom: 30px;">Reason</div>
-        <button class="btn-start" onclick="location.reload()">MAIN LAGI</button>
+    <div id="game-over-screen" class="hidden">
+        <div class="content-wrapper">
+            <h1 id="end-title" style="color: #ffd700;">GAME OVER</h1>
+            <h2 id="winner-text" style="color: #fff; margin-bottom: 20px; font-family:'Fredoka'; font-size: clamp(1.2rem, 3vw, 2rem);">Player 1 Wins!</h2>
+            <div id="end-reason" style="color: #ccc; margin-bottom: 30px;">Reason</div>
+            <button class="btn-start" onclick="location.reload()">MAIN LAGI</button>
+        </div>
     </div>
 
     <!-- HUD -->
