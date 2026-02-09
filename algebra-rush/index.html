@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Algebra Rush: Duel 2 Pemain</title>
+    <title>Algebra Rush: Duel 2 Pemain (Race to 30)</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -341,15 +341,17 @@
             <p style="margin:5px 0;">🎯 <strong>Jawab Benar:</strong> Skor bertambah (+x)</p>
             <p style="margin:5px 0;">📉 <strong>Jawab Salah/Negatif:</strong> Skor berkurang (-x)</p>
             <p style="margin:5px 0;">⏳ <strong>Batas Giliran:</strong> 1 Menit (Lewat = Ganti Giliran)</p>
+            <!-- NEW RULE ADDED HERE -->
+            <p style="margin:5px 0; color: #aaffaa; font-weight: bold; border: 1px solid #aaffaa; border-radius: 5px; padding: 5px; background: rgba(0,255,0,0.1);">
+                🚀 RACE TO 30: Siapa cepat dapat Skor 30 Menang!
+            </p>
+            
             <hr style="border:0; border-top:1px solid rgba(255,255,255,0.3); margin:10px 0;">
             <p style="margin:5px 0; color: #ff9999;"><strong>💀 GAME OVER JIKA:</strong></p>
             <ul style="text-align: left; margin: 5px auto; width: fit-content; color: #ddd;">
                 <li>Kehabisan Waktu (3 Menit)</li>
                 <li>Skor menjadi Negatif (< 0)</li>
             </ul>
-            <p style="margin-top:10px; font-weight:bold; color: #aaffaa; border: 1px solid #aaffaa; padding: 5px; border-radius: 5px;">
-                🏆 Jika skor kedua pemain positif, pemenang adalah pemain yang bertahan (TIDAK kehabisan waktu)!
-            </p>
         </div>
 
         <button class="btn-start" onclick="game.start()">MULAI DUEL</button>
@@ -620,6 +622,16 @@
                 // Update Score logic
                 this.state[player].score += value;
                 this.updateScoreUI();
+
+                // -----------------------------------------------------
+                // NEW RULE: Check for Win (Score >= 30)
+                // -----------------------------------------------------
+                if (this.state[player].score >= 30) {
+                    const winnerName = this.state[player].name;
+                    this.endGame(winnerName, `RACE TO 30: ${winnerName} Mencapai Skor 30!`);
+                    return;
+                }
+                // -----------------------------------------------------
 
                 // Check Negative Score Death
                 if (this.state[player].score < 0) {
