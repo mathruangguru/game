@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Battle Akar Kuadrat (Layered Edition)</title>
+    <title>Battle Akar Kuadrat (Single & Multi)</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,18 +16,16 @@
 
     <style>
         :root {
-            /* Palette - Menggunakan Tema Kelipatan (Ungu) */
+            /* Palette */
             --bg-color: #2b1055; 
-            --bg-gradient: radial-gradient(circle at center, #4b1d85 0%, #2b1055 100%);
+            --bg-gradient: radial-gradient(circle at center top, #4b1d85 0%, #2b1055 100%);
             --p1-color: #00d2ff; 
             --p1-dark: #009ac2;
-            --p1-bg: rgba(0, 210, 255, 0.15);
+            --p1-bg: rgba(0, 210, 255, 0.2);
             --p2-color: #ff47bc; 
             --p2-dark: #c2007e;
-            --p2-bg: rgba(255, 71, 188, 0.15);
+            --p2-bg: rgba(255, 71, 188, 0.2);
             --gold: #ffd700;
-            --card-bg: #ffffff;
-            --card-text: #2b1055;
             --text-color: #ffffff;
             --danger: #ff3333;
         }
@@ -38,18 +36,42 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        body {
+        html, body {
             margin: 0;
             padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
             background-color: var(--bg-color);
             background-image: var(--bg-gradient);
             color: var(--text-color);
             font-family: 'Nunito', sans-serif;
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
+        }
+
+        /* --- MODE STYLES --- */
+        /* Hide P2 elements in Single Player Mode */
+        body.single-mode .p2-only { display: none !important; }
+        
+        /* Adjust Layout for Single Player */
+        body.single-mode header {
+            justify-content: center;
+            gap: 20px;
+        }
+        body.single-mode .player-panel {
+            width: 40%;
+            max-width: 300px;
+        }
+        body.single-mode .target-box {
+            max-width: 50%;
+            flex: 1;
+        }
+
+        /* --- MAIN WRAPPER --- */
+        .main-wrapper {
             display: flex;
             flex-direction: column;
+            height: 100vh; 
+            width: 100vw;
         }
 
         /* --- UTILS --- */
@@ -57,45 +79,39 @@
         .flex-center { display: flex; justify-content: center; align-items: center; }
         .font-fredoka { font-family: 'Fredoka', cursive; }
 
-        /* --- SCREENS --- */
+        /* --- OVERLAYS --- */
         #setup-screen, #gameover-screen, #summary-screen, #turn-alert {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-gradient);
+            background: rgba(43, 16, 85, 0.98);
             z-index: 100;
             flex-direction: column;
             text-align: center;
-            padding: 20px;
+            padding: 10px;
+            overflow-y: auto; /* Allow scroll on setup if needed */
         }
 
-        #gameover-screen {
-            background: rgba(20, 5, 40, 0.95);
-            backdrop-filter: blur(10px);
-        }
+        #gameover-screen { background: rgba(20, 5, 40, 0.98); }
+        #summary-screen { background: rgba(0, 0, 0, 0.9); z-index: 150; overflow: hidden; }
 
-        #summary-screen {
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(8px);
-            z-index: 50;
-        }
-
-        /* --- POP UP REBOUND ALERT --- */
+        /* --- ALERTS --- */
         #turn-alert {
-            background: rgba(0,0,0,0.7);
+            background: rgba(0,0,0,0.8);
             z-index: 200;
-            display: none; /* Controlled by JS */
+            display: none; 
             pointer-events: none;
+            overflow: hidden;
         }
         .alert-box {
             background: white;
             color: #2b1055;
             padding: 20px 40px;
             border-radius: 20px;
-            border: 5px solid var(--gold);
+            border: 4px solid var(--gold);
             font-family: 'Fredoka';
-            font-size: 2rem;
+            font-size: 5vmin;
             animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
         }
 
         @keyframes popIn {
@@ -105,86 +121,140 @@
 
         h1 {
             font-family: 'Fredoka', cursive;
-            font-size: clamp(2rem, 5vw, 4rem);
+            font-size: 8vmin;
             text-transform: uppercase;
             letter-spacing: 2px;
-            margin-bottom: 20px;
+            margin-bottom: 1.5vh;
             color: #fff;
-            text-shadow: 4px 4px 0px #000;
+            text-shadow: 3px 3px 0px #000;
             line-height: 1.1;
+            margin-top: 2vh;
         }
 
-        /* --- INPUTS & BUTTONS --- */
+        /* --- SETUP UI --- */
+        .mode-selector {
+            display: flex;
+            gap: 2vw;
+            margin-bottom: 2vh;
+            background: rgba(0,0,0,0.3);
+            padding: 1vh;
+            border-radius: 50px;
+        }
+        
+        .btn-mode {
+            background: transparent;
+            border: 2px solid rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.7);
+            padding: 1vh 4vw;
+            border-radius: 30px;
+            font-family: 'Fredoka';
+            font-weight: bold;
+            font-size: 3.5vmin;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-mode.active {
+            background: var(--p1-color);
+            color: #fff;
+            border-color: var(--p1-color);
+            box-shadow: 0 0 15px var(--p1-bg);
+            transform: scale(1.05);
+        }
+
         .input-group {
             display: flex;
             gap: 15px;
-            margin-bottom: 20px;
+            margin-bottom: 2vh;
             align-items: center;
-            flex-wrap: wrap;
             justify-content: center;
+            transition: all 0.3s ease;
         }
 
         .name-input {
             font-family: 'Fredoka', cursive;
-            font-size: clamp(1rem, 2.5vw, 1.5rem);
-            padding: 10px;
-            border-radius: 50px;
+            font-size: 3.5vmin;
+            padding: 1vh 2vw;
+            border-radius: 30px;
             border: 3px solid #fff;
             background: rgba(255,255,255,0.1);
             color: #fff;
             text-align: center;
-            width: clamp(150px, 30vw, 250px);
+            width: 30vw;
             outline: none;
         }
         #input-p1 { border-color: var(--p1-color); }
         #input-p2 { border-color: var(--p2-color); }
 
+        /* --- DIFFICULTY SELECTOR --- */
+        .diff-container {
+            margin-bottom: 3vh;
+            display: flex;
+            flex-direction: column;
+            gap: 1vh;
+            align-items: center;
+        }
+        .diff-label { font-family: 'Fredoka'; font-size: 3vmin; color: var(--gold); letter-spacing: 1px; }
+        .diff-options { display: flex; gap: 2vw; background: rgba(0,0,0,0.3); padding: 1vh; border-radius: 50px; }
+        .btn-diff {
+            background: transparent;
+            border: 2px solid rgba(255,255,255,0.3);
+            color: rgba(255,255,255,0.6);
+            padding: 1vh 3vw;
+            border-radius: 30px;
+            font-family: 'Fredoka';
+            font-weight: bold;
+            font-size: 3vmin;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-diff.active {
+            background: var(--gold); color: #5a3e00; border-color: var(--gold);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); transform: scale(1.05);
+        }
+
         .btn-primary {
             font-family: 'Fredoka', cursive;
             background: linear-gradient(180deg, #ffd700, #ffaa00);
             border: 3px solid #fff;
-            padding: 10px 40px;
-            font-size: clamp(1.2rem, 3vw, 2rem);
+            padding: 1.5vh 6vw;
+            font-size: 4.5vmin;
             font-weight: 600;
             color: #5a3e00;
-            border-radius: 60px;
+            border-radius: 40px;
             cursor: pointer;
-            box-shadow: 0 6px 0 #b37700;
+            box-shadow: 0 0.6vh 0 #b37700;
             transition: transform 0.1s;
         }
-        .btn-primary:active { transform: translateY(6px); box-shadow: 0 0 0 #b37700; }
+        .btn-primary:active { transform: translateY(0.6vh); box-shadow: 0 0 0 #b37700; }
 
         .btn-green {
-            background: #00cc00;
-            color: white;
-            box-shadow: 0 4px 0 #008000;
-            border: none;
-            border-radius: 15px;
-            padding: 15px 30px;
-            font-size: 1.2rem;
-            cursor: pointer;
+            background: #00cc00; color: white; box-shadow: 0 0.6vh 0 #008000;
+            border: none; border-radius: 15px; padding: 1.5vh 5vw; font-size: 4vmin; cursor: pointer;
         }
-        .btn-green:active { transform: translateY(4px); box-shadow: none; }
+        .btn-green:active { transform: translateY(0.6vh); box-shadow: none; }
 
         /* --- HUD --- */
         header {
-            height: 18vh; 
+            flex: 0 0 auto; 
+            height: 25vh; 
             min-height: 100px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            padding: 5px 10px;
-            background: rgba(0,0,0,0.3);
-            border-bottom: 2px solid rgba(255,255,255,0.1);
+            align-items: stretch;
+            padding: 1vh 1.5vw;
+            background: rgba(43, 16, 85, 0.95);
+            border-bottom: 3px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            z-index: 10;
         }
 
         .player-panel {
-            width: 25%;
-            height: 100%;
-            border-radius: 12px;
-            padding: 5px;
+            width: 26%;
+            border-radius: 15px;
+            padding: 0.5vh 1vw;
             position: relative;
-            border: 2px solid transparent;
+            border: 3px solid transparent;
             transition: all 0.3s;
             display: flex;
             flex-direction: column;
@@ -194,26 +264,24 @@
         .p1-panel { border-color: var(--p1-color); background: rgba(255,255,255,0.05); }
         .p2-panel { border-color: var(--p2-color); background: rgba(255,255,255,0.05); text-align: right; }
 
-        .active-p1 { background: var(--p1-bg); box-shadow: 0 0 15px var(--p1-color); }
-        .active-p2 { background: var(--p2-bg); box-shadow: 0 0 15px var(--p2-color); }
+        .active-p1 { background: var(--p1-bg); box-shadow: 0 0 20px var(--p1-color); }
+        .active-p2 { background: var(--p2-bg); box-shadow: 0 0 20px var(--p2-color); }
         .inactive { opacity: 0.6; filter: grayscale(80%); }
 
         .turn-badge {
             position: absolute;
-            top: -10px; left: 50%; transform: translateX(-50%);
+            top: -1.2vh; left: 50%; transform: translateX(-50%);
             background: white; color: #2b1055;
-            font-size: 0.7rem; font-weight: bold;
-            padding: 2px 8px; border-radius: 10px;
+            font-size: 2.2vmin; font-weight: bold;
+            padding: 0.3vh 1.5vw; border-radius: 15px;
             z-index: 10;
             white-space: nowrap;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
         }
 
         .rebound-badge {
-            background: #ff3333 !important;
-            color: white !important;
-            animation: pulse 1s infinite;
+            background: #ff3333 !important; color: white !important; animation: pulse 1s infinite;
         }
-
         @keyframes pulse {
             0% { transform: translateX(-50%) scale(1); }
             50% { transform: translateX(-50%) scale(1.1); }
@@ -221,262 +289,239 @@
         }
 
         .timer-badge {
-            position: absolute; top: 5px;
-            font-family: 'Fredoka', monospace;
-            font-size: clamp(0.8rem, 2vw, 1.2rem);
-            font-weight: bold;
-            padding: 2px 6px; border-radius: 6px;
-            background: rgba(0,0,0,0.3); color: rgba(255,255,255,0.5);
+            position: absolute; top: 0.5vh;
+            font-family: 'Fredoka', monospace; font-size: 3.5vmin; font-weight: bold;
+            padding: 0.3vh 1vw; border-radius: 8px;
+            background: rgba(0,0,0,0.4); color: rgba(255,255,255,0.7);
         }
         .p1-panel .timer-badge { right: 5px; }
         .p2-panel .timer-badge { left: 5px; }
         
         .active-timer {
-            background: #ff3333 !important;
-            color: white !important;
-            box-shadow: 0 0 8px red;
-            transform: scale(1.1);
+            background: #ff3333 !important; color: white !important;
+            box-shadow: 0 0 10px red; transform: scale(1.1);
         }
 
         .player-name {
-            font-family: 'Fredoka', cursive;
-            font-size: clamp(0.8rem, 2vw, 1.2rem);
-            margin-top: 5px;
+            font-family: 'Fredoka', cursive; font-size: 4vmin; margin-top: 1vh;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
 
-        .hearts { display: flex; gap: 2px; margin-top: 5px; }
+        .hearts { display: flex; gap: 0.3vw; margin-top: 0.5vh; height: 3vh; align-items: center; }
         .p2-panel .hearts { justify-content: flex-end; }
-        
-        /* Streak Styles */
+        .icon-heart { width: 3.5vmin; height: 3.5vmin; fill: #555; }
+        .icon-heart.filled { fill: #ff3333; filter: drop-shadow(0 0 3px red); }
+
         .streak-container {
-            display: flex; align-items: center; gap: 3px;
-            margin-top: 10px; font-weight: bold; font-size: 0.9rem;
+            display: flex; align-items: center; gap: 0.3vw;
+            margin-top: 0.5vh; font-weight: bold; font-size: 3vmin;
             color: var(--gold);
         }
         .p2-panel .streak-container { justify-content: flex-end; }
         
         .streak-dot {
-            width: 10px; height: 10px; border-radius: 50%;
-            background: rgba(255,255,255,0.2);
-            border: 1px solid rgba(255,255,255,0.5);
+            width: 2.5vmin; height: 2.5vmin; border-radius: 50%;
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.5);
+            display: none; /* Hidden by default, shown by JS based on target streak */
         }
-        .streak-active { background: var(--gold); box-shadow: 0 0 5px var(--gold); border-color: #fff; }
+        .streak-dot.visible { display: block; }
+        .streak-active { background: var(--gold); box-shadow: 0 0 8px var(--gold); border-color: #fff; }
 
         /* --- TARGET BOX --- */
         .target-box {
-            flex: 1; height: 95%; max-width: 300px;
+            flex: 1; 
             background: white; border: 4px solid var(--gold);
             border-radius: 15px;
             display: flex; flex-direction: column;
             justify-content: center; align-items: center;
-            box-shadow: 0 4px 0 #b37700;
-            margin: 0 10px;
-            z-index: 5;
-            padding: 5px;
-            overflow: hidden;
-            position: relative;
+            box-shadow: 0 0.6vh 0 #b37700;
+            margin: 0 1.5vw; padding: 0.5vh;
+            overflow: hidden; position: relative;
+            max-width: 45%;
         }
-        .target-label { color: #888; font-size: 0.7rem; font-weight: bold; letter-spacing: 1px; }
-        .target-level { position: absolute; top: 0; left: 0; width: 100%; background: var(--gold); color: #5a3e00; font-size: 0.6rem; font-weight: bold; text-align: center; padding: 2px; }
+        .target-label { color: #888; font-size: 2.5vmin; font-weight: bold; letter-spacing: 1px; margin-top: 1.5vh;}
+        .target-level { 
+            position: absolute; top: 0; left: 0; width: 100%; 
+            background: var(--gold); color: #5a3e00; 
+            font-size: 2.5vmin; font-weight: bold; 
+            text-align: center; padding: 0.3vh; 
+        }
         .target-math { 
-            color: #2b1055; 
-            font-size: clamp(1.2rem, 3vw, 1.8rem); 
-            font-weight: bold; 
-            line-height: 1.2; 
-            margin: 5px 0;
-            width: 100%;
-            text-align: center;
+            color: #2b1055; font-size: 6vmin; font-weight: bold; 
+            line-height: 1.2; margin: 0.5vh 0; width: 100%; text-align: center;
         }
 
-        /* --- GRID --- */
+        /* --- GRID AREA --- */
         #game-area {
-            flex: 1;
+            flex: 1; width: 100%; overflow: hidden;
             display: flex; justify-content: center; align-items: center;
-            padding: 10px;
-            overflow: hidden;
+            padding: 1vh 2vw;
         }
 
         .grid-container {
-            width: 100%; height: 100%; max-width: 600px;
-            background: rgba(0,0,0,0.2);
-            border: 2px solid rgba(255,255,255,0.1);
-            border-radius: 15px;
-            padding: 10px;
+            width: 100%; max-width: 95vw; height: 100%;
             display: grid;
-            grid-template-columns: repeat(10, 1fr); /* 10 kolom */
-            grid-template-rows: auto;
-            gap: 4px;
-            overflow-y: auto;
-            align-content: center;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 0.6vmin; padding-bottom: 0;
         }
 
         .grid-cell {
-            background: white;
-            color: #2b1055;
-            border-radius: 8px;
-            border: none;
-            font-family: 'Fredoka', sans-serif;
-            font-weight: bold;
-            font-size: clamp(0.8rem, 2.5vmin, 1.2rem);
+            background: white; color: #2b1055;
+            border-radius: 10px; border: none;
+            font-family: 'Fredoka', sans-serif; font-weight: bold;
+            font-size: 3.5vmin;
             display: flex; justify-content: center; align-items: center;
             cursor: pointer;
-            box-shadow: 0 3px 0 #b0b0b0;
-            transition: all 0.1s;
-            padding: 0;
-            aspect-ratio: 1/1; /* Kotak sempurna */
+            box-shadow: 0 0.4vh 0 #b0b0b0; transition: all 0.1s;
+            height: 100%; min-height: 0;
         }
         
-        .grid-cell:active { transform: translateY(3px); box-shadow: none; }
+        .grid-cell:active { transform: translateY(0.4vh); box-shadow: none; }
         .grid-cell:disabled { cursor: default; }
-
-        .cell-correct { background: #88ff00 !important; box-shadow: 0 3px 0 #55aa00 !important; transform: scale(1.05); z-index: 2; }
-        .cell-wrong { background: #ff3333 !important; color: white !important; box-shadow: 0 3px 0 #990000 !important; opacity: 0.5; transform: scale(0.9); }
-        .cell-inactive { opacity: 0.5; }
+        .cell-correct { background: #88ff00 !important; box-shadow: 0 0.4vh 0 #55aa00 !important; transform: scale(1.05); z-index: 2; }
+        .cell-wrong { background: #ff3333 !important; color: white !important; box-shadow: 0 0.4vh 0 #990000 !important; opacity: 0.5; transform: scale(0.9); }
 
         /* --- FOOTER --- */
         footer {
-            height: 10vh; min-height: 50px;
-            display: flex; justify-content: center; align-items: center;
-            background: rgba(0,0,0,0.4);
-            font-size: 0.9rem;
-            color: rgba(255,255,255,0.6);
-            text-align: center;
-            padding: 0 20px;
+            flex: 0 0 auto; padding: 1vh; font-size: 2.5vmin;
+            color: rgba(255,255,255,0.6); text-align: center; background: rgba(0,0,0,0.2);
         }
-
-        /* --- SVG ICONS --- */
-        .icon-heart { width: 14px; height: 14px; fill: #666; }
-        .icon-heart.filled { fill: #ff3333; }
 
     </style>
 </head>
 <body>
-
-    <!-- ALERT OVERLAY (For Turn Switching) -->
-    <div id="turn-alert" class="flex-center">
-        <div class="alert-box">
-            <div id="alert-icon" style="font-size: 3rem; margin-bottom: 10px;">⚠️</div>
-            <div id="alert-msg">SALAH!</div>
-            <div id="alert-sub" style="font-size: 1rem; color:#666; margin-top:5px;">Giliran dilempar ke lawan</div>
-        </div>
-    </div>
-
-    <!-- SETUP SCREEN -->
-    <div id="setup-screen" class="flex-center">
-        <h1>Battle<br><span style="color:var(--gold); font-size:0.6em; font-family:'Nunito'">AKAR KUADRAT</span></h1>
-        
-        <div class="input-group">
-            <input type="text" id="p1-name" class="name-input" placeholder="Nama P1" value="Player 1">
-            <span style="font-size:2rem; font-weight:bold">VS</span>
-            <input type="text" id="p2-name" class="name-input" placeholder="Nama P2" value="Player 2">
+    <div class="main-wrapper">
+        <!-- ALERT OVERLAY -->
+        <div id="turn-alert" class="flex-center">
+            <div class="alert-box">
+                <div id="alert-icon" style="font-size: 10vmin; margin-bottom: 1.5vh;">⚠️</div>
+                <div id="alert-msg">SALAH!</div>
+                <div id="alert-sub" style="font-size: 4vmin; color:#666; margin-top:1vh;">Giliran dilempar ke lawan</div>
+            </div>
         </div>
 
-        <!-- Rules Box Updated -->
-        <div style="background:rgba(0,0,0,0.4); padding:20px; border-radius:15px; margin-bottom:30px; border:1px solid rgba(255,255,255,0.1); max-width:500px; text-align:left; width:90%;">
-            <h3 style="margin-top:0; text-align:center; color:var(--gold); font-family:'Fredoka'; letter-spacing:1px; margin-bottom:15px;">PERATURAN</h3>
-            <ul style="padding-left:20px; margin:0; font-size:0.95rem; line-height:1.5; color:#eee;">
-                <li style="margin-bottom:8px;">🎯 <strong>Misi:</strong> Cari 2 Akar dari persamaan kuadrat (Rentang -24 s.d. 25).</li>
-                <li style="margin-bottom:8px;">📈 <strong>Bertingkat:</strong> Soal semakin sulit (7 Tipe). Ganti tipe tiap 2 soal.</li>
-                <li style="margin-bottom:8px;">⚠️ <strong>SALAH = LEMPAR:</strong> Jika salah klik, nyawa -1 dan giliran <strong>dilempar ke lawan</strong>.</li>
-                <li style="margin-bottom:8px;">🚫 <strong>GAGAL TOTAL:</strong> Jika lawan yang menerima lemparan juga salah, <strong>soal hangus</strong>.</li>
-                <li style="margin-bottom:8px;">🏆 <strong>Menang Instan:</strong> Dapatkan Streak <strong>PERFECT</strong> (Menjawab Benar) 5x berturut-turut.</li>
-            </ul>
-        </div>
-
-        <button class="btn-primary" onclick="Game.start()">MULAI BATTLE</button>
-    </div>
-
-    <!-- GAME OVER SCREEN -->
-    <div id="gameover-screen" class="flex-center hidden">
-        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="gold" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:20px; filter:drop-shadow(0 0 10px gold);">
-            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
-            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
-            <path d="M4 22h16"></path>
-            <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
-            <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
-            <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
-        </svg>
-        <h1>SELESAI!</h1>
-        <h2 id="winner-text" style="color:var(--p1-color); margin-bottom:10px;">Player 1 Menang!</h2>
-        <p id="win-reason" style="background:rgba(255,255,255,0.1); padding:10px 20px; border-radius:10px; margin-bottom:30px; font-size:1.2rem; max-width: 80%;">Alasan</p>
-
-        <button class="btn-primary" onclick="Game.setup()">MAIN LAGI</button>
-    </div>
-
-    <!-- SUMMARY POPUP -->
-    <div id="summary-screen" class="flex-center hidden">
-        <div style="background:white; color:#2b1055; padding:30px; border-radius:20px; max-width:90%; border:4px solid var(--gold);">
-            <h2 class="font-fredoka" style="margin-top:0;">RONDE SELESAI</h2>
-            <p id="summary-msg" style="font-size:1.2rem; font-weight:bold; margin-bottom:20px;">Pesan</p>
-            <button class="btn-green font-fredoka" onclick="Game.nextRound(true)">LANJUT SOAL BARU ▶</button>
-        </div>
-    </div>
-
-    <!-- MAIN HUD -->
-    <header id="game-hud" class="hidden">
-        <!-- P1 Panel -->
-        <div id="p1-panel" class="player-panel p1-panel">
-            <div id="p1-turn-badge" class="turn-badge hidden">GILIRANMU</div>
-            <div id="p1-timer" class="timer-badge">03:00</div>
+        <!-- SETUP SCREEN -->
+        <div id="setup-screen" class="flex-center">
+            <h1>Battle<br><span style="color:var(--gold); font-size:0.6em; font-family:'Nunito'">AKAR KUADRAT</span></h1>
             
-            <div>
-                <div id="hud-p1-name" class="player-name">Player 1</div>
-                <div class="hearts" id="p1-hearts"></div>
+            <!-- Mode Selector -->
+            <div class="mode-selector">
+                <button id="btn-mode-1p" class="btn-mode" onclick="Game.setMode('single')">1 PLAYER</button>
+                <button id="btn-mode-2p" class="btn-mode active" onclick="Game.setMode('multi')">2 PLAYERS</button>
             </div>
-            
-            <div class="streak-container">
-                <span>Streak:</span>
-                <div id="p1-s1" class="streak-dot"></div>
-                <div id="p1-s2" class="streak-dot"></div>
-                <div id="p1-s3" class="streak-dot"></div>
-                <div id="p1-s4" class="streak-dot"></div>
-                <div id="p1-s5" class="streak-dot"></div>
+
+            <div class="input-group">
+                <input type="text" id="p1-name" class="name-input" placeholder="Nama P1" value="Player 1">
+                <span id="vs-label" style="font-size:6vmin; font-weight:bold; color:var(--gold)">VS</span>
+                <input type="text" id="p2-name" class="name-input p2-only" placeholder="Nama P2" value="Player 2">
+            </div>
+
+            <!-- DIFFICULTY SELECTION -->
+            <div class="diff-container">
+                <div class="diff-label">PILIH TINGKAT KESULITAN:</div>
+                <div class="diff-options">
+                    <button id="btn-easy" class="btn-diff active" onclick="Game.setDifficulty('easy')">EASY</button>
+                    <button id="btn-medium" class="btn-diff" onclick="Game.setDifficulty('medium')">MEDIUM</button>
+                    <button id="btn-hard" class="btn-diff" onclick="Game.setDifficulty('hard')">HARD</button>
+                </div>
+            </div>
+
+            <!-- Rules Box Updated -->
+            <div style="background:rgba(0,0,0,0.4); padding:2vh 2vw; border-radius:20px; margin-bottom:3vh; border:2px solid rgba(255,255,255,0.1); max-width:850px; text-align:left;">
+                <h3 style="margin-top:0; text-align:center; color:var(--gold); font-family:'Fredoka'; letter-spacing:1px; font-size:4vmin; margin-bottom:1.5vh;">PERATURAN</h3>
+                <!-- Dynamic Rules based on mode -->
+                <ul id="rules-list" style="padding-left:20px; margin:0; font-size:3vmin; line-height:1.5; color:#eee;">
+                    <!-- Injected via JS -->
+                </ul>
+            </div>
+
+            <button class="btn-primary" onclick="Game.start()">MULAI BATTLE</button>
+        </div>
+
+        <!-- GAME OVER SCREEN -->
+        <div id="gameover-screen" class="flex-center hidden">
+            <svg width="18vmin" height="18vmin" viewBox="0 0 24 24" fill="none" stroke="gold" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:2vh; filter:drop-shadow(0 0 15px gold);">
+                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+                <path d="M4 22h16"></path>
+                <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
+                <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
+                <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+            </svg>
+            <h1>SELESAI!</h1>
+            <h2 id="winner-text" style="color:var(--p1-color); margin-bottom:1.5vh; font-size: 7vmin;">Menang!</h2>
+            <p id="win-reason" style="background:rgba(255,255,255,0.1); padding:1.5vh 3vw; border-radius:15px; margin-bottom:3vh; font-size:3.5vmin; max-width: 85%;">Alasan</p>
+
+            <button class="btn-primary" onclick="Game.setup()">MAIN LAGI</button>
+        </div>
+
+        <!-- SUMMARY POPUP -->
+        <div id="summary-screen" class="flex-center hidden">
+            <div style="background:white; color:#2b1055; padding:4vh 4vw; border-radius:30px; max-width:85vw; border:0.8vmin solid var(--gold);">
+                <h2 class="font-fredoka" style="margin-top:0; font-size: 6vmin;">RONDE SELESAI</h2>
+                <p id="summary-msg" style="font-size:4vmin; font-weight:bold; margin-bottom:3vh;">Pesan</p>
+                <button class="btn-green font-fredoka" onclick="Game.nextRound(true)">LANJUT SOAL BARU ▶</button>
             </div>
         </div>
 
-        <!-- Target Center -->
-        <div class="target-box">
-            <div id="level-indicator" class="target-level">LEVEL 1</div>
-            <span class="target-label" style="margin-top: 15px;">CARI AKAR (X1, X2)</span>
-            <!-- MathJax Container -->
-            <div id="target-math" class="target-math">
-                \[ x^2 - 5x + 6 = 0 \]
+        <!-- MAIN HUD -->
+        <header id="game-hud" class="hidden">
+            <!-- P1 Panel -->
+            <div id="p1-panel" class="player-panel p1-panel">
+                <div id="p1-turn-badge" class="turn-badge hidden">GILIRANMU</div>
+                <div id="p1-timer" class="timer-badge">03:00</div>
+                
+                <div>
+                    <div id="hud-p1-name" class="player-name">Player 1</div>
+                    <div class="hearts" id="p1-hearts"></div>
+                </div>
+                
+                <div class="streak-container" id="p1-streak-container">
+                    <span>Streak:</span>
+                    <!-- Dots injected via JS -->
+                </div>
             </div>
-        </div>
 
-        <!-- P2 Panel -->
-        <div id="p2-panel" class="player-panel p2-panel">
-            <div id="p2-turn-badge" class="turn-badge hidden">GILIRANMU</div>
-            <div id="p2-timer" class="timer-badge">03:00</div>
-            
-            <div style="display:flex; flex-direction:column; align-items:flex-end;">
-                <div id="hud-p2-name" class="player-name">Player 2</div>
-                <div class="hearts" id="p2-hearts"></div>
+            <!-- Target Center -->
+            <div class="target-box">
+                <div id="level-indicator" class="target-level">LEVEL 1</div>
+                <span class="target-label">CARI AKAR (X1, X2)</span>
+                <!-- MathJax Container -->
+                <div id="target-math" class="target-math">
+                    \[ x^2 - 5x + 6 = 0 \]
+                </div>
             </div>
-            
-            <div class="streak-container">
-                <div id="p2-s5" class="streak-dot"></div>
-                <div id="p2-s4" class="streak-dot"></div>
-                <div id="p2-s3" class="streak-dot"></div>
-                <div id="p2-s2" class="streak-dot"></div>
-                <div id="p2-s1" class="streak-dot"></div>
-                <span>:Streak</span>
+
+            <!-- P2 Panel (Hidden in Single Player) -->
+            <div id="p2-panel" class="player-panel p2-panel p2-only">
+                <div id="p2-turn-badge" class="turn-badge hidden">GILIRANMU</div>
+                <div id="p2-timer" class="timer-badge">03:00</div>
+                
+                <div style="display:flex; flex-direction:column; align-items:flex-end;">
+                    <div id="hud-p2-name" class="player-name">Player 2</div>
+                    <div class="hearts" id="p2-hearts"></div>
+                </div>
+                
+                <div class="streak-container" id="p2-streak-container">
+                    <!-- Dots injected via JS -->
+                    <span>:Streak</span>
+                </div>
             </div>
-        </div>
-    </header>
+        </header>
 
-    <!-- GRID AREA -->
-    <section id="game-area" class="hidden">
-        <div class="grid-container" id="grid">
-            <!-- JS will inject buttons here -->
-        </div>
-    </section>
+        <!-- GRID AREA -->
+        <section id="game-area" class="hidden">
+            <div class="grid-container" id="grid">
+                <!-- JS will inject buttons here -->
+            </div>
+        </section>
 
-    <!-- FOOTER -->
-    <footer id="game-footer" class="hidden">
-        Cari dan klik dua angka akar yang benar (-24 s.d 25)
-    </footer>
+        <!-- FOOTER -->
+        <footer id="game-footer" class="hidden">
+            Cari dan klik dua angka akar yang benar (-24 s.d 25).
+        </footer>
+    </div>
 
     <script>
         // --- AUDIO ENGINE ---
@@ -497,8 +542,8 @@
 
                 if (type === 'correct') {
                     osc.type = 'sine';
-                    osc.frequency.setValueAtTime(523, now); // C5
-                    osc.frequency.setValueAtTime(659, now + 0.1); // E5
+                    osc.frequency.setValueAtTime(523, now); 
+                    osc.frequency.setValueAtTime(659, now + 0.1); 
                     gain.gain.setValueAtTime(0.2, now);
                     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
                     osc.start(now); osc.stop(now + 0.3);
@@ -534,23 +579,71 @@
         // --- GAME LOGIC ---
         const Game = {
             state: {
-                players: [
-                    { name: 'P1', lives: 5, time: 180, streak: 0 },
-                    { name: 'P2', lives: 5, time: 180, streak: 0 }
-                ],
+                mode: 'multi', // 'single' or 'multi'
+                players: [],
                 activePlayer: 0,
-                roots: [], // Current correct answers [x1, x2]
-                foundRoots: [], // Track which roots have been clicked
+                roots: [],
+                foundRoots: [],
                 gridStatus: {},
                 isRebound: false,
                 intervalId: null,
-                questionCount: 0 // Track total questions asked
+                difficulty: 'easy'
             },
             
-            // LOGIC CONSTANTS
+            // CONFIG
             GRID_MIN: -24,
             GRID_MAX: 25,
-            TARGET_STREAK: 5, // Updated target streak to 5
+            
+            // Getter for dynamic target streak
+            get TARGET_STREAK() {
+                return this.state.mode === 'single' ? 8 : 5;
+            },
+
+            setMode(mode) {
+                this.state.mode = mode;
+                const btn1 = document.getElementById('btn-mode-1p');
+                const btn2 = document.getElementById('btn-mode-2p');
+                const p2Inputs = document.querySelectorAll('.p2-only');
+                const vsLabel = document.getElementById('vs-label');
+
+                if (mode === 'single') {
+                    btn1.classList.add('active');
+                    btn2.classList.remove('active');
+                    p2Inputs.forEach(el => el.classList.add('hidden'));
+                    vsLabel.classList.add('hidden');
+                } else {
+                    btn1.classList.remove('active');
+                    btn2.classList.add('active');
+                    p2Inputs.forEach(el => el.classList.remove('hidden'));
+                    vsLabel.classList.remove('hidden');
+                }
+                this.updateRulesText();
+            },
+
+            setDifficulty(level) {
+                this.state.difficulty = level;
+                ['easy', 'medium', 'hard'].forEach(l => {
+                    const btn = document.getElementById(`btn-${l}`);
+                    if (l === level) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                });
+            },
+
+            updateRulesText() {
+                const list = document.getElementById('rules-list');
+                const isSingle = this.state.mode === 'single';
+                
+                list.innerHTML = `
+                    <li style="margin-bottom:0.5vh;">🎯 <strong>Misi:</strong> Cari 2 Akar persamaan kuadrat.</li>
+                    <li style="margin-bottom:0.5vh;">📈 <strong>Level:</strong> Soal sesuai level (Easy/Med/Hard).</li>
+                    <li style="margin-bottom:0.5vh;">⚠️ <strong>SALAH:</strong> 
+                        ${isSingle ? "Nyawa -1 dan Streak Reset." : "Nyawa -1 dan giliran <strong>dilempar ke lawan</strong>."}
+                    </li>
+                    <li style="margin-bottom:0.5vh;">🏆 <strong>Menang:</strong> 
+                        ${isSingle ? "Capai <strong>STREAK 8x</strong>." : "Streak <strong>5x</strong> atau lawan mati."}
+                    </li>
+                `;
+            },
 
             getRandomInt(min, max, exclude = []) {
                 let val;
@@ -559,115 +652,79 @@
                 } while (exclude.includes(val));
                 return val;
             },
-            
-            // Helper to format terms like "+ 5", "- 3", or ""
-            formatTerm(val, suffix = "") {
-                if (val === 0) return "";
-                const sign = val > 0 ? "+" : "-";
-                const abs = Math.abs(val);
-                return `${sign} ${abs}${suffix}`;
-            },
 
             generateQuestion() {
-                this.state.questionCount++;
-                const count = this.state.questionCount;
                 let x1, x2, latex, levelLabel;
+                let questionType;
+                const diff = this.state.difficulty;
 
-                // --- LAYERED DIFFICULTY LOGIC (UPDATED: PER 2 SOAL) ---
-                
-                // Helper internal functions
-                const randRoot = () => this.getRandomInt(-24, 25);
+                if (diff === 'easy') {
+                    questionType = this.getRandomInt(1, 3);
+                    levelLabel = `EASY - TIPE ${questionType}`;
+                } else if (diff === 'medium') {
+                    questionType = this.getRandomInt(4, 5);
+                    levelLabel = `MEDIUM - TIPE ${questionType}`;
+                } else {
+                    questionType = this.getRandomInt(6, 7);
+                    levelLabel = `HARD - TIPE ${questionType}`;
+                }
+
                 const randNonZero = () => this.getRandomInt(-24, 25, [0]);
                 
-                // 1. x(x+a)=0  (Soal 1-2)
-                if (count <= 2) {
-                    levelLabel = "LEVEL 1";
-                    x1 = 0;
-                    x2 = randNonZero(); // Akar kedua
-                    // Bentuk x(x - x2) = 0
+                // 1. x(x+a)=0
+                if (questionType === 1) {
+                    x1 = 0; x2 = randNonZero(); 
                     const term = -x2; 
                     const termStr = term > 0 ? `+ ${term}` : `- ${Math.abs(term)}`;
                     latex = `\\[ x(x ${termStr}) = 0 \\]`;
                 }
-                
-                // 2. ax(x+b)=0 (Soal 3-4) -> Sama akarnya dengan level 1, tapi ada koefisien depan
-                else if (count <= 4) {
-                    levelLabel = "LEVEL 2";
-                    x1 = 0;
-                    x2 = randNonZero();
-                    const a = this.getRandomInt(2, 5); // Koefisien depan kecil
+                // 2. ax(x+b)=0
+                else if (questionType === 2) {
+                    x1 = 0; x2 = randNonZero();
+                    const a = this.getRandomInt(2, 5); 
                     const term = -x2;
                     const termStr = term > 0 ? `+ ${term}` : `- ${Math.abs(term)}`;
                     latex = `\\[ ${a}x(x ${termStr}) = 0 \\]`;
                 }
-
-                // 3. (x+a)(x+b)=0 (Soal 5-6) -> Pemfaktoran
-                else if (count <= 6) {
-                    levelLabel = "LEVEL 3";
-                    x1 = randNonZero();
-                    do { x2 = randNonZero(); } while (x1 === x2); // Beda akar
-                    
-                    const a = -x1;
-                    const b = -x2;
-                    
+                // 3. (x+a)(x+b)=0
+                else if (questionType === 3) {
+                    x1 = randNonZero(); do { x2 = randNonZero(); } while (x1 === x2); 
+                    const a = -x1; const b = -x2;
                     const aStr = a > 0 ? `+ ${a}` : `- ${Math.abs(a)}`;
                     const bStr = b > 0 ? `+ ${b}` : `- ${Math.abs(b)}`;
-                    
                     latex = `\\[ (x ${aStr})(x ${bStr}) = 0 \\]`;
                 }
-
-                // 4. (x+a)(x-a)=0 (Soal 7-8) -> Selisih kuadrat bentuk faktor
-                else if (count <= 8) {
-                    levelLabel = "LEVEL 4";
-                    const a = Math.abs(randNonZero()); // Pastikan a positif untuk display
-                    x1 = -a;
-                    x2 = a;
-                    
+                // 4. (x+a)(x-a)=0
+                else if (questionType === 4) {
+                    const a = Math.abs(randNonZero());
+                    x1 = -a; x2 = a;
                     latex = `\\[ (x + ${a})(x - ${a}) = 0 \\]`;
                 }
-
-                // 5. x^2 + bx = 0 (Soal 9-10) -> Polinomial tanpa c
-                else if (count <= 10) {
-                    levelLabel = "LEVEL 5";
-                    x1 = 0;
-                    x2 = randNonZero();
-                    
-                    // x^2 - (sum)x = 0 -> sum = x2
+                // 5. x^2 + bx = 0
+                else if (questionType === 5) {
+                    x1 = 0; x2 = randNonZero();
                     const b = -x2;
                     let bStr = b > 0 ? `+ ${b}x` : `- ${Math.abs(b)}x`;
                     if (Math.abs(b) === 1) bStr = b > 0 ? `+ x` : `- x`;
-                    
                     latex = `\\[ x^2 ${bStr} = 0 \\]`;
                 }
-
-                // 6. x^2 - a^2 = 0 (Soal 11-12) -> Selisih kuadrat bentuk umum
-                else if (count <= 12) {
-                    levelLabel = "LEVEL 6";
+                // 6. x^2 - a^2 = 0
+                else if (questionType === 6) {
                     const a = Math.abs(randNonZero());
-                    x1 = a;
-                    x2 = -a;
+                    x1 = a; x2 = -a;
                     const c = a * a;
-                    
                     latex = `\\[ x^2 - ${c} = 0 \\]`;
                 }
-
-                // 7. x^2 + bx + c = 0 (Soal 13++) -> Bentuk Umum
+                // 7. x^2 + bx + c = 0
                 else {
-                    levelLabel = "LEVEL MAX";
-                    // Batasi agar hasil kali tidak terlalu besar, tapi akar tetap -24 sd 25
                     do {
                         x1 = this.getRandomInt(-15, 15, [0]); 
                         x2 = this.getRandomInt(-15, 15, [0]);
                     } while (x1 === x2 || x1 === -x2);
-
-                    const b = -(x1 + x2);
-                    const c = x1 * x2;
-
+                    const b = -(x1 + x2); const c = x1 * x2;
                     let bStr = b === 0 ? "" : (b > 0 ? `+ ${b}x` : `- ${Math.abs(b)}x`);
                     if (Math.abs(b) === 1) bStr = (b > 0 ? `+ x` : `- x`);
-                    
                     let cStr = c === 0 ? "" : (c > 0 ? `+ ${c}` : `- ${Math.abs(c)}`);
-                    
                     latex = `\\[ x^2 ${bStr} ${cStr} = 0 \\]`;
                 }
 
@@ -678,13 +735,9 @@
                 const mathContainer = document.getElementById('target-math');
                 mathContainer.innerHTML = latex;
                 
-                // Trigger MathJax re-render
-                if (window.MathJax) {
-                    MathJax.typesetPromise([mathContainer]).catch((err) => console.log(err));
-                }
+                if (window.MathJax) MathJax.typesetPromise([mathContainer]).catch((err) => console.log(err));
             },
 
-            // Game Flow
             setup() {
                 document.getElementById('setup-screen').classList.remove('hidden');
                 document.getElementById('gameover-screen').classList.add('hidden');
@@ -692,32 +745,67 @@
                 document.getElementById('game-area').classList.add('hidden');
                 document.getElementById('game-footer').classList.add('hidden');
                 this.stopTimer();
+                this.setMode('multi'); // Default UI reset
+                this.setDifficulty('easy');
             },
 
             start() {
                 const p1Name = document.getElementById('p1-name').value || 'Player 1';
                 const p2Name = document.getElementById('p2-name').value || 'Player 2';
                 
+                // Initialize Players
                 this.state.players = [
-                    { name: p1Name, lives: 5, time: 180, streak: 0 }, // Updated lives to 5
-                    { name: p2Name, lives: 5, time: 180, streak: 0 }  // Updated lives to 5
+                    { name: p1Name, lives: 5, time: 180, streak: 0 }, 
+                    { name: p2Name, lives: 5, time: 180, streak: 0 }
                 ];
                 this.state.activePlayer = 0;
-                this.state.questionCount = 0; // Reset question counter
+
+                // Adjust UI Body Class
+                if (this.state.mode === 'single') {
+                    document.body.classList.add('single-mode');
+                } else {
+                    document.body.classList.remove('single-mode');
+                }
 
                 document.getElementById('hud-p1-name').textContent = p1Name;
                 document.getElementById('hud-p2-name').textContent = p2Name;
+
+                // Setup Streak Dots in UI
+                this.setupStreakDotsUI();
 
                 document.getElementById('setup-screen').classList.add('hidden');
                 document.getElementById('game-hud').classList.remove('hidden');
                 document.getElementById('game-area').classList.remove('hidden');
                 document.getElementById('game-footer').classList.remove('hidden');
 
-                this.nextRound(true); // Start new round
+                this.nextRound(true); 
                 this.startTimer();
             },
 
-            // New Round = Soal Baru
+            setupStreakDotsUI() {
+                const max = this.TARGET_STREAK;
+                // P1 Dots
+                const p1Container = document.getElementById('p1-streak-container');
+                p1Container.innerHTML = '<span>Streak:</span>';
+                for(let i=1; i<=max; i++) {
+                    const d = document.createElement('div');
+                    d.id = `p1-s${i}`; d.className = 'streak-dot visible';
+                    p1Container.appendChild(d);
+                }
+
+                // P2 Dots
+                const p2Container = document.getElementById('p2-streak-container');
+                p2Container.innerHTML = '';
+                for(let i=max; i>=1; i--) {
+                    const d = document.createElement('div');
+                    d.id = `p2-s${i}`; d.className = 'streak-dot visible';
+                    p2Container.appendChild(d);
+                }
+                const span = document.createElement('span');
+                span.textContent = ':Streak';
+                p2Container.appendChild(span);
+            },
+
             nextRound(isNewQuestion = true) {
                 this.state.gridStatus = {};
                 this.state.isRebound = false;
@@ -761,7 +849,7 @@
                 setTimeout(() => {
                     box.style.display = 'none';
                     if (callback) callback();
-                }, 1500);
+                }, 1500); 
             },
 
             handleGridClick(num) {
@@ -769,7 +857,6 @@
 
                 const roots = this.state.roots;
                 const isCorrect = roots.includes(num);
-                
                 const player = this.state.players[this.state.activePlayer];
                 const btn = document.getElementById(`cell-${num}`);
 
@@ -779,9 +866,9 @@
                     this.state.foundRoots.push(num);
                     btn.className = "grid-cell cell-correct";
 
-                    // Check completeness (Finding both roots)
-                    if (this.state.foundRoots.length === roots.length) { 
-                         this.roundWin();
+                    // Check win
+                    if (this.state.foundRoots.length === roots.length) {  
+                        this.roundWin();
                     }
 
                 } else {
@@ -789,33 +876,41 @@
                     AudioEngine.play('wrong');
                     this.state.gridStatus[num] = 'wrong';
                     player.lives--;
-                    player.streak = 0; // Reset streak
+                    player.streak = 0; 
                     btn.className = "grid-cell cell-wrong";
 
-                    // Cek Kalah
+                    // Check Death
                     if (player.lives <= 0) {
-                        this.endGame(this.state.activePlayer === 0 ? 1 : 0, "Lawan Kehabisan Nyawa!");
+                        if (this.state.mode === 'single') {
+                            this.endGame(1, "Nyawa Habis! Coba Lagi."); // 1 is dummy winner logic
+                        } else {
+                            this.endGame(this.state.activePlayer === 0 ? 1 : 0, "Lawan Kehabisan Nyawa!");
+                        }
                         return;
                     }
 
-                    // LOGIKA REBOUND / LEMPARAN
-                    if (this.state.isRebound) {
-                        // Jika sudah rebound dan salah lagi -> SOAL HANGUS
-                        this.showAlert("☠️", "DUA-DUANYA SALAH!", "Soal Hangus. Ganti Soal Baru.", () => {
-                            // Tukar pemain dulu agar yang salah terakhir tidak jalan duluan
-                            this.state.activePlayer = this.state.activePlayer === 0 ? 1 : 0;
-                            this.nextRound(true);
+                    // Mode Specific Logic on Wrong
+                    if (this.state.mode === 'single') {
+                        // SINGLE PLAYER: Just alert and stay
+                        this.showAlert("❌", "SALAH!", "Streak Reset.", () => {
+                            this.updateHUD();
                         });
                     } else {
-                        // Baru salah pertama kali -> LEMPAR KE LAWAN
-                        this.state.isRebound = true;
-                        const nextPlayerName = this.state.players[this.state.activePlayer === 0 ? 1 : 0].name;
-                        
-                        this.showAlert("🔄", "SALAH TEBAK!", `Giliran dilempar ke ${nextPlayerName}`, () => {
-                            this.state.activePlayer = this.state.activePlayer === 0 ? 1 : 0;
-                            AudioEngine.play('pass');
-                            this.updateHUD(); // Update UI ganti player
-                        });
+                        // MULTI PLAYER: Rebound / Pass Turn
+                        if (this.state.isRebound) {
+                            this.showAlert("☠️", "DUA-DUANYA SALAH!", "Soal Hangus.", () => {
+                                this.state.activePlayer = this.state.activePlayer === 0 ? 1 : 0;
+                                this.nextRound(true);
+                            });
+                        } else {
+                            this.state.isRebound = true;
+                            const nextName = this.state.players[this.state.activePlayer === 0 ? 1 : 0].name;
+                            this.showAlert("🔄", "SALAH!", `Giliran dilempar ke ${nextName}`, () => {
+                                this.state.activePlayer = this.state.activePlayer === 0 ? 1 : 0;
+                                AudioEngine.play('pass');
+                                this.updateHUD(); 
+                            });
+                        }
                     }
                 }
                 this.updateHUD();
@@ -824,24 +919,35 @@
             roundWin() {
                 AudioEngine.play('round_complete');
                 const player = this.state.players[this.state.activePlayer];
-                
                 player.streak++;
                 
-                let msg = this.state.isRebound 
-                     ? `REBOUND SUKSES! Streak: ${player.streak}` 
-                     : `PERFECT! Streak: ${player.streak}`;
-                
+                // Win Check
                 if (player.streak >= this.TARGET_STREAK) {
-                    this.endGame(this.state.activePlayer, "Mencapai 5x PERFECT STREAK!");
+                    const msg = this.state.mode === 'single' 
+                        ? "SOLO MASTER! 8x WIN STREAK!" 
+                        : "CHAMPION! 5x WIN STREAK!";
+                    this.endGame(this.state.activePlayer, msg);
                     return;
+                }
+
+                // Determine message
+                let msg;
+                if (this.state.mode === 'single') {
+                    msg = `BENAR! Streak: ${player.streak} / ${this.TARGET_STREAK}`;
+                } else {
+                    msg = this.state.isRebound 
+                       ? `REBOUND SUKSES! Streak: ${player.streak}`
+                       : `PERFECT! Streak: ${player.streak}`;
                 }
 
                 document.getElementById('summary-msg').textContent = msg;
                 document.getElementById('summary-screen').classList.remove('hidden');
                 document.getElementById('grid').style.pointerEvents = 'none';
                 
-                // Switch turn for next round
-                this.state.activePlayer = this.state.activePlayer === 0 ? 1 : 0;
+                // Switch turn logic
+                if (this.state.mode === 'multi') {
+                    this.state.activePlayer = this.state.activePlayer === 0 ? 1 : 0;
+                }
             },
 
             endGame(winnerIdx, reason) {
@@ -854,10 +960,22 @@
                 document.getElementById('game-footer').classList.add('hidden');
                 document.getElementById('summary-screen').classList.add('hidden');
 
-                AudioEngine.play('win');
-
-                document.getElementById('winner-text').textContent = `${winner.name} Menang!`;
-                document.getElementById('winner-text').style.color = winnerIdx === 0 ? 'var(--p1-color)' : 'var(--p2-color)';
+                if (this.state.mode === 'single') {
+                    if (winnerIdx === 0) { // Player 1
+                        AudioEngine.play('win');
+                        document.getElementById('winner-text').textContent = "KAMU MENANG!";
+                        document.getElementById('winner-text').style.color = "var(--gold)";
+                    } else {
+                        // Logic for Single Player Loss
+                        document.getElementById('winner-text').textContent = "GAME OVER";
+                        document.getElementById('winner-text').style.color = "var(--danger)";
+                    }
+                } else {
+                    AudioEngine.play('win');
+                    document.getElementById('winner-text').textContent = `${winner.name} Menang!`;
+                    document.getElementById('winner-text').style.color = winnerIdx === 0 ? 'var(--p1-color)' : 'var(--p2-color)';
+                }
+                
                 document.getElementById('win-reason').textContent = reason;
             },
 
@@ -865,16 +983,13 @@
             renderGrid() {
                 const grid = document.getElementById('grid');
                 grid.innerHTML = '';
-                // Render from -24 to 25 (Total 50 items)
                 for (let i = this.GRID_MIN; i <= this.GRID_MAX; i++) {
                     const btn = document.createElement('button');
                     btn.id = `cell-${i}`;
                     btn.className = 'grid-cell';
-                    // Rebound logic: preserve wrong status if switching players mid-round
                     if (this.state.isRebound && this.state.gridStatus[i] === 'wrong') {
                         btn.classList.add('cell-wrong');
                     }
-                    
                     btn.textContent = i;
                     btn.onclick = () => this.handleGridClick(i);
                     grid.appendChild(btn);
@@ -892,36 +1007,45 @@
                 const p1Badge = document.getElementById('p1-turn-badge');
                 const p2Badge = document.getElementById('p2-turn-badge');
 
-                if (active === 0) {
-                    p1Panel.classList.add('active-p1'); p1Panel.classList.remove('inactive');
-                    p2Panel.classList.remove('active-p2'); p2Panel.classList.add('inactive');
-                    p1Badge.classList.remove('hidden'); p2Badge.classList.add('hidden');
+                // Single Player visual tweaks
+                if (this.state.mode === 'single') {
+                    p1Panel.classList.add('active-p1');
+                    p1Badge.classList.add('hidden'); // No turn badge needed
                     document.getElementById('p1-timer').classList.add('active-timer');
-                    document.getElementById('p2-timer').classList.remove('active-timer');
                 } else {
-                    p1Panel.classList.remove('active-p1'); p1Panel.classList.add('inactive');
-                    p2Panel.classList.add('active-p2'); p2Panel.classList.remove('inactive');
-                    p1Badge.classList.add('hidden'); p2Badge.classList.remove('hidden');
-                    document.getElementById('p1-timer').classList.remove('active-timer');
-                    document.getElementById('p2-timer').classList.add('active-timer');
+                    // Multi Player Turn Logic
+                    if (active === 0) {
+                        p1Panel.classList.add('active-p1'); p1Panel.classList.remove('inactive');
+                        p2Panel.classList.remove('active-p2'); p2Panel.classList.add('inactive');
+                        p1Badge.classList.remove('hidden'); p2Badge.classList.add('hidden');
+                        document.getElementById('p1-timer').classList.add('active-timer');
+                        document.getElementById('p2-timer').classList.remove('active-timer');
+                    } else {
+                        p1Panel.classList.remove('active-p1'); p1Panel.classList.add('inactive');
+                        p2Panel.classList.add('active-p2'); p2Panel.classList.remove('inactive');
+                        p1Badge.classList.add('hidden'); p2Badge.classList.remove('hidden');
+                        document.getElementById('p1-timer').classList.remove('active-timer');
+                        document.getElementById('p2-timer').classList.add('active-timer');
+                    }
+                    
+                    // Rebound Text
+                    if (this.state.isRebound) {
+                        const txt = "DAPAT LEMPARAN!";
+                        if (active === 0) { p1Badge.textContent = txt; p1Badge.classList.add('rebound-badge'); }
+                        else { p2Badge.textContent = txt; p2Badge.classList.add('rebound-badge'); }
+                    } else {
+                        p1Badge.textContent = "GILIRANMU"; p1Badge.classList.remove('rebound-badge');
+                        p2Badge.textContent = "GILIRANMU"; p2Badge.classList.remove('rebound-badge');
+                    }
                 }
 
-                // Rebound Badge Style
-                if (this.state.isRebound) {
-                    if (active === 0) { p1Badge.textContent = "DAPAT LEMPARAN!"; p1Badge.classList.add('rebound-badge'); }
-                    else { p2Badge.textContent = "DAPAT LEMPARAN!"; p2Badge.classList.add('rebound-badge'); }
-                } else {
-                    p1Badge.textContent = "GILIRANMU"; p1Badge.classList.remove('rebound-badge');
-                    p2Badge.textContent = "GILIRANMU"; p2Badge.classList.remove('rebound-badge');
-                }
-
-                // Lives (Hearts)
+                // Lives
                 this.renderHearts('p1-hearts', p1.lives);
-                this.renderHearts('p2-hearts', p2.lives);
+                if(this.state.mode === 'multi') this.renderHearts('p2-hearts', p2.lives);
 
-                // Streaks Dots Update
+                // Streaks
                 this.renderStreakDots('p1', p1.streak);
-                this.renderStreakDots('p2', p2.streak);
+                if(this.state.mode === 'multi') this.renderStreakDots('p2', p2.streak);
 
                 this.updateTimers();
             },
@@ -930,7 +1054,7 @@
                 const container = document.getElementById(id);
                 container.innerHTML = '';
                 const svgIcon = `<svg class="icon-heart" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
-                for (let i = 0; i < 5; i++) { // Updated to loop 5 times
+                for (let i = 0; i < 5; i++) {
                     const span = document.createElement('span');
                     span.innerHTML = svgIcon;
                     if (i < count) span.querySelector('svg').classList.add('filled');
@@ -939,7 +1063,8 @@
             },
 
             renderStreakDots(playerPrefix, streakCount) {
-                for (let i = 1; i <= 5; i++) { // Updated to loop 5 times
+                const max = this.TARGET_STREAK;
+                for (let i = 1; i <= max; i++) {
                     const dot = document.getElementById(`${playerPrefix}-s${i}`);
                     if (dot) {
                         if (i <= streakCount) dot.classList.add('streak-active');
@@ -955,12 +1080,17 @@
                     return `${m}:${sec}`;
                 };
                 document.getElementById('p1-timer').textContent = fmt(this.state.players[0].time);
-                document.getElementById('p2-timer').textContent = fmt(this.state.players[1].time);
+                if (this.state.mode === 'multi') {
+                    document.getElementById('p2-timer').textContent = fmt(this.state.players[1].time);
+                }
             }
         };
 
         // Initialize
-        window.onload = () => Game.setup();
+        window.onload = () => {
+            Game.setMode('multi'); // Init default
+            Game.setup();
+        };
 
     </script>
 </body>
