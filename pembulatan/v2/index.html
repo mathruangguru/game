@@ -1,0 +1,827 @@
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Rocket, Sparkles, Target, Zap, HelpCircle, Flame, CloudOff } from 'lucide-react';
+
+// Types
+interface Question {
+  qText: number;
+  qLabel: string;
+  answer: number;
+  options: number[];
+  roundTo: number;
+}
+
+interface PlayerState {
+  score: number;
+  currentQ: Question | null;
+  fuel: number;
+  lives: number;
+  qIndex: number;
+}
+
+interface GameState {
+  isPlaying: boolean;
+  time: number;
+  level: string;
+  questionSequence: string[];
+  p1: PlayerState;
+  p2: PlayerState;
+}
+
+type LevelType = 'puluhan' | 'desimal' | 'campuran';
+
+const randInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+function App() {
+  const [state, setState] = useState<GameState>({
+    isPlaying: false,
+    time: 60,
+    level: 'puluhan',
+    questionSequence: [],
+    p1: { score: 0, currentQ: null, fuel: 0, lives: 3, qIndex: 0 },
+    p2: { score: 0, currentQ: null, fuel: 0, lives: 3, qIndex: 0 }
+  });
+
+  const [showStartScreen, setShowStartScreen] = useState(true);
+  const [showEndScreen, setShowEndScreen] = useState(false);
+  const [showHintOverlay, setShowHintOverlay] = useState(false);
+  const [hintPlayer, setHintPlayer] = useState<1 | 2>(1);
+  const [selectedLevel, setSelectedLevel] = useState<LevelType>('puluhan');
+  const [particles1, setParticles1] = useState<Array<{ id: number; isCorrect: boolean }>>([]);
+  const [particles2, setParticles2] = useState<Array<{ id: number; isCorrect: boolean }>>([]);
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Generate question sequence for fairness
+  const generateQuestionSequence = () => {
+    const sequence: string[] = [];
+    const count = 100;
+    
+    for (let i = 0; i < count; i++) {
+      let type = '';
+      const r = Math.random();
+
+      if (selectedLevel === 'puluhan') {
+        type = (r < 0.5) ? 'puluhan' : 'ratusan';
+      } else if (selectedLevel === 'desimal') {
+        type = (r < 0.5) ? 'desimal_tenth' : 'desimal_one';
+      } else {
+        if (r < 0.33) type = 'campuran_ribuan';
+        else if (r < 0.66) type = 'campuran_puluhan';
+        else type = 'campuran_desimal';
+      }
+      sequence.push(type);
+    }
+    return sequence;
+  };
+
+  // Generate question data
+  const generateQuestionData = (type: string): Question => {
+    let number: number, roundTo: number, label: string;
+
+    if (type === 'puluhan' || type === 'campuran_puluhan') {
+      roundTo = 10;
+      number = randInt(11, 99);
+      while (number % 10 === 0) number = randInt(11, 99);
+      label = "Ke Puluhan Terdekat";
+      
+    } else if (type === 'ratusan') {
+      roundTo = 100;
+      number = randInt(101, 999);
+      while (number % 100 === 0) number = randInt(101, 999);
+      label = "Ke Ratusan Terdekat";
+      
+    } else if (type === 'campuran_ribuan') {
+      roundTo = 1000;
+      number = randInt(1100, 9900);
+      while (number % 1000 === 0) number = randInt(1100, 9900);
+      label = "Ke Ribuan Terdekat";
+      
+    } else if (type === 'desimal_tenth' || type === 'campuran_desimal') {
+      const intPart = randInt(0, 20);
+      const tenth = randInt(0, 9);
+      const hundredth = randInt(1, 9);
+      number = intPart + (tenth/10) + (hundredth/100);
+      number = parseFloat(number.toFixed(2));
+      roundTo = 0.1;
+      label = "Ke Sepersepuluhan Terdekat";
+      
+    } else {
+      const intPart = randInt(0, 20);
+      const decimalPart = randInt(1, 99);
+      number = intPart + (decimalPart/100);
+      number = parseFloat(number.toFixed(2));
+      roundTo = 1;
+      label = "Ke Satuan Terdekat";
+    }
+
+    let answer: number;
+    if (roundTo >= 1) {
+      answer = Math.round(number / roundTo) * roundTo;
+    } else {
+      const factor = 1 / roundTo;
+      answer = Math.round(number * factor) / factor;
+      if (roundTo === 0.1) answer = parseFloat(answer.toFixed(1));
+    }
+
+    const options = new Set<number>();
+    options.add(answer);
+
+    while(options.size < 4) {
+      let fake: number;
+      if (roundTo >= 1) {
+        const offset = (Math.floor(Math.random() * 5) - 2) * roundTo;
+        fake = answer + offset;
+        if(fake < 0) fake = 0;
+      } else {
+        const factor = 1 / roundTo;
+        const offset = (Math.floor(Math.random() * 5) - 2) / factor;
+        fake = answer + offset;
+        fake = parseFloat(fake.toFixed(1));
+        if(fake < 0) fake = 0;
+      }
+      if(fake !== answer) options.add(fake);
+    }
+
+    return {
+      qText: number,
+      qLabel: label,
+      answer: answer,
+      options: Array.from(options).sort(() => Math.random() - 0.5),
+      roundTo: roundTo
+    };
+  };
+
+  // New question
+  const newQuestion = (playerNum: 1 | 2) => {
+    if (!state.isPlaying) return;
+    
+    setState(prev => {
+      const playerState = playerNum === 1 ? prev.p1 : prev.p2;
+      if (playerState.lives <= 0) return prev;
+
+      const type = prev.questionSequence[playerState.qIndex] || prev.questionSequence[0];
+      const q = generateQuestionData(type);
+
+      return {
+        ...prev,
+        [playerNum === 1 ? 'p1' : 'p2']: {
+          ...playerState,
+          currentQ: q,
+          qIndex: playerState.qIndex + 1
+        }
+      };
+    });
+  };
+
+  // Show particles
+  const showParticles = (playerNum: 1 | 2, isCorrect: boolean) => {
+    const id = Date.now();
+    if (playerNum === 1) {
+      setParticles1(prev => [...prev, { id, isCorrect }]);
+      setTimeout(() => setParticles1(prev => prev.filter(p => p.id !== id)), 1000);
+    } else {
+      setParticles2(prev => [...prev, { id, isCorrect }]);
+      setTimeout(() => setParticles2(prev => prev.filter(p => p.id !== id)), 1000);
+    }
+  };
+
+  // Handle answer
+  const handleAnswer = (playerNum: 1 | 2, selectedVal: number) => {
+    setState(prev => {
+      const playerState = playerNum === 1 ? prev.p1 : prev.p2;
+      if (playerState.lives <= 0 || !playerState.currentQ) return prev;
+
+      const isCorrect = selectedVal === playerState.currentQ.answer;
+      showParticles(playerNum, isCorrect);
+
+      if (isCorrect) {
+        const newState = {
+          ...prev,
+          [playerNum === 1 ? 'p1' : 'p2']: {
+            ...playerState,
+            score: playerState.score + 100,
+            fuel: Math.min(100, playerState.fuel + 10)
+          }
+        };
+        setTimeout(() => newQuestion(playerNum), 300);
+        return newState;
+      } else {
+        const newLives = playerState.lives - 1;
+        const newState = {
+          ...prev,
+          [playerNum === 1 ? 'p1' : 'p2']: {
+            ...playerState,
+            score: Math.max(0, playerState.score - 50),
+            lives: newLives
+          }
+        };
+        
+        if (newLives > 0) {
+          setTimeout(() => newQuestion(playerNum), 500);
+        }
+        return newState;
+      }
+    });
+  };
+
+  // Show hint
+  const handleShowHint = (playerNum: 1 | 2) => {
+    setState(prev => {
+      const playerState = playerNum === 1 ? prev.p1 : prev.p2;
+      if (playerState.lives <= 0 || playerState.score < 25) return prev;
+
+      setHintPlayer(playerNum);
+      setShowHintOverlay(true);
+
+      return {
+        ...prev,
+        [playerNum === 1 ? 'p1' : 'p2']: {
+          ...playerState,
+          score: playerState.score - 25
+        }
+      };
+    });
+  };
+
+  // Draw number line on canvas
+  useEffect(() => {
+    if (!showHintOverlay || !canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const playerState = hintPlayer === 1 ? state.p1 : state.p2;
+    const q = playerState.currentQ;
+    if (!q) return;
+
+    ctx.clearRect(0, 0, 600, 300);
+    ctx.fillStyle = "#1F2937";
+    ctx.font = "bold 24px Arial";
+
+    const { qText: number, roundTo: step } = q;
+    let lower: number, upper: number;
+
+    if (step >= 1) {
+      lower = Math.floor(number / step) * step;
+      upper = lower + step;
+    } else {
+      const factor = 1 / step;
+      lower = Math.floor(number * factor) / factor;
+      upper = lower + step;
+      lower = parseFloat(lower.toFixed(1));
+      upper = parseFloat(upper.toFixed(1));
+    }
+    
+    const mid = (lower + upper) / 2;
+
+    ctx.beginPath();
+    ctx.moveTo(50, 150);
+    ctx.lineTo(550, 150);
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "#374151";
+    ctx.stroke();
+
+    const drawTick = (x: number, val: number, isMain: boolean) => {
+      ctx.beginPath();
+      ctx.moveTo(x, 140);
+      ctx.lineTo(x, 160);
+      ctx.lineWidth = isMain ? 4 : 2;
+      ctx.stroke();
+      ctx.fillText(val.toString(), x - 20, 190);
+    };
+
+    drawTick(50, lower, true);
+    drawTick(300, mid, false);
+    drawTick(550, upper, true);
+
+    const percent = (number - lower) / step;
+    const xPos = 50 + (percent * 500);
+
+    ctx.beginPath();
+    ctx.arc(xPos, 150, 15, 0, 2 * Math.PI);
+    ctx.fillStyle = "#EF4444";
+    ctx.fill();
+    ctx.fillStyle = "#EF4444";
+    ctx.fillText(number.toString(), xPos - 15, 120);
+  }, [showHintOverlay, hintPlayer, state.p1.currentQ, state.p2.currentQ]);
+
+  // Start game
+  const startGame = () => {
+    const sequence = generateQuestionSequence();
+    
+    // Generate pertanyaan awal untuk kedua player dari tipe yang SAMA (fairness)
+    const q1 = generateQuestionData(sequence[0]);
+    const q2 = generateQuestionData(sequence[0]); // Sama dengan P1, tipe soal yang sama
+    
+    setState({
+      isPlaying: true,
+      time: 60,
+      level: selectedLevel,
+      questionSequence: sequence,
+      p1: { score: 0, currentQ: q1, fuel: 0, lives: 3, qIndex: 1 },
+      p2: { score: 0, currentQ: q2, fuel: 0, lives: 3, qIndex: 1 }
+    });
+    setShowStartScreen(false);
+    setShowEndScreen(false);
+  };
+
+  // Timer effect
+  useEffect(() => {
+    if (state.isPlaying) {
+      timerIntervalRef.current = setInterval(() => {
+        setState(prev => {
+          const newTime = prev.time - 1;
+          if (newTime <= 0) {
+            if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+            setTimeout(() => setShowEndScreen(true), 100);
+            return { ...prev, isPlaying: false, time: 0 };
+          }
+          return { ...prev, time: newTime };
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    };
+  }, [state.isPlaying]);
+
+  const winner = state.p1.score > state.p2.score 
+    ? "PEMENANG: TIM BIRU!" 
+    : state.p2.score > state.p1.score 
+    ? "PEMENANG: TIM MERAH!" 
+    : "SERI!";
+
+  return (
+    <div className="relative w-screen h-screen overflow-hidden bg-slate-950 flex items-center justify-center">
+      {/* Main Container with Fixed Resolution */}
+      <div className="relative w-[960px] h-[540px] overflow-hidden bg-slate-950">
+      {/* Animated Stars Background */}
+      <div className="absolute inset-0">
+        {[...Array(100)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-1 h-1 bg-white rounded-full"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              opacity: [0.2, 1, 0.2],
+              scale: [1, 1.5, 1]
+            }}
+            transition={{
+              duration: Math.random() * 3 + 2,
+              repeat: Infinity,
+              delay: Math.random() * 2
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Planets Decoration */}
+      <motion.div 
+        className="absolute top-10 right-20 w-32 h-32 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 opacity-30 blur-sm"
+        animate={{ y: [0, 20, 0] }}
+        transition={{ duration: 6, repeat: Infinity }}
+      />
+      <motion.div 
+        className="absolute bottom-20 left-10 w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-cyan-400 opacity-20 blur-sm"
+        animate={{ y: [0, -15, 0] }}
+        transition={{ duration: 5, repeat: Infinity }}
+      />
+
+      {/* Start Screen */}
+      <AnimatePresence>
+        {showStartScreen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/95"
+          >
+            <motion.div
+              initial={{ scale: 0.5, y: -50 }}
+              animate={{ scale: 1, y: 0 }}
+              transition={{ type: "spring", duration: 0.8 }}
+            >
+              <div className="flex items-center gap-4 mb-4">
+                <Rocket className="w-20 h-20 text-amber-500" />
+                <h1 className="text-7xl font-black text-amber-500">ROCKET ROUNDING</h1>
+                <Rocket className="w-20 h-20 text-amber-500 rotate-180" />
+              </div>
+            </motion.div>
+            
+            <motion.p 
+              className="text-2xl text-gray-300 mb-12"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              Misi Penyelamatan Angka: Duel Kelas 4 SD
+            </motion.p>
+
+            <div className="flex gap-5 mb-12">
+              {(['puluhan', 'desimal', 'campuran'] as LevelType[]).map((level) => (
+                <motion.button
+                  key={level}
+                  onClick={() => setSelectedLevel(level)}
+                  className={`px-8 py-4 rounded-xl text-xl font-bold border-2 transition-all ${
+                    selectedLevel === level
+                      ? 'bg-amber-500 border-amber-300 text-slate-900 scale-105'
+                      : 'bg-slate-800 border-slate-600 text-white hover:border-amber-500'
+                  }`}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {level === 'puluhan' ? 'Puluhan & Ratusan' : level === 'desimal' ? 'Desimal (Koma)' : 'Campuran (Hard)'}
+                </motion.button>
+              ))}
+            </div>
+
+            <motion.button
+              onClick={startGame}
+              className="px-16 py-6 bg-amber-500 text-slate-900 text-3xl font-black rounded-full shadow-lg shadow-amber-500/40"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              animate={{ 
+                boxShadow: [
+                  '0 0 20px rgba(245, 158, 11, 0.4)',
+                  '0 0 40px rgba(245, 158, 11, 0.8)',
+                  '0 0 20px rgba(245, 158, 11, 0.4)'
+                ]
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              🚀 MULAI MISI
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* End Screen */}
+      <AnimatePresence>
+        {showEndScreen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/95"
+          >
+            <motion.h1 
+              className="text-6xl font-black text-amber-500 mb-6"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", bounce: 0.5 }}
+            >
+              MISI SELESAI!
+            </motion.h1>
+            
+            <motion.h2 
+              className="text-5xl font-bold mb-12"
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              style={{ 
+                color: winner.includes('BIRU') ? '#3B82F6' : winner.includes('MERAH') ? '#EF4444' : '#F59E0B' 
+              }}
+            >
+              {winner}
+            </motion.h2>
+
+            <div className="flex gap-16 text-3xl font-bold mb-12">
+              <motion.div 
+                className="text-blue-500"
+                initial={{ x: -50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.4 }}
+              >
+                Biru: {state.p1.score}
+              </motion.div>
+              <motion.div 
+                className="text-red-500"
+                initial={{ x: 50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.4 }}
+              >
+                Merah: {state.p2.score}
+              </motion.div>
+            </div>
+
+            <motion.button
+              onClick={() => window.location.reload()}
+              className="px-12 py-4 bg-amber-500 text-slate-900 text-2xl font-bold rounded-full"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.6 }}
+            >
+              MAIN LAGI
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Hint Overlay */}
+      <AnimatePresence>
+        {showHintOverlay && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowHintOverlay(false)}
+            className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/90 cursor-pointer"
+          >
+            <h2 className="text-3xl font-bold text-white mb-6">Visualisasi Garis Bilangan</h2>
+            <canvas ref={canvasRef} width="600" height="300" className="bg-white rounded-xl mb-6" />
+            <p className="text-gray-400 text-lg">Ketuk layar untuk kembali</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main Game */}
+      {!showStartScreen && !showEndScreen && (
+        <>
+          {/* Header with Timer */}
+          <header className="h-20 bg-slate-900/80 backdrop-blur-sm border-b-2 border-slate-700 flex items-center justify-center relative z-10">
+            <motion.div 
+              className="px-8 py-3 bg-slate-950 border-2 border-amber-500 rounded-xl"
+              animate={{ 
+                scale: state.time <= 10 ? [1, 1.1, 1] : 1,
+                borderColor: state.time <= 10 ? ['#F59E0B', '#EF4444', '#F59E0B'] : '#F59E0B'
+              }}
+              transition={{ duration: 0.5, repeat: state.time <= 10 ? Infinity : 0 }}
+            >
+              <div className="text-5xl font-black font-mono text-amber-500">{state.time}</div>
+            </motion.div>
+          </header>
+
+          <div className="flex h-[calc(540px-5rem)]">
+            {/* Player 1 Zone */}
+            <PlayerZone
+              playerNum={1}
+              playerState={state.p1}
+              onAnswer={handleAnswer}
+              onShowHint={handleShowHint}
+              particles={particles1}
+            />
+
+            {/* Player 2 Zone */}
+            <PlayerZone
+              playerNum={2}
+              playerState={state.p2}
+              onAnswer={handleAnswer}
+              onShowHint={handleShowHint}
+              particles={particles2}
+            />
+          </div>
+        </>
+      )}
+      </div>
+    </div>
+  );
+}
+
+// Player Zone Component
+function PlayerZone({
+  playerNum,
+  playerState,
+  onAnswer,
+  onShowHint,
+  particles
+}: {
+  playerNum: 1 | 2;
+  playerState: PlayerState;
+  onAnswer: (playerNum: 1 | 2, val: number) => void;
+  onShowHint: (playerNum: 1 | 2) => void;
+  particles: Array<{ id: number; isCorrect: boolean }>;
+}) {
+  const isP1 = playerNum === 1;
+  const color = isP1 ? 'blue' : 'red';
+  const bgGradient = isP1 
+    ? 'from-slate-900 via-blue-950/30 to-slate-900' 
+    : 'from-slate-900 via-red-950/30 to-slate-900';
+
+  const rocketRotation = -90; // Hadap ke atas
+  const fuelPercent = Math.min(100, (playerState.score / 2000) * 100);
+
+  return (
+    <div className={`flex-1 relative bg-gradient-to-b ${bgGradient} border-r-2 border-slate-700 last:border-r-0`}>
+      {/* Particles */}
+      <AnimatePresence>
+        {particles.map(particle => (
+          <motion.div
+            key={particle.id}
+            initial={{ opacity: 1, scale: 0, y: 0 }}
+            animate={{ opacity: 0, scale: 2, y: -200 }}
+            exit={{ opacity: 0 }}
+            className="absolute top-1/2 left-1/2 pointer-events-none z-50"
+          >
+            {particle.isCorrect ? (
+              <Sparkles className="w-24 h-24 text-green-400" />
+            ) : (
+              <Zap className="w-24 h-24 text-red-500" />
+            )}
+          </motion.div>
+        ))}
+      </AnimatePresence>
+
+      <div className="flex flex-col items-center justify-center h-full px-8 py-6 relative z-10">
+        {/* HUD */}
+        <div className="w-full max-w-2xl flex justify-between items-center mb-4">
+          <motion.div 
+            className={`text-6xl font-black ${isP1 ? 'text-blue-500' : 'text-red-500'}`}
+            key={playerState.score}
+            initial={{ scale: 1.2 }}
+            animate={{ scale: 1 }}
+          >
+            {playerState.score}
+          </motion.div>
+          <div className="text-4xl tracking-wider">
+            {[...Array(playerState.lives)].map((_, i) => (
+              <motion.span
+                key={i}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: i * 0.1 }}
+              >
+                ❤️
+              </motion.span>
+            ))}
+          </div>
+        </div>
+
+        {/* Vertical Rocket Trail (Fuel Gauge) */}
+        <div className="w-full max-w-2xl mb-6 relative">
+          <div className="h-6 bg-slate-800 rounded-full overflow-hidden relative border-2 border-slate-600">
+            <motion.div 
+              className={`h-full ${isP1 ? 'bg-blue-500' : 'bg-red-500'}`}
+              style={{ width: `${fuelPercent}%` }}
+              initial={{ width: 0 }}
+              animate={{ width: `${fuelPercent}%` }}
+              transition={{ duration: 0.5 }}
+            />
+            <motion.div
+              className="absolute right-2 top-1/2 -translate-y-1/2"
+              animate={{ x: [0, 5, 0] }}
+              transition={{ duration: 1, repeat: Infinity }}
+            >
+              <Rocket 
+                className={`w-5 h-5 ${isP1 ? 'text-blue-300' : 'text-red-300'}`} 
+                style={{ transform: `rotate(${rocketRotation}deg)` }}
+              />
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Rocket Visual */}
+        <motion.div
+          className="mb-6 relative"
+          animate={{ 
+            y: playerState.lives > 0 ? [0, -10, 0] : [0, 100, 80],
+            rotate: playerState.lives <= 0 ? [0, -15, 15, -10, 0] : 0
+          }}
+          transition={{ 
+            duration: playerState.lives > 0 ? 2 : 1.5,
+            repeat: playerState.lives > 0 ? Infinity : 0 
+          }}
+        >
+          {/* Roket Normal atau Rusak */}
+          {playerState.lives > 0 ? (
+            <Rocket 
+              className={`w-24 h-24 ${isP1 ? 'text-blue-400' : 'text-red-400'}`}
+              style={{ transform: `rotate(${rocketRotation}deg)` }}
+            />
+          ) : (
+            <div className="relative">
+              {/* Roket Rusak dengan opacity rendah */}
+              <motion.div
+                animate={{ opacity: [0.3, 0.5, 0.3] }}
+                transition={{ duration: 0.5, repeat: Infinity }}
+              >
+                <Rocket 
+                  className={`w-24 h-24 text-gray-600`}
+                  style={{ transform: `rotate(${rocketRotation + 45}deg)` }}
+                />
+              </motion.div>
+              
+              {/* Efek Api/Ledakan */}
+              <motion.div
+                className="absolute -top-4 -right-4"
+                animate={{ 
+                  scale: [1, 1.3, 1],
+                  rotate: [0, 10, -10, 0]
+                }}
+                transition={{ duration: 0.3, repeat: Infinity }}
+              >
+                <Flame className="w-12 h-12 text-orange-500" />
+              </motion.div>
+              
+              {/* Asap */}
+              <motion.div
+                className="absolute -bottom-2 left-1/2 -translate-x-1/2"
+                animate={{ 
+                  opacity: [0.5, 0.8, 0.3],
+                  scale: [0.8, 1.2, 1]
+                }}
+                transition={{ duration: 0.8, repeat: Infinity }}
+              >
+                <CloudOff className="w-16 h-16 text-gray-500" />
+              </motion.div>
+              
+              {/* Percikan */}
+              {[...Array(5)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-2 h-2 bg-amber-500 rounded-full"
+                  style={{
+                    left: `${Math.random() * 80}%`,
+                    top: `${Math.random() * 80}%`,
+                  }}
+                  animate={{
+                    opacity: [1, 0],
+                    y: [0, Math.random() * 30 - 15],
+                    x: [0, Math.random() * 40 - 20],
+                  }}
+                  transition={{
+                    duration: 0.8,
+                    repeat: Infinity,
+                    delay: i * 0.15
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </motion.div>
+
+        {/* Question Box */}
+        {playerState.currentQ && playerState.lives > 0 ? (
+          <motion.div
+            key={playerState.currentQ.qText}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="w-full max-w-2xl bg-white rounded-2xl p-8 mb-6 shadow-2xl"
+          >
+            <div className="text-sm text-gray-500 uppercase tracking-wider mb-2 text-center">
+              {playerState.currentQ.qLabel}
+            </div>
+            <div className="text-5xl font-black text-slate-900 text-center">
+              {playerState.currentQ.qText}
+            </div>
+          </motion.div>
+        ) : playerState.lives <= 0 ? (
+          <div className="w-full max-w-2xl bg-slate-800 rounded-2xl p-8 mb-6">
+            <h2 className={`text-4xl font-black ${isP1 ? 'text-blue-500' : 'text-red-500'} text-center mb-2`}>
+              ROKET RUSAK!
+            </h2>
+            <p className="text-gray-400 text-center text-xl">Nyawa Habis</p>
+          </div>
+        ) : null}
+
+        {/* Answer Options */}
+        {playerState.currentQ && playerState.lives > 0 && (
+          <div className="w-full max-w-2xl grid grid-cols-2 gap-5 mb-6">
+            {playerState.currentQ.options.map((opt, i) => (
+              <motion.button
+                key={i}
+                onClick={() => onAnswer(playerNum, opt)}
+                className={`py-6 px-4 bg-slate-800/50 border-2 ${
+                  isP1 ? 'border-blue-500/30 hover:bg-blue-600 hover:border-blue-400' : 'border-red-500/30 hover:bg-red-600 hover:border-red-400'
+                } rounded-xl text-3xl font-bold text-white transition-all backdrop-blur-sm`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+              >
+                {opt}
+              </motion.button>
+            ))}
+          </div>
+        )}
+
+        {/* Hint Button */}
+        <motion.button
+          onClick={() => onShowHint(playerNum)}
+          disabled={playerState.score < 25 || playerState.lives <= 0}
+          className={`flex items-center gap-2 px-6 py-3 rounded-full border-2 transition-all ${
+            playerState.score >= 25 && playerState.lives > 0
+              ? 'border-gray-400 text-gray-300 hover:border-white hover:text-white'
+              : 'border-gray-700 text-gray-700 cursor-not-allowed opacity-50'
+          }`}
+          whileHover={playerState.score >= 25 && playerState.lives > 0 ? { scale: 1.05 } : {}}
+          whileTap={playerState.score >= 25 && playerState.lives > 0 ? { scale: 0.95 } : {}}
+        >
+          <HelpCircle className="w-5 h-5" />
+          {playerState.score >= 25 ? 'Bantuan Visual (-25 Poin)' : 'Bantuan (Butuh 25 Poin)'}
+        </motion.button>
+      </div>
+    </div>
+  );
+}
+
+export default App;
