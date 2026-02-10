@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Math: Aritmetika & Geometri</title>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --snake-head: #2d3436;
+            --snake-body: #636e72;
+            --food-color: #e67e22; 
+            --grid-line: #dfe6e9;
+            --ui-bg: #ffffff;
+            --text-color: #2d3436;
+            --primary-btn: #0984e3;
+            --secondary-btn: #00b894;
+            --victory-color: #f1c40f;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            margin: 0;
+            padding: 10px;
+            color: var(--text-color);
+            touch-action: none; 
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- MAIN MENU --- */
+        #main-menu {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-color);
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .menu-title {
+            font-size: 2.5rem;
+            color: #2d3436;
+            margin-bottom: 10px;
+        }
+
+        .menu-subtitle {
+            font-size: 1.1rem;
+            color: #636e72;
+            margin-bottom: 30px;
+        }
+
+        .mode-btn {
+            width: 280px;
+            padding: 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .mode-btn:active { transform: scale(0.98); }
+        
+        .btn-arithmetic {
+            background: linear-gradient(135deg, #0984e3, #74b9ff);
+            box-shadow: 0 6px 15px rgba(9, 132, 227, 0.3);
+        }
+
+        .btn-geometric {
+            background: linear-gradient(135deg, #00b894, #55efc4);
+            box-shadow: 0 6px 15px rgba(0, 184, 148, 0.3);
+        }
+
+        .icon { font-size: 1.8rem; }
+
+        /* --- GAME UI --- */
+        #game-container {
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .game-header {
+            background: var(--ui-bg);
+            padding: 12px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            width: 95%;
+            max-width: 400px;
+            text-align: center;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #dfe6e9;
+            border: none;
+            border-radius: 8px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .sequence-box {
+            font-size: 1.1rem;
+            color: #2d3436;
+            background: #ffeaa7;
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 5px solid #fdcb6e;
+            margin-top: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .given-sequence {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #d35400;
+            letter-spacing: 1px;
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .target-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+            justify-content: center;
+        }
+        
+        .target-badge {
+            background: #fff;
+            padding: 5px 12px;
+            border-radius: 4px;
+            border: 2px dashed #fab1a0; 
+            font-weight: bold;
+            color: #e17055;
+            min-width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        
+        .target-badge.active {
+            background: #fff;
+            border-color: #e17055;
+            border-style: solid;
+            transform: scale(1.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            animation: pulse 1.5s infinite;
+        }
+        
+        .target-badge.done {
+            background: #00b894; 
+            color: white;
+            border: none;
+            border-style: solid;
+        }
+
+        /* --- FRACTION CSS --- */
+        .fraction {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            vertical-align: middle;
+            font-size: 0.85em;
+            margin: 0 2px;
+        }
+        .fraction .top {
+            border-bottom: 2px solid currentColor;
+            padding: 0 2px;
+            line-height: 1.2;
+        }
+        .fraction .bottom {
+            padding: 0 2px;
+            line-height: 1.2;
+        }
+        .target-badge .fraction {
+            font-size: 0.7em; 
+        }
+        .target-badge.done .fraction .top {
+            border-color: white; 
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            font-weight: bold;
+            font-size: 1rem;
+            color: #0984e3;
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        
+        .lives-container {
+            display: flex;
+            gap: 2px;
+            font-size: 1.2rem;
+        }
+
+        .canvas-container {
+            position: relative;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            border-radius: 8px;
+            border: 4px solid #2d3436;
+            background-color: #fff;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        canvas {
+            display: block;
+            background-image: 
+                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 20px 20px; 
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            gap: 10px;
+        }
+
+        .btn {
+            width: 60px;
+            height: 60px;
+            border: none;
+            border-radius: 15px;
+            background: #dfe6e9;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #b2bec3;
+            transition: transform 0.1s;
+        }
+
+        .btn:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        .btn-up { grid-column: 2; background: #ffeaa7; }
+        .btn-left { grid-column: 1; grid-row: 2; background: #ffeaa7; }
+        .btn-down { grid-column: 2; grid-row: 2; background: #ffeaa7; }
+        .btn-right { grid-column: 3; grid-row: 2; background: #ffeaa7; }
+        
+        #modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        #modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 300px;
+        }
+        button.restart-btn {
+            background: #0984e3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 1rem;
+        }
+        button.continue-btn {
+            background: #e67e22; 
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 1rem;
+        }
+        button.victory-btn {
+            background: #f1c40f; 
+            color: #2d3436;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #f39c12;
+        }
+        
+        /* Level Up Overlay */
+        #levelup-overlay {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 184, 148, 0.9);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            display: none;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        /* Countdown Overlay */
+        #countdown-overlay {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 6rem;
+            font-weight: 800;
+            color: #fab1a0;
+            text-shadow: 2px 2px 0px #fff, 0 0 10px rgba(0,0,0,0.1);
+            display: none;
+            pointer-events: none;
+            z-index: 30;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            from { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- MAIN MENU -->
+    <div id="main-menu">
+        <div class="menu-title">🐍 Snake Math</div>
+        <div class="menu-subtitle">Pilih Tantanganmu!</div>
+        
+        <button class="mode-btn btn-arithmetic" onclick="selectMode('aritmetika')">
+            <span>Barisan<br>Aritmetika (+ / -)</span>
+            <span class="icon">➕</span>
+        </button>
+        
+        <button class="mode-btn btn-geometric" onclick="selectMode('geometri')">
+            <span>Barisan<br>Geometri (× / ÷)</span>
+            <span class="icon">✖️</span>
+        </button>
+    </div>
+
+    <!-- GAME AREA -->
+    <div id="game-container">
+        <div class="game-header">
+            <button class="back-btn" onclick="backToMenu()">🏠</button>
+            <div class="score-board">
+                <div class="lives-container" id="lives-display">❤️❤️</div>
+                <span>Lvl <span id="level">1</span>/15</span>
+                <span>Skor: <span id="score">0</span></span>
+            </div>
+            <div class="sequence-box">
+                <div style="font-size:0.8rem; color:#636e72;">Perhatikan pola barisan ini:</div>
+                <div class="given-sequence" id="given-sequence-display">...</div>
+                <div style="font-size:0.8rem; margin-top:5px; color:#636e72;">Temukan 3 suku berikutnya:</div>
+                <div class="target-container" id="target-badges">
+                    <!-- Badges injected by JS -->
+                </div>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="gameCanvas" width="360" height="360"></canvas>
+            <div id="levelup-overlay">Level Up! Soal Baru!</div>
+            <div id="countdown-overlay">3</div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-up" onclick="setDirection('UP')">⬆️</button>
+            <button class="btn btn-left" onclick="setDirection('LEFT')">⬅️</button>
+            <button class="btn btn-down" onclick="setDirection('DOWN')">⬇️</button>
+            <button class="btn btn-right" onclick="setDirection('RIGHT')">➡️</button>
+        </div>
+    </div>
+
+    <!-- MODAL GAME OVER / MISTAKE / VICTORY -->
+    <div id="modal">
+        <div id="modal-content">
+            <h2 id="modal-title">Game Over!</h2>
+            <p id="modal-msg"></p>
+            <div id="modal-actions"></div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const targetBadgesContainer = document.getElementById("target-badges");
+        const levelUpOverlay = document.getElementById("levelup-overlay");
+        const countdownOverlay = document.getElementById("countdown-overlay");
+        const livesDisplay = document.getElementById("lives-display");
+        
+        const mainMenu = document.getElementById("main-menu");
+        const gameContainer = document.getElementById("game-container");
+        const modal = document.getElementById("modal");
+        const modalTitle = document.getElementById("modal-title");
+        const modalMsg = document.getElementById("modal-msg");
+        const modalActions = document.getElementById("modal-actions");
+
+        const box = 20; 
+        const cols = canvas.width / box;
+        const rows = canvas.height / box;
+
+        let snake = [];
+        let score = 0;
+        let level = 1;
+        let lives = 2; 
+        let dir;
+        let gameInterval;
+        let isGameRunning = false;
+        let currentMode = 'aritmetika'; 
+
+        // Current Math State
+        let startNum, diff, ratio;
+        let initialSequence = []; 
+        let targetSequence = [];  
+        let foundSequence = [];   
+        let currentTargetIndex = 0; 
+        let foods = []; 
+
+        // History to prevent duplicate questions in one session
+        let usedQuestionIDs = []; 
+        let previousPatterns = []; 
+
+        // --- AUDIO SYSTEM (Simple Synth) ---
+        let audioCtx;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playTone(freq, type, duration, startTime = 0) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime + startTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime + startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + startTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(audioCtx.currentTime + startTime);
+            osc.stop(audioCtx.currentTime + startTime + duration);
+        }
+
+        const sfx = {
+            click: () => playTone(400, 'sine', 0.1),
+            eat: () => {
+                playTone(600, 'sine', 0.1);
+                playTone(1000, 'sine', 0.1, 0.05); // "Ting" sound
+            },
+            wrong: () => {
+                playTone(150, 'sawtooth', 0.4);
+                playTone(100, 'sawtooth', 0.4, 0.1); // "Buzz" down
+            },
+            levelUp: () => {
+                playTone(440, 'square', 0.1, 0); // A4
+                playTone(554, 'square', 0.1, 0.1); // C#5
+                playTone(659, 'square', 0.2, 0.2); // E5
+            },
+            win: () => {
+                let now = 0;
+                [523, 659, 784, 1046, 784, 1046].forEach((f, i) => {
+                    playTone(f, 'triangle', 0.2, i * 0.15);
+                });
+            }
+        };
+
+        // --- QUESTION BANK DARI DOKUMEN PDF (Revised for progression) ---
+        // S = Start (Awal), D = Diff (Beda), R = Ratio (Rasio)
+        const QUESTION_BANK = {
+            aritmetika: {
+                1: [ // Level 1-3: Dasar (Angka Kecil, Beda Positif)
+                    {s: 1, d: 1}, {s: 2, d: 2}, {s: 3, d: 3}, {s: 4, d: 4}, {s: 5, d: 5}, 
+                    {s: 6, d: 6}, {s: 7, d: 7}, {s: 8, d: 8}, {s: 9, d: 9}, {s: 10, d: 10},
+                    {s: 1, d: 3}, {s: 1, d: 4}, {s: 1, d: 5}, {s: 2, d: 5}, {s: 2, d: 3}, 
+                    {s: 3, d: 2}, {s: 3, d: 4}, {s: 4, d: 3}, {s: 5, d: 3}
+                ],
+                2: [ // Level 4-6: Angka Ratusan/Puluhan & Beda Negatif Sederhana
+                    {s: 50, d: 50}, {s: 100, d: 100}, {s: 500, d: 100}, {s: 200, d: 50},
+                    {s: 100, d: -10}, {s: 200, d: -20}, {s: 150, d: -5}, {s: 150, d: -25},
+                    {s: 90, d: 10}, {s: 90, d: -9}, {s: 100, d: -5}, {s: 1000, d: -100}
+                ],
+                3: [ // Level 7-9: Melintasi Nol / Negatif (Start Negatif)
+                    {s: -10, d: 2}, {s: -10, d: 3}, {s: -10, d: 4}, {s: -10, d: 5},
+                    {s: -20, d: 2}, {s: -50, d: 10}, {s: -5, d: 1}, {s: 5, d: -2},
+                    {s: -2, d: 2}, {s: 10, d: -20}, {s: -100, d: 50}, {s: 4, d: -4}
+                ],
+                4: [ // Level 10-12: Pecahan Sederhana (Penyebut sama)
+                    {s: 1, d: 0.5}, {s: 2, d: 0.5}, {s: 10, d: 2.5}, {s: 5.5, d: 0.5},
+                    {s: 0.1, d: 0.1}, {s: 0.2, d: 0.2}, {s: 10.5, d: -0.5}, {s: 1.5, d: 1.5},
+                    {s: 0.5, d: 0.5}, {s: 1.1, d: 0.1}
+                ],
+                5: [ // Level 13-15: Pecahan Campuran
+                    {s: 0.5, d: 0.5}, {s: 1.5, d: 0.5}, {s: 0.25, d: 0.25}, {s: 0.75, d: 0.25},
+                    {s: 1.25, d: 0.25}, {s: 0.333, d: 0.333}, {s: 0.2, d: 0.2}, {s: 1.5, d: 1.5},
+                    {s: 2.5, d: -0.5}, {s: 5.5, d: -1.5}
+                ]
+            },
+            geometri: {
+                1: [ // Level 1-3: Rasio 2, 3 (Angka Kecil)
+                    {s: 1, r: 2}, {s: 2, r: 2}, {s: 3, r: 2}, {s: 4, r: 2}, {s: 5, r: 2},
+                    {s: 1, r: 3}, {s: 2, r: 3}, {s: 3, r: 3}, {s: 1, r: 4}, {s: 1, r: 5}
+                ],
+                2: [ // Level 4-6: Angka Ratusan, Rasio Pecahan Sederhana (Membagi)
+                    {s: 100, r: 2}, {s: 200, r: 2}, {s: 100, r: 0.1}, {s: 1000, r: 0.1},
+                    {s: 100, r: 0.5}, {s: 200, r: 0.5}, {s: 400, r: 0.5}, {s: 800, r: 0.5},
+                    {s: 64, r: 0.5}, {s: 128, r: 0.5}, {s: 256, r: 0.5}
+                ],
+                3: [ // Level 7-9: Rasio Negatif
+                    {s: 1, r: -2}, {s: 2, r: -2}, {s: 3, r: -2}, {s: 4, r: -2}, {s: 5, r: -2},
+                    {s: -1, r: 2}, {s: -2, r: 2}, {s: 1, r: -3}, {s: 2, r: -3}, {s: -1, r: -1}
+                ],
+                4: [ // Level 10-12: Start Pecahan / Desimal
+                    {s: 0.5, r: 2}, {s: 0.25, r: 2}, {s: 0.125, r: 2}, {s: 0.5, r: 0.5},
+                    {s: 0.0625, r: 2}, {s: 0.074, r: 3}, {s: 0.5, r: 3}
+                ],
+                5: [ // Level 13-15: Pecahan Kompleks
+                    {s: 1.5, r: 2}, {s: 2.5, r: 2}, {s: 1.5, r: 1.5}, {s: 1.25, r: 2},
+                    {s: 1.333, r: 2}, {s: 0.75, r: 2}, {s: 2.25, r: 2}, {s: 16, r: -0.5}
+                ]
+            }
+        };
+
+        function selectMode(mode) {
+            initAudio(); // Activate audio context on user gesture
+            sfx.click();
+            currentMode = mode;
+            mainMenu.style.display = "none";
+            gameContainer.style.display = "flex";
+            resetGame();
+        }
+
+        function backToMenu() {
+            sfx.click();
+            clearInterval(gameInterval);
+            isGameRunning = false;
+            modal.style.display = "none";
+            gameContainer.style.display = "none";
+            mainMenu.style.display = "flex";
+        }
+
+        // --- MATH FORMATTER ENGINE ---
+        // Bersihkan floating point error
+        function cleanFloat(val) {
+            if (Math.abs(val - Math.round(val)) < 0.00001) {
+                return Math.round(val);
+            }
+            return parseFloat(val.toFixed(5));
+        }
+
+        function toFraction(val) {
+            val = cleanFloat(val);
+            if (Number.isInteger(val)) return { n: val, d: 1, isInt: true };
+            
+            const tolerance = 0.001;
+            let absVal = Math.abs(val);
+            let sign = val < 0 ? -1 : 1;
+            
+            const common = [
+                {v: 0.5, n:1, d:2}, {v: 0.25, n:1, d:4}, {v: 0.75, n:3, d:4},
+                {v: 0.2, n:1, d:5}, {v: 0.4, n:2, d:5}, {v: 0.6, n:3, d:5}, {v: 0.8, n:4, d:5},
+                {v: 0.1, n:1, d:10}, {v: 0.333, n:1, d:3}, {v: 0.666, n:2, d:3},
+                {v: 0.125, n:1, d:8}, {v: 0.0625, n:1, d:16},
+                {v: 0.166, n:1, d:6}, {v: 0.833, n:5, d:6}, {v: 0.142, n:1, d:7}
+            ];
+
+            let whole = Math.floor(absVal);
+            let decimal = absVal - whole;
+
+            if (decimal < tolerance) return { n: whole * sign, d: 1, isInt: true };
+            if (Math.abs(decimal - 1) < tolerance) return { n: (whole + 1) * sign, d: 1, isInt: true };
+
+            for (let c of common) {
+                if (Math.abs(decimal - c.v) < tolerance) {
+                    let num = whole * c.d + c.n;
+                    return { n: num * sign, d: c.d, isInt: false };
+                }
+            }
+            return { n: Math.round(val*10), d: 10, isInt: false }; 
+        }
+
+        function formatValHTML(val) {
+            val = cleanFloat(val);
+            let f = toFraction(val);
+            if (f.isInt) return f.n;
+            return `<span class="fraction"><span class="top">${f.n}</span><span class="bottom">${f.d}</span></span>`;
+        }
+
+        function updateLivesUI() {
+            let hearts = "";
+            for(let i=0; i<2; i++) { 
+                if(i < lives) hearts += "❤️";
+                else hearts += "🖤"; 
+            }
+            livesDisplay.innerHTML = hearts;
+        }
+
+        function getBankLevel(gameLvl) {
+            // Mapping Level Game -> Level Bank
+            return Math.ceil(gameLvl / 3);
+        }
+
+        function getQuestionFromBank(mode, gameLvl) {
+            let bankLvl = getBankLevel(gameLvl);
+            if (bankLvl > 5) bankLvl = 5;
+
+            let bank = QUESTION_BANK[mode];
+            let questions = bank[bankLvl];
+            
+            let available = questions.filter(q => {
+                let id = `${mode}-${bankLvl}-${q.s}-${q.d || q.r}`;
+                return !usedQuestionIDs.includes(id);
+            });
+
+            if (available.length === 0) {
+                usedQuestionIDs = usedQuestionIDs.filter(id => !id.startsWith(`${mode}-${bankLvl}-`));
+                available = questions;
+            }
+
+            if (previousPatterns.length >= 2) {
+                let last = previousPatterns[previousPatterns.length - 1];
+                let secondLast = previousPatterns[previousPatterns.length - 2];
+                
+                if (last === secondLast) {
+                    let forcedDiff = available.filter(q => {
+                        let val = q.d !== undefined ? q.d : q.r;
+                        return Math.abs(val - last) > 0.0001;
+                    });
+                    if (forcedDiff.length > 0) {
+                        available = forcedDiff;
+                    }
+                }
+            }
+
+            let q = available[Math.floor(Math.random() * available.length)];
+            let id = `${mode}-${bankLvl}-${q.s}-${q.d || q.r}`;
+            usedQuestionIDs.push(id);
+            
+            let val = q.d !== undefined ? q.d : q.r;
+            previousPatterns.push(val);
+            if (previousPatterns.length > 2) previousPatterns.shift();
+            
+            return q;
+        }
+
+        function initLevel() {
+            initialSequence = [];
+            targetSequence = [];
+            foundSequence = [];
+            currentTargetIndex = 0;
+
+            let q = getQuestionFromBank(currentMode, level);
+
+            if (currentMode === 'aritmetika') {
+                startNum = cleanFloat(q.s);
+                diff = cleanFloat(q.d);
+                for(let i=0; i<3; i++) initialSequence.push(cleanFloat(startNum + (i * diff)));
+                for(let i=3; i<6; i++) targetSequence.push(cleanFloat(startNum + (i * diff)));
+            } else {
+                startNum = cleanFloat(q.s);
+                ratio = cleanFloat(q.r);
+                for(let i=0; i<6; i++) {
+                    let val = startNum * Math.pow(ratio, i);
+                    val = cleanFloat(val); 
+                    if (i < 3) initialSequence.push(val);
+                    else targetSequence.push(val);
+                }
+            }
+            
+            updateUI();
+            spawnFoodsRound();
+        }
+
+        function updateUI() {
+            let seqHTML = initialSequence.map(val => formatValHTML(val)).join(", ") + ", ...";
+            document.getElementById("given-sequence-display").innerHTML = seqHTML;
+            document.getElementById("score").innerText = score;
+            document.getElementById("level").innerText = level;
+            updateLivesUI();
+
+            targetBadgesContainer.innerHTML = "";
+            targetSequence.forEach((val, idx) => {
+                let badge = document.createElement("div");
+                badge.className = "target-badge";
+                
+                if (idx < currentTargetIndex) {
+                    badge.innerHTML = formatValHTML(val);
+                    badge.classList.add("done"); 
+                } else {
+                    badge.innerText = "?";
+                    if (idx === currentTargetIndex) {
+                        badge.classList.add("active");
+                    }
+                }
+                targetBadgesContainer.appendChild(badge);
+            });
+        }
+
+        function spawnFoodsRound() {
+            foods = [];
+            
+            for(let i = currentTargetIndex; i < targetSequence.length; i++) {
+                let val = targetSequence[i];
+                let pos = getSafeRandomPos();
+                foods.push({ x: pos.x, y: pos.y, value: val, type: 'target' });
+            }
+
+            let distractorCount = 6; 
+            if (level > 9) distractorCount = 8; 
+
+            for(let i=0; i<distractorCount; i++) {
+                let distVal;
+                let baseTarget = targetSequence[Math.floor(Math.random() * targetSequence.length)];
+                
+                if (currentMode === 'aritmetika') {
+                    let offset = (Math.random() < 0.5 ? -1 : 1) * (Math.floor(Math.random() * 3) + 1);
+                    if (Math.abs(diff % 1) > 0) offset = offset * 0.5; 
+                    distVal = cleanFloat(baseTarget + offset);
+                    if (baseTarget !== 0 && Math.random() < 0.2) distVal = -baseTarget;
+                } else {
+                    if (Math.abs(ratio) < 1) { 
+                        let invR = 1/ratio;
+                        distVal = cleanFloat(baseTarget * invR);
+                        if (Math.random() < 0.3) distVal = cleanFloat(baseTarget + 0.5);
+                    } else if (ratio < 0) {
+                        distVal = -baseTarget; 
+                    } else {
+                        distVal = cleanFloat(baseTarget + ratio); 
+                        if(Math.random() < 0.5) distVal = cleanFloat(baseTarget * 2); 
+                    }
+                }
+
+                let isDuplicate = false;
+                for(let f of foods) {
+                    if(Math.abs(f.value - distVal) < 0.0001) isDuplicate = true;
+                }
+                for(let t of targetSequence) {
+                    if(Math.abs(t - distVal) < 0.0001) isDuplicate = true;
+                }
+                for(let s of initialSequence) {
+                    if(Math.abs(s - distVal) < 0.0001) isDuplicate = true;
+                }
+                
+                if (!isDuplicate) {
+                    let pos = getSafeRandomPos();
+                    foods.push({ x: pos.x, y: pos.y, value: distVal, type: 'distractor' });
+                }
+            }
+            
+            foods.forEach(f => {
+                f.value = cleanFloat(f.value);
+                let frac = toFraction(f.value);
+                f.fraction = frac; 
+            });
+        }
+
+        function getSafeRandomPos() {
+            let pos;
+            let safe = false;
+            let attempts = 0;
+            while (!safe && attempts < 100) {
+                pos = {
+                    x: Math.floor(Math.random() * (cols - 2) + 1) * box,
+                    y: Math.floor(Math.random() * (rows - 2) + 1) * box
+                };
+                safe = true;
+                for(let part of snake) if(part.x === pos.x && part.y === pos.y) safe = false;
+                for(let f of foods) if(f.x === pos.x && f.y === pos.y) safe = false;
+                attempts++;
+            }
+            return pos;
+        }
+
+        function resetGame() {
+            modal.style.display = "none";
+            level = 1;
+            score = 0;
+            lives = 2; 
+            usedQuestionIDs = []; 
+            previousPatterns = [];
+            startLevel();
+        }
+
+        function resetSnake() {
+            snake = [];
+            snake[0] = { x: 5 * box, y: 10 * box };
+            snake[1] = { x: 4 * box, y: 10 * box };
+            snake[2] = { x: 3 * box, y: 10 * box };
+            dir = "RIGHT";
+        }
+
+        function startLevel() {
+            resetSnake();
+            initLevel();
+            draw(); 
+            startCountdown();
+        }
+
+        function startCountdown() {
+            isGameRunning = false; 
+            let count = 3;
+            countdownOverlay.innerText = count;
+            countdownOverlay.style.display = "block";
+            
+            countdownOverlay.style.animation = 'none';
+            countdownOverlay.offsetHeight; 
+            countdownOverlay.style.animation = 'popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+
+            let countInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdownOverlay.innerText = count;
+                    countdownOverlay.style.animation = 'none';
+                    countdownOverlay.offsetHeight; 
+                    countdownOverlay.style.animation = 'popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                } else if (count === 0) {
+                    countdownOverlay.innerText = "GO!";
+                } else {
+                    clearInterval(countInterval);
+                    countdownOverlay.style.display = "none";
+                    isGameRunning = true; 
+                    if (gameInterval) clearInterval(gameInterval);
+                    gameInterval = setInterval(gameLoop, 180); 
+                }
+            }, 1000);
+        }
+
+        function setDirection(newDir) {
+            if (!isGameRunning) return;
+            sfx.click();
+            if (newDir === "LEFT" && dir !== "RIGHT") dir = "LEFT";
+            if (newDir === "UP" && dir !== "DOWN") dir = "UP";
+            if (newDir === "RIGHT" && dir !== "LEFT") dir = "RIGHT";
+            if (newDir === "DOWN" && dir !== "UP") dir = "DOWN";
+        }
+
+        document.addEventListener("keydown", event => {
+            if (event.keyCode === 37) setDirection("LEFT");
+            if (event.keyCode === 38) setDirection("UP");
+            if (event.keyCode === 39) setDirection("RIGHT");
+            if (event.keyCode === 40) setDirection("DOWN");
+        });
+
+        function gameLoop() {
+            let snakeX = snake[0].x;
+            let snakeY = snake[0].y;
+
+            if (dir === "LEFT") snakeX -= box;
+            if (dir === "UP") snakeY -= box;
+            if (dir === "RIGHT") snakeX += box;
+            if (dir === "DOWN") snakeY += box;
+
+            if (snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height) {
+                handleMistake("Aduh! Ular menabrak dinding!");
+                return;
+            }
+
+            for (let i = 0; i < snake.length; i++) {
+                if (snakeX === snake[i].x && snakeY === snake[i].y) {
+                    handleMistake("Aduh! Ular menabrak dirinya sendiri!");
+                    return;
+                }
+            }
+
+            let ateIndex = -1;
+            for (let i = 0; i < foods.length; i++) {
+                if (snakeX === foods[i].x && snakeY === foods[i].y) {
+                    ateIndex = i;
+                    let foodVal = foods[i].value;
+                    let targetVal = targetSequence[currentTargetIndex];
+                    
+                    if (Math.abs(foodVal - targetVal) < 0.0001) {
+                        sfx.eat();
+                        score += 10;
+                        foundSequence.push(foodVal);
+                        currentTargetIndex++;
+                        foods.splice(i, 1);
+                        updateUI();
+                        
+                        if (currentTargetIndex >= targetSequence.length) {
+                            level++;
+                            sfx.levelUp();
+                            clearInterval(gameInterval); 
+                            
+                            if (level > 15) {
+                                showVictoryModal();
+                            } else {
+                                showLevelUp(); 
+                            }
+                            return; 
+                        }
+                    } else {
+                        let msg = "";
+                        let displayFood = formatValHTML(foodVal);
+                        let displayTarget = formatValHTML(targetVal);
+
+                        let isWrongOrder = false;
+                        for(let t of targetSequence) {
+                            if(Math.abs(t - foodVal) < 0.0001) isWrongOrder = true;
+                        }
+
+                        if (isWrongOrder) {
+                             msg = `<b>Urutan Salah!</b><br>Kamu makan ${displayFood}, seharusnya cari <b>${displayTarget}</b> dulu.`;
+                        } else {
+                             if(currentMode === 'aritmetika') {
+                                msg = `<b>Salah Hitung!</b><br>Pola beda (b) = <b>${formatValHTML(diff)}</b>.<br>Seharusnya makan angka <b>${displayTarget}</b>.`;
+                             } else {
+                                let rDisplay = formatValHTML(ratio);
+                                msg = `<b>Salah Hitung!</b><br>Pola rasio (r) = <b>${rDisplay}</b>.<br>Seharusnya makan angka <b>${displayTarget}</b>.`;
+                             }
+                        }
+                        handleMistake(msg);
+                        return;
+                    }
+                    break;
+                }
+            }
+
+            if (ateIndex !== -1) {
+            } else {
+                snake.pop();
+            }
+
+            let newHead = { x: snakeX, y: snakeY };
+            snake.unshift(newHead);
+
+            draw();
+        }
+
+        function handleMistake(msg) {
+            sfx.wrong();
+            clearInterval(gameInterval);
+            isGameRunning = false;
+            lives--;
+            updateLivesUI();
+
+            if (lives > 0) {
+                showMistakeModal(msg);
+            } else {
+                showGameOverModal(msg);
+            }
+        }
+
+        function showMistakeModal(msg) {
+            modalTitle.innerText = "Hati-hati!";
+            modalTitle.style.color = "#e67e22";
+            modalMsg.innerHTML = msg + `<br><br><b>Sisa Nyawa: ${lives}</b>`;
+            modalActions.innerHTML = `<button class="continue-btn" onclick="resumeAfterMistake()">Lanjut Main</button>`;
+            modal.style.display = "flex";
+        }
+
+        function resumeAfterMistake() {
+            sfx.click();
+            modal.style.display = "none";
+            // KUNCI: Spawn ulang makanan agar distraktor penuh kembali + Reset Ular
+            spawnFoodsRound(); 
+            resetSnake(); 
+            
+            // Force draw agar user lihat arena baru sebelum countdown
+            draw();
+            startCountdown();
+        }
+
+        function showGameOverModal(msg) {
+            modalTitle.innerText = "Game Berakhir!";
+            modalTitle.style.color = "#d63031";
+            modalMsg.innerHTML = msg + `<br><br>Skor Akhir: <b>${score}</b>`;
+            modalActions.innerHTML = `
+                <button class="restart-btn" onclick="resetGame()">Main Lagi</button>
+                <br><br>
+                <button style="background:none; border:none; color:#636e72; cursor:pointer; text-decoration:underline;" onclick="backToMenu()">Kembali ke Menu</button>
+            `;
+            modal.style.display = "flex";
+        }
+
+        function showVictoryModal() {
+            sfx.win();
+            modalTitle.innerText = "SELAMAT! KAMU MENANG! 🏆";
+            modalTitle.style.color = "#f1c40f";
+            modalMsg.innerHTML = `Kamu telah menyelesaikan semua 15 Level!<br><br>Skor Akhir: <b>${score}</b><br>Sisa Nyawa: ${lives} ❤️`;
+            modalActions.innerHTML = `
+                <button class="victory-btn" onclick="resetGame()">Main Ulang (Reset)</button>
+                <br><br>
+                <button style="background:none; border:none; color:#636e72; cursor:pointer; text-decoration:underline;" onclick="backToMenu()">Kembali ke Menu</button>
+            `;
+            modal.style.display = "flex";
+        }
+
+        function showLevelUp() {
+            levelUpOverlay.style.display = "block";
+            setTimeout(() => {
+                levelUpOverlay.style.display = "none";
+                startLevel(); 
+            }, 1500);
+        }
+
+        function draw() {
+            ctx.fillStyle = "#f0f4f8"; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < snake.length; i++) {
+                ctx.fillStyle = (i === 0) ? "#2d3436" : "#636e72";
+                ctx.beginPath();
+                ctx.roundRect(snake[i].x, snake[i].y, box, box, 4);
+                ctx.fill();
+            }
+
+            for (let f of foods) {
+                ctx.fillStyle = currentMode === 'aritmetika' ? "#e67e22" : "#8e44ad"; 
+                ctx.beginPath();
+                ctx.roundRect(f.x, f.y, box, box, 5);
+                ctx.fill();
+
+                ctx.fillStyle = "white";
+                
+                let frac = f.fraction;
+                if (!frac) frac = toFraction(f.value); 
+
+                if (frac.isInt) {
+                    let valStr = frac.n.toString();
+                    let fontSize = 11; 
+                    if (valStr.length >= 3) fontSize = 9;
+                    if (valStr.length >= 4) fontSize = 8;
+                    if (valStr.length >= 5) fontSize = 7;
+                    
+                    ctx.font = "bold " + fontSize + "px Arial";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(frac.n, f.x + (box/2), f.y + (box/2) + 1);
+                } else {
+                    let cx = f.x + (box/2);
+                    let cy = f.y + (box/2);
+                    
+                    ctx.strokeStyle = "white";
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(cx - 5, cy);
+                    ctx.lineTo(cx + 5, cy);
+                    ctx.stroke();
+                    
+                    ctx.font = "bold 7px Arial"; 
+                    ctx.textAlign = "center";
+                    
+                    ctx.textBaseline = "bottom"; 
+                    ctx.fillText(frac.n, cx, cy - 1);
+                    
+                    ctx.textBaseline = "top"; 
+                    ctx.fillText(frac.d, cx, cy + 2);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
