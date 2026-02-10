@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Battle Akar Kuadrat (Fit Screen Edition)</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;600&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <!-- MathJax for rendering equations -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            /* Palette */
+            --bg-color: #2b1055; 
+            --bg-gradient: radial-gradient(circle at center top, #4b1d85 0%, #2b1055 100%);
+            --p1-color: #00d2ff; 
+            --p1-dark: #009ac2;
+            --p1-bg: rgba(0, 210, 255, 0.2);
+            --p2-color: #ff47bc; 
+            --p2-dark: #c2007e;
+            --p2-bg: rgba(255, 71, 188, 0.2);
+            --gold: #ffd700;
+            --text-color: #ffffff;
+            --danger: #ff3333;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%; /* Kunci agar fit screen */
+            width: 100%;
+            overflow: hidden; /* Mencegah scroll pada body utama */
+            background-color: var(--bg-color);
+            background-image: var(--bg-gradient);
+            color: var(--text-color);
+            font-family: 'Nunito', sans-serif;
+        }
+
+        /* --- MAIN WRAPPER (FULL SCREEN FLEX) --- */
+        .main-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100vh; /* Full Viewport Height */
+            width: 100vw;  /* Full Viewport Width */
+        }
+
+        /* --- UTILS --- */
+        .hidden { display: none !important; }
+        .flex-center { display: flex; justify-content: center; align-items: center; }
+        .font-fredoka { font-family: 'Fredoka', cursive; }
+
+        /* --- OVERLAYS (Absolute Position) --- */
+        #setup-screen, #gameover-screen, #summary-screen, #turn-alert {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(43, 16, 85, 0.98);
+            z-index: 100;
+            flex-direction: column;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #gameover-screen { background: rgba(20, 5, 40, 0.98); }
+        #summary-screen { background: rgba(0, 0, 0, 0.9); z-index: 150; }
+
+        /* --- ALERTS --- */
+        #turn-alert {
+            background: rgba(0,0,0,0.8);
+            z-index: 200;
+            display: none; 
+            pointer-events: none;
+        }
+        .alert-box {
+            background: white;
+            color: #2b1055;
+            padding: 30px 60px;
+            border-radius: 30px;
+            border: 6px solid var(--gold);
+            font-family: 'Fredoka';
+            font-size: 4vmin; /* Responsive font */
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        h1 {
+            font-family: 'Fredoka', cursive;
+            font-size: 8vmin;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 3vh;
+            color: #fff;
+            text-shadow: 4px 4px 0px #000;
+            line-height: 1.1;
+        }
+
+        /* --- SETUP INPUTS --- */
+        .input-group {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 4vh;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .name-input {
+            font-family: 'Fredoka', cursive;
+            font-size: 3vmin;
+            padding: 1.5vh 2vw;
+            border-radius: 50px;
+            border: 4px solid #fff;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            text-align: center;
+            width: 25vw;
+            outline: none;
+        }
+        #input-p1 { border-color: var(--p1-color); }
+        #input-p2 { border-color: var(--p2-color); }
+
+        .btn-primary {
+            font-family: 'Fredoka', cursive;
+            background: linear-gradient(180deg, #ffd700, #ffaa00);
+            border: 4px solid #fff;
+            padding: 2vh 5vw;
+            font-size: 4vmin;
+            font-weight: 600;
+            color: #5a3e00;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0.8vh 0 #b37700;
+            transition: transform 0.1s;
+        }
+        .btn-primary:active { transform: translateY(0.8vh); box-shadow: 0 0 0 #b37700; }
+
+        .btn-green {
+            background: #00cc00;
+            color: white;
+            box-shadow: 0 0.8vh 0 #008000;
+            border: none;
+            border-radius: 20px;
+            padding: 2vh 4vw;
+            font-size: 3vmin;
+            cursor: pointer;
+        }
+        .btn-green:active { transform: translateY(0.8vh); box-shadow: none; }
+
+        /* --- HUD (Top Bar - Fixed Height) --- */
+        header {
+            flex: 0 0 auto; /* Tidak menyusut */
+            height: 25vh; /* Proporsi tetap untuk header */
+            min-height: 180px;
+            display: flex;
+            justify-content: space-between;
+            align-items: stretch;
+            padding: 1vh 2vw;
+            background: rgba(43, 16, 85, 0.95);
+            border-bottom: 4px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        .player-panel {
+            width: 28%;
+            border-radius: 20px;
+            padding: 1vh 1vw;
+            position: relative;
+            border: 4px solid transparent;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .p1-panel { border-color: var(--p1-color); background: rgba(255,255,255,0.05); }
+        .p2-panel { border-color: var(--p2-color); background: rgba(255,255,255,0.05); text-align: right; }
+
+        .active-p1 { background: var(--p1-bg); box-shadow: 0 0 30px var(--p1-color); }
+        .active-p2 { background: var(--p2-bg); box-shadow: 0 0 30px var(--p2-color); }
+        .inactive { opacity: 0.6; filter: grayscale(80%); }
+
+        .turn-badge {
+            position: absolute;
+            top: -1.5vh; left: 50%; transform: translateX(-50%);
+            background: white; color: #2b1055;
+            font-size: 2vmin; font-weight: bold;
+            padding: 0.5vh 2vw; border-radius: 20px;
+            z-index: 10;
+            white-space: nowrap;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+        }
+
+        .rebound-badge {
+            background: #ff3333 !important;
+            color: white !important;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.1); }
+            100% { transform: translateX(-50%) scale(1); }
+        }
+
+        .timer-badge {
+            position: absolute; top: 1vh;
+            font-family: 'Fredoka', monospace;
+            font-size: 3vmin;
+            font-weight: bold;
+            padding: 0.5vh 1vw; border-radius: 10px;
+            background: rgba(0,0,0,0.4); color: rgba(255,255,255,0.7);
+        }
+        .p1-panel .timer-badge { right: 10px; }
+        .p2-panel .timer-badge { left: 10px; }
+        
+        .active-timer {
+            background: #ff3333 !important;
+            color: white !important;
+            box-shadow: 0 0 15px red;
+            transform: scale(1.1);
+        }
+
+        .player-name {
+            font-family: 'Fredoka', cursive;
+            font-size: 3.5vmin;
+            margin-top: 1vh;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .hearts { display: flex; gap: 0.5vw; margin-top: 1vh; height: 3vh; align-items: center; }
+        .p2-panel .hearts { justify-content: flex-end; }
+        .icon-heart { width: 3vh; height: 3vh; fill: #555; }
+        .icon-heart.filled { fill: #ff3333; filter: drop-shadow(0 0 5px red); }
+
+        .streak-container {
+            display: flex; align-items: center; gap: 0.5vw;
+            margin-top: 1vh; font-weight: bold; font-size: 2.5vmin;
+            color: var(--gold);
+        }
+        .p2-panel .streak-container { justify-content: flex-end; }
+        
+        .streak-dot {
+            width: 2vh; height: 2vh; border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.5);
+        }
+        .streak-active { background: var(--gold); box-shadow: 0 0 10px var(--gold); border-color: #fff; }
+
+        /* --- TARGET BOX --- */
+        .target-box {
+            flex: 1; 
+            background: white; border: 6px solid var(--gold);
+            border-radius: 20px;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            box-shadow: 0 0.8vh 0 #b37700;
+            margin: 0 2vw;
+            padding: 1vh;
+            overflow: hidden;
+            position: relative;
+            max-width: 40%;
+        }
+        .target-label { color: #888; font-size: 2vmin; font-weight: bold; letter-spacing: 2px; margin-top: 2vh;}
+        .target-level { 
+            position: absolute; top: 0; left: 0; width: 100%; 
+            background: var(--gold); color: #5a3e00; 
+            font-size: 2vmin; font-weight: bold; 
+            text-align: center; padding: 0.5vh; 
+        }
+        .target-math { 
+            color: #2b1055; 
+            font-size: 5vmin; 
+            font-weight: bold; 
+            line-height: 1.2; 
+            margin: 1vh 0;
+            width: 100%;
+            text-align: center;
+        }
+
+        /* --- GRID AREA (SCROLLABLE) --- */
+        #game-area {
+            flex: 1; /* Mengisi sisa ruang */
+            width: 100%;
+            overflow-y: auto; /* Scroll hanya di sini */
+            display: flex; 
+            justify-content: center;
+            padding: 2vh 2vw;
+            /* Scrollbar styling */
+            scrollbar-width: thin;
+            scrollbar-color: var(--gold) rgba(0,0,0,0.3);
+        }
+
+        #game-area::-webkit-scrollbar {
+            width: 12px;
+        }
+        #game-area::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.3);
+        }
+        #game-area::-webkit-scrollbar-thumb {
+            background-color: var(--gold);
+            border-radius: 20px;
+            border: 3px solid rgba(0,0,0,0);
+        }
+
+        .grid-container {
+            width: 100%; 
+            max-width: 90vw;
+            display: grid;
+            grid-template-columns: repeat(10, 1fr); /* 10 Kolom */
+            gap: 1vmin;
+            height: fit-content;
+            padding-bottom: 2vh;
+        }
+
+        .grid-cell {
+            background: white;
+            color: #2b1055;
+            border-radius: 15px;
+            border: none;
+            font-family: 'Fredoka', sans-serif;
+            font-weight: bold;
+            font-size: 3vmin; /* Responsive font */
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer;
+            box-shadow: 0 0.5vh 0 #b0b0b0;
+            transition: all 0.1s;
+            aspect-ratio: 1/1; /* Tetap Kotak */
+        }
+        
+        .grid-cell:active { transform: translateY(0.5vh); box-shadow: none; }
+        .grid-cell:disabled { cursor: default; }
+
+        .cell-correct { background: #88ff00 !important; box-shadow: 0 0.5vh 0 #55aa00 !important; transform: scale(1.05); z-index: 2; }
+        .cell-wrong { background: #ff3333 !important; color: white !important; box-shadow: 0 0.5vh 0 #990000 !important; opacity: 0.5; transform: scale(0.9); }
+
+        /* --- FOOTER --- */
+        footer {
+            flex: 0 0 auto; /* Tinggi tetap sesuai konten */
+            padding: 1.5vh;
+            font-size: 2vmin;
+            color: rgba(255,255,255,0.6);
+            text-align: center;
+            background: rgba(0,0,0,0.2);
+        }
+
+    </style>
+</head>
+<body>
+    <div class="main-wrapper">
+        <!-- ALERT OVERLAY -->
+        <div id="turn-alert" class="flex-center">
+            <div class="alert-box">
+                <div id="alert-icon" style="font-size: 8vmin; margin-bottom: 2vh;">⚠️</div>
+                <div id="alert-msg">SALAH!</div>
+                <div id="alert-sub" style="font-size: 3vmin; color:#666; margin-top:1vh;">Giliran dilempar ke lawan</div>
+            </div>
+        </div>
+
+        <!-- SETUP SCREEN -->
+        <div id="setup-screen" class="flex-center">
+            <h1>Battle<br><span style="color:var(--gold); font-size:0.6em; font-family:'Nunito'">AKAR KUADRAT</span></h1>
+            
+            <div class="input-group">
+                <input type="text" id="p1-name" class="name-input" placeholder="Nama P1" value="Player 1">
+                <span style="font-size:5vmin; font-weight:bold; color:var(--gold)">VS</span>
+                <input type="text" id="p2-name" class="name-input" placeholder="Nama P2" value="Player 2">
+            </div>
+
+            <!-- Rules Box Updated -->
+            <div style="background:rgba(0,0,0,0.4); padding:3vh 3vw; border-radius:30px; margin-bottom:4vh; border:2px solid rgba(255,255,255,0.1); max-width:800px; text-align:left;">
+                <h3 style="margin-top:0; text-align:center; color:var(--gold); font-family:'Fredoka'; letter-spacing:2px; font-size:3.5vmin; margin-bottom:2vh;">PERATURAN</h3>
+                <ul style="padding-left:30px; margin:0; font-size:2.5vmin; line-height:1.6; color:#eee;">
+                    <li style="margin-bottom:1vh;">🎯 <strong>Misi:</strong> Cari 2 Akar dari persamaan kuadrat (-24 s.d. 25).</li>
+                    <li style="margin-bottom:1vh;">📈 <strong>Bertingkat:</strong> Soal semakin sulit. Ganti tipe tiap 2 soal.</li>
+                    <li style="margin-bottom:1vh;">⚠️ <strong>SALAH = LEMPAR:</strong> Jika salah klik, nyawa -1 dan giliran <strong>dilempar ke lawan</strong>.</li>
+                    <li style="margin-bottom:1vh;">🏆 <strong>Menang:</strong> Dapatkan Streak <strong>PERFECT</strong> 5x berturut-turut atau lawan mati.</li>
+                </ul>
+            </div>
+
+            <button class="btn-primary" onclick="Game.start()">MULAI BATTLE</button>
+        </div>
+
+        <!-- GAME OVER SCREEN -->
+        <div id="gameover-screen" class="flex-center hidden">
+            <svg width="15vmin" height="15vmin" viewBox="0 0 24 24" fill="none" stroke="gold" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:3vh; filter:drop-shadow(0 0 20px gold);">
+                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+                <path d="M4 22h16"></path>
+                <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
+                <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
+                <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+            </svg>
+            <h1>SELESAI!</h1>
+            <h2 id="winner-text" style="color:var(--p1-color); margin-bottom:2vh; font-size: 6vmin;">Player 1 Menang!</h2>
+            <p id="win-reason" style="background:rgba(255,255,255,0.1); padding:2vh 4vw; border-radius:20px; margin-bottom:4vh; font-size:3vmin; max-width: 80%;">Alasan</p>
+
+            <button class="btn-primary" onclick="Game.setup()">MAIN LAGI</button>
+        </div>
+
+        <!-- SUMMARY POPUP -->
+        <div id="summary-screen" class="flex-center hidden">
+            <div style="background:white; color:#2b1055; padding:5vh 5vw; border-radius:40px; max-width:80vw; border:1vmin solid var(--gold);">
+                <h2 class="font-fredoka" style="margin-top:0; font-size: 5vmin;">RONDE SELESAI</h2>
+                <p id="summary-msg" style="font-size:3.5vmin; font-weight:bold; margin-bottom:4vh;">Pesan</p>
+                <button class="btn-green font-fredoka" onclick="Game.nextRound(true)">LANJUT SOAL BARU ▶</button>
+            </div>
+        </div>
+
+        <!-- MAIN HUD -->
+        <header id="game-hud" class="hidden">
+            <!-- P1 Panel -->
+            <div id="p1-panel" class="player-panel p1-panel">
+                <div id="p1-turn-badge" class="turn-badge hidden">GILIRANMU</div>
+                <div id="p1-timer" class="timer-badge">03:00</div>
+                
+                <div>
+                    <div id="hud-p1-name" class="player-name">Player 1</div>
+                    <div class="hearts" id="p1-hearts"></div>
+                </div>
+                
+                <div class="streak-container">
+                    <span>Streak:</span>
+                    <div id="p1-s1" class="streak-dot"></div>
+                    <div id="p1-s2" class="streak-dot"></div>
+                    <div id="p1-s3" class="streak-dot"></div>
+                    <div id="p1-s4" class="streak-dot"></div>
+                    <div id="p1-s5" class="streak-dot"></div>
+                </div>
+            </div>
+
+            <!-- Target Center -->
+            <div class="target-box">
+                <div id="level-indicator" class="target-level">LEVEL 1</div>
+                <span class="target-label">CARI AKAR (X1, X2)</span>
+                <!-- MathJax Container -->
+                <div id="target-math" class="target-math">
+                    \[ x^2 - 5x + 6 = 0 \]
+                </div>
+            </div>
+
+            <!-- P2 Panel -->
+            <div id="p2-panel" class="player-panel p2-panel">
+                <div id="p2-turn-badge" class="turn-badge hidden">GILIRANMU</div>
+                <div id="p2-timer" class="timer-badge">03:00</div>
+                
+                <div style="display:flex; flex-direction:column; align-items:flex-end;">
+                    <div id="hud-p2-name" class="player-name">Player 2</div>
+                    <div class="hearts" id="p2-hearts"></div>
+                </div>
+                
+                <div class="streak-container">
+                    <div id="p2-s5" class="streak-dot"></div>
+                    <div id="p2-s4" class="streak-dot"></div>
+                    <div id="p2-s3" class="streak-dot"></div>
+                    <div id="p2-s2" class="streak-dot"></div>
+                    <div id="p2-s1" class="streak-dot"></div>
+                    <span>:Streak</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- GRID AREA -->
+        <section id="game-area" class="hidden">
+            <div class="grid-container" id="grid">
+                <!-- JS will inject buttons here -->
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer id="game-footer" class="hidden">
+            Cari dan klik dua angka akar yang benar (-24 s.d 25). Scroll area grid untuk melihat angka lainnya.
+        </footer>
+    </div>
+
+    <script>
+        // --- AUDIO ENGINE ---
+        const AudioEngine = {
+            ctx: null,
+            init() {
+                if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            },
+            play(type) {
+                if (!this.ctx) this.init();
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                const now = this.ctx.currentTime;
+
+                if (type === 'correct') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523, now); // C5
+                    osc.frequency.setValueAtTime(659, now + 0.1); // E5
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now); osc.stop(now + 0.3);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.linearRampToValueAtTime(80, now + 0.3);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now); osc.stop(now + 0.3);
+                } else if (type === 'win') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523, now);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 1.5);
+                    osc.start(now); osc.stop(now + 1.5);
+                } else if (type === 'pass') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+                    gain.gain.setValueAtTime(0.1, now);
+                    osc.start(now); osc.stop(now + 0.3);
+                } else if (type === 'round_complete') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.setValueAtTime(880, now + 0.2);
+                    gain.gain.setValueAtTime(0.2, now);
+                    osc.start(now); osc.stop(now + 0.4);
+                }
+            }
+        };
+
+        // --- GAME LOGIC ---
+        const Game = {
+            state: {
+                players: [
+                    { name: 'P1', lives: 5, time: 180, streak: 0 },
+                    { name: 'P2', lives: 5, time: 180, streak: 0 }
+                ],
+                activePlayer: 0,
+                roots: [], // Current correct answers [x1, x2]
+                foundRoots: [], // Track which roots have been clicked
+                gridStatus: {},
+                isRebound: false,
+                intervalId: null,
+                questionCount: 0 // Track total questions asked
+            },
+            
+            // LOGIC CONSTANTS
+            GRID_MIN: -24,
+            GRID_MAX: 25,
+            TARGET_STREAK: 5,
+
+            getRandomInt(min, max, exclude = []) {
+                let val;
+                do {
+                    val = Math.floor(Math.random() * (max - min + 1)) + min;
+                } while (exclude.includes(val));
+                return val;
+            },
+
+            generateQuestion() {
+                this.state.questionCount++;
+                const count = this.state.questionCount;
+                let x1, x2, latex, levelLabel;
+
+                // --- LAYERED DIFFICULTY LOGIC (UPDATED: PER 2 SOAL) ---
+                const randNonZero = () => this.getRandomInt(-24, 25, [0]);
+                
+                // 1. x(x+a)=0  (Soal 1-2)
+                if (count <= 2) {
+                    levelLabel = "LEVEL 1";
+                    x1 = 0;
+                    x2 = randNonZero(); 
+                    const term = -x2; 
+                    const termStr = term > 0 ? `+ ${term}` : `- ${Math.abs(term)}`;
+                    latex = `\\[ x(x ${termStr}) = 0 \\]`;
+                }
+                
+                // 2. ax(x+b)=0 (Soal 3-4) 
+                else if (count <= 4) {
+                    levelLabel = "LEVEL 2";
+                    x1 = 0;
+                    x2 = randNonZero();
+                    const a = this.getRandomInt(2, 5); 
+                    const term = -x2;
+                    const termStr = term > 0 ? `+ ${term}` : `- ${Math.abs(term)}`;
+                    latex = `\\[ ${a}x(x ${termStr}) = 0 \\]`;
+                }
+
+                // 3. (x+a)(x+b)=0 (Soal 5-6)
+                else if (count <= 6) {
+                    levelLabel = "LEVEL 3";
+                    x1 = randNonZero();
+                    do { x2 = randNonZero(); } while (x1 === x2); 
+                    const a = -x1;
+                    const b = -x2;
+                    const aStr = a > 0 ? `+ ${a}` : `- ${Math.abs(a)}`;
+                    const bStr = b > 0 ? `+ ${b}` : `- ${Math.abs(b)}`;
+                    latex = `\\[ (x ${aStr})(x ${bStr}) = 0 \\]`;
+                }
+
+                // 4. (x+a)(x-a)=0 (Soal 7-8)
+                else if (count <= 8) {
+                    levelLabel = "LEVEL 4";
+                    const a = Math.abs(randNonZero());
+                    x1 = -a;
+                    x2 = a;
+                    latex = `\\[ (x + ${a})(x - ${a}) = 0 \\]`;
+                }
+
+                // 5. x^2 + bx = 0 (Soal 9-10)
+                else if (count <= 10) {
+                    levelLabel = "LEVEL 5";
+                    x1 = 0;
+                    x2 = randNonZero();
+                    const b = -x2;
+                    let bStr = b > 0 ? `+ ${b}x` : `- ${Math.abs(b)}x`;
+                    if (Math.abs(b) === 1) bStr = b > 0 ? `+ x` : `- x`;
+                    latex = `\\[ x^2 ${bStr} = 0 \\]`;
+                }
+
+                // 6. x^2 - a^2 = 0 (Soal 11-12)
+                else if (count <= 12) {
+                    levelLabel = "LEVEL 6";
+                    const a = Math.abs(randNonZero());
+                    x1 = a;
+                    x2 = -a;
+                    const c = a * a;
+                    latex = `\\[ x^2 - ${c} = 0 \\]`;
+                }
+
+                // 7. x^2 + bx + c = 0 (Soal 13++)
+                else {
+                    levelLabel = "LEVEL MAX";
+                    do {
+                        x1 = this.getRandomInt(-15, 15, [0]); 
+                        x2 = this.getRandomInt(-15, 15, [0]);
+                    } while (x1 === x2 || x1 === -x2);
+
+                    const b = -(x1 + x2);
+                    const c = x1 * x2;
+
+                    let bStr = b === 0 ? "" : (b > 0 ? `+ ${b}x` : `- ${Math.abs(b)}x`);
+                    if (Math.abs(b) === 1) bStr = (b > 0 ? `+ x` : `- x`);
+                    
+                    let cStr = c === 0 ? "" : (c > 0 ? `+ ${c}` : `- ${Math.abs(c)}`);
+                    
+                    latex = `\\[ x^2 ${bStr} ${cStr} = 0 \\]`;
+                }
+
+                this.state.roots = [x1, x2];
+                this.state.foundRoots = [];
+                
+                document.getElementById('level-indicator').innerText = levelLabel;
+                const mathContainer = document.getElementById('target-math');
+                mathContainer.innerHTML = latex;
+                
+                // Trigger MathJax re-render
+                if (window.MathJax) {
+                    MathJax.typesetPromise([mathContainer]).catch((err) => console.log(err));
+                }
+            },
+
+            setup() {
+                document.getElementById('setup-screen').classList.remove('hidden');
+                document.getElementById('gameover-screen').classList.add('hidden');
+                document.getElementById('game-hud').classList.add('hidden');
+                document.getElementById('game-area').classList.add('hidden');
+                document.getElementById('game-footer').classList.add('hidden');
+                this.stopTimer();
+            },
+
+            start() {
+                const p1Name = document.getElementById('p1-name').value || 'Player 1';
+                const p2Name = document.getElementById('p2-name').value || 'Player 2';
+                
+                this.state.players = [
+                    { name: p1Name, lives: 5, time: 180, streak: 0 }, 
+                    { name: p2Name, lives: 5, time: 180, streak: 0 }
+                ];
+                this.state.activePlayer = 0;
+                this.state.questionCount = 0; 
+
+                document.getElementById('hud-p1-name').textContent = p1Name;
+                document.getElementById('hud-p2-name').textContent = p2Name;
+
+                document.getElementById('setup-screen').classList.add('hidden');
+                document.getElementById('game-hud').classList.remove('hidden');
+                document.getElementById('game-area').classList.remove('hidden');
+                document.getElementById('game-footer').classList.remove('hidden');
+
+                this.nextRound(true); 
+                this.startTimer();
+            },
+
+            nextRound(isNewQuestion = true) {
+                this.state.gridStatus = {};
+                this.state.isRebound = false;
+                this.state.foundRoots = [];
+                
+                if (isNewQuestion) this.generateQuestion();
+                
+                this.renderGrid();
+                this.updateHUD();
+                document.getElementById('summary-screen').classList.add('hidden');
+                
+                const grid = document.getElementById('grid');
+                grid.style.pointerEvents = 'auto';
+            },
+
+            startTimer() {
+                this.stopTimer();
+                this.state.intervalId = setInterval(() => {
+                    const p = this.state.players[this.state.activePlayer];
+                    p.time--;
+                    
+                    if (p.time <= 0) {
+                        this.endGame(this.state.activePlayer === 0 ? 1 : 0, "Waktu Habis!");
+                    }
+                    this.updateTimers();
+                }, 1000);
+            },
+
+            stopTimer() {
+                if (this.state.intervalId) clearInterval(this.state.intervalId);
+            },
+
+            showAlert(icon, msg, sub, callback) {
+                const box = document.getElementById('turn-alert');
+                document.getElementById('alert-icon').textContent = icon;
+                document.getElementById('alert-msg').textContent = msg;
+                document.getElementById('alert-sub').textContent = sub;
+                
+                box.style.display = 'flex';
+                
+                setTimeout(() => {
+                    box.style.display = 'none';
+                    if (callback) callback();
+                }, 2000); // 2 seconds alert
+            },
+
+            handleGridClick(num) {
+                if (this.state.gridStatus[num]) return;
+
+                const roots = this.state.roots;
+                const isCorrect = roots.includes(num);
+                
+                const player = this.state.players[this.state.activePlayer];
+                const btn = document.getElementById(`cell-${num}`);
+
+                if (isCorrect) {
+                    AudioEngine.play('correct');
+                    this.state.gridStatus[num] = 'correct';
+                    this.state.foundRoots.push(num);
+                    btn.className = "grid-cell cell-correct";
+
+                    // Check completeness (Finding both roots)
+                    if (this.state.foundRoots.length === roots.length) {
+                          this.roundWin();
+                    }
+
+                } else {
+                    // WRONG ANSWER
+                    AudioEngine.play('wrong');
+                    this.state.gridStatus[num] = 'wrong';
+                    player.lives--;
+                    player.streak = 0; 
+                    btn.className = "grid-cell cell-wrong";
+
+                    // Cek Kalah
+                    if (player.lives <= 0) {
+                        this.endGame(this.state.activePlayer === 0 ? 1 : 0, "Lawan Kehabisan Nyawa!");
+                        return;
+                    }
+
+                    // LOGIKA REBOUND / LEMPARAN
+                    if (this.state.isRebound) {
+                        this.showAlert("☠️", "DUA-DUANYA SALAH!", "Soal Hangus. Ganti Soal Baru.", () => {
+                            this.state.activePlayer = this.state.activePlayer === 0 ? 1 : 0;
+                            this.nextRound(true);
+                        });
+                    } else {
+                        this.state.isRebound = true;
+                        const nextPlayerName = this.state.players[this.state.activePlayer === 0 ? 1 : 0].name;
+                        
+                        this.showAlert("🔄", "SALAH TEBAK!", `Giliran dilempar ke ${nextPlayerName}`, () => {
+                            this.state.activePlayer = this.state.activePlayer === 0 ? 1 : 0;
+                            AudioEngine.play('pass');
+                            this.updateHUD(); 
+                        });
+                    }
+                }
+                this.updateHUD();
+            },
+
+            roundWin() {
+                AudioEngine.play('round_complete');
+                const player = this.state.players[this.state.activePlayer];
+                
+                player.streak++;
+                
+                let msg = this.state.isRebound 
+                      ? `REBOUND SUKSES! Streak: ${player.streak}` 
+                      : `PERFECT! Streak: ${player.streak}`;
+                
+                if (player.streak >= this.TARGET_STREAK) {
+                    this.endGame(this.state.activePlayer, "Mencapai 5x PERFECT STREAK!");
+                    return;
+                }
+
+                document.getElementById('summary-msg').textContent = msg;
+                document.getElementById('summary-screen').classList.remove('hidden');
+                document.getElementById('grid').style.pointerEvents = 'none';
+                
+                // Switch turn for next round
+                this.state.activePlayer = this.state.activePlayer === 0 ? 1 : 0;
+            },
+
+            endGame(winnerIdx, reason) {
+                this.stopTimer();
+                const winner = this.state.players[winnerIdx];
+                
+                document.getElementById('gameover-screen').classList.remove('hidden');
+                document.getElementById('game-hud').classList.add('hidden');
+                document.getElementById('game-area').classList.add('hidden');
+                document.getElementById('game-footer').classList.add('hidden');
+                document.getElementById('summary-screen').classList.add('hidden');
+
+                AudioEngine.play('win');
+
+                document.getElementById('winner-text').textContent = `${winner.name} Menang!`;
+                document.getElementById('winner-text').style.color = winnerIdx === 0 ? 'var(--p1-color)' : 'var(--p2-color)';
+                document.getElementById('win-reason').textContent = reason;
+            },
+
+            // --- RENDERING ---
+            renderGrid() {
+                const grid = document.getElementById('grid');
+                grid.innerHTML = '';
+                // Render from -24 to 25 (Total 50 items)
+                for (let i = this.GRID_MIN; i <= this.GRID_MAX; i++) {
+                    const btn = document.createElement('button');
+                    btn.id = `cell-${i}`;
+                    btn.className = 'grid-cell';
+                    if (this.state.isRebound && this.state.gridStatus[i] === 'wrong') {
+                        btn.classList.add('cell-wrong');
+                    }
+                    
+                    btn.textContent = i;
+                    btn.onclick = () => this.handleGridClick(i);
+                    grid.appendChild(btn);
+                }
+            },
+
+            updateHUD() {
+                const p1 = this.state.players[0];
+                const p2 = this.state.players[1];
+                const active = this.state.activePlayer;
+
+                // Panels
+                const p1Panel = document.getElementById('p1-panel');
+                const p2Panel = document.getElementById('p2-panel');
+                const p1Badge = document.getElementById('p1-turn-badge');
+                const p2Badge = document.getElementById('p2-turn-badge');
+
+                if (active === 0) {
+                    p1Panel.classList.add('active-p1'); p1Panel.classList.remove('inactive');
+                    p2Panel.classList.remove('active-p2'); p2Panel.classList.add('inactive');
+                    p1Badge.classList.remove('hidden'); p2Badge.classList.add('hidden');
+                    document.getElementById('p1-timer').classList.add('active-timer');
+                    document.getElementById('p2-timer').classList.remove('active-timer');
+                } else {
+                    p1Panel.classList.remove('active-p1'); p1Panel.classList.add('inactive');
+                    p2Panel.classList.add('active-p2'); p2Panel.classList.remove('inactive');
+                    p1Badge.classList.add('hidden'); p2Badge.classList.remove('hidden');
+                    document.getElementById('p1-timer').classList.remove('active-timer');
+                    document.getElementById('p2-timer').classList.add('active-timer');
+                }
+
+                // Rebound Badge Style
+                if (this.state.isRebound) {
+                    if (active === 0) { p1Badge.textContent = "DAPAT LEMPARAN!"; p1Badge.classList.add('rebound-badge'); }
+                    else { p2Badge.textContent = "DAPAT LEMPARAN!"; p2Badge.classList.add('rebound-badge'); }
+                } else {
+                    p1Badge.textContent = "GILIRANMU"; p1Badge.classList.remove('rebound-badge');
+                    p2Badge.textContent = "GILIRANMU"; p2Badge.classList.remove('rebound-badge');
+                }
+
+                // Lives (Hearts)
+                this.renderHearts('p1-hearts', p1.lives);
+                this.renderHearts('p2-hearts', p2.lives);
+
+                // Streaks Dots Update
+                this.renderStreakDots('p1', p1.streak);
+                this.renderStreakDots('p2', p2.streak);
+
+                this.updateTimers();
+            },
+
+            renderHearts(id, count) {
+                const container = document.getElementById(id);
+                container.innerHTML = '';
+                const svgIcon = `<svg class="icon-heart" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+                for (let i = 0; i < 5; i++) {
+                    const span = document.createElement('span');
+                    span.innerHTML = svgIcon;
+                    if (i < count) span.querySelector('svg').classList.add('filled');
+                    container.appendChild(span);
+                }
+            },
+
+            renderStreakDots(playerPrefix, streakCount) {
+                for (let i = 1; i <= 5; i++) {
+                    const dot = document.getElementById(`${playerPrefix}-s${i}`);
+                    if (dot) {
+                        if (i <= streakCount) dot.classList.add('streak-active');
+                        else dot.classList.remove('streak-active');
+                    }
+                }
+            },
+
+            updateTimers() {
+                const fmt = (s) => {
+                    const m = Math.floor(s/60).toString().padStart(2,'0');
+                    const sec = (s%60).toString().padStart(2,'0');
+                    return `${m}:${sec}`;
+                };
+                document.getElementById('p1-timer').textContent = fmt(this.state.players[0].time);
+                document.getElementById('p2-timer').textContent = fmt(this.state.players[1].time);
+            }
+        };
+
+        // Initialize
+        window.onload = () => Game.setup();
+
+    </script>
+</body>
+</html>
