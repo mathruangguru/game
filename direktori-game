@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Game Edukasi (TV Mode)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #000; /* Hitam untuk batas TV */
+            margin: 0;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden; /* Mencegah scroll pada body utama */
+        }
+
+        /* Container Utama dengan Resolusi Tetap 960x540 */
+        #tv-viewport {
+            width: 960px;
+            height: 540px;
+            background-color: #f3f4f6;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            /* Transform origin center untuk scaling yang rapi */
+            transform-origin: center center;
+        }
+
+        /* Scrollbar kustom agar tidak terlalu mengganggu di TV */
+        .custom-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Viewport 960x540 -->
+    <div id="tv-viewport">
+        
+        <!-- Header Section (Fixed Height) -->
+        <div class="bg-indigo-600 px-6 py-4 text-white flex justify-between items-center shadow-md z-10 shrink-0 h-20">
+            <div class="flex items-center gap-3">
+                <img src="https://imgix3.ruangguru.com/assets/miscellaneous/png_zekej2_3984.png" alt="Logo Ruangguru" class="h-10 bg-white rounded p-1 shadow-sm">
+                <div>
+                    <h1 class="text-xl font-bold leading-tight">Direktori Game Edukasi</h1>
+                    <p class="text-indigo-200 text-xs">Menu Interaktif TV</p>
+                </div>
+            </div>
+            
+            <!-- Search Bar -->
+            <div class="relative w-64">
+                <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Cari game..." 
+                    class="w-full pl-9 pr-3 py-2 rounded-md text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 shadow-inner">
+                <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
+            </div>
+        </div>
+
+        <!-- Header Tabel (Fixed) -->
+        <div class="bg-indigo-50 border-b border-indigo-100 px-6 py-2 grid grid-cols-12 gap-2 text-xs font-bold text-indigo-800 uppercase tracking-wider shrink-0">
+            <div class="col-span-4">Nama Game</div>
+            <div class="col-span-2">PIC</div>
+            <div class="col-span-4">Topik</div>
+            <div class="col-span-2 text-center">Aksi</div>
+        </div>
+
+        <!-- Content Area (Scrollable) -->
+        <div class="flex-1 overflow-y-auto custom-scroll px-6 py-2 bg-white">
+            <table class="w-full text-left border-collapse">
+                <tbody id="gameTableBody" class="text-sm text-gray-700">
+                    <!-- Data rows inserted here -->
+                </tbody>
+            </table>
+            
+            <!-- Empty State for Search -->
+            <div id="emptyState" class="hidden text-center py-10 text-gray-500">
+                <i class="fas fa-ghost text-3xl mb-2"></i>
+                <p>Game tidak ditemukan</p>
+            </div>
+        </div>
+
+        <!-- Footer (Fixed Height) -->
+        <div class="bg-gray-50 px-6 py-2 text-xs text-gray-500 border-t border-gray-200 flex justify-between items-center shrink-0 h-8">
+            <span>Resolusi Asli: 960x540</span>
+            <span>Total Game: <span id="gameCount" class="font-bold text-indigo-600">0</span></span>
+        </div>
+
+    </div>
+
+    <script>
+        // --- TV SCALING LOGIC ---
+        function scaleToFit() {
+            const viewport = document.getElementById('tv-viewport');
+            const targetWidth = 960;
+            const targetHeight = 540;
+            
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            
+            // Hitung skala agar pas di layar (contain)
+            const scale = Math.min(windowWidth / targetWidth, windowHeight / targetHeight);
+            
+            viewport.style.transform = `scale(${scale})`;
+        }
+
+        // Jalankan saat load dan saat window di-resize
+        window.addEventListener('resize', scaleToFit);
+        window.addEventListener('load', scaleToFit);
+        scaleToFit(); // Panggil langsung agar instan
+
+
+        // --- DATA & LOGIC ---
+        const games = [
+            { name: "Algebra Rush", pic: "Dhanar", topic: "Persamaan Linear Satu Variabel", link: "https://mathruangguru.github.io/game/algebra-rush/" },
+            { name: "Integer Zap", pic: "Dhanar", topic: "Operasi Hitung Bilangan Bulat", link: "https://mathruangguru.github.io/game/integer-zap/" },
+            { name: "Probability Battle Cards", pic: "Rohmat", topic: "Peluang", link: "https://matrohmatmath.com/game/probability-battle-cards/" },
+            { name: "Battle Kelipatan", pic: "Dhanar", topic: "Kelipatan Persekutuan", link: "https://mathruangguru.github.io/game/battle-kelipatan/" },
+            { name: "Battle Faktor", pic: "Dhanar", topic: "Faktor Persekutuan", link: "https://mathruangguru.github.io/game/battle-faktor/" },
+            { name: "Substitute the Operator", pic: "Dhanar", topic: "Operasi Bilangan", link: "https://mathruangguru.github.io/game/substitute-the-operator/" },
+            { name: "Picto Resto", pic: "Rohmat", topic: "Piktogram", link: "https://matrohmatmath.com/game/picto-resto/" },
+            { name: "Rocket Rounding", pic: "Mayang", topic: "Pembulatan/Taksiran", link: "https://mathruangguru.github.io/game/pembulatan/" },
+            { name: "Math Snake", pic: "Mayang", topic: "Barisan Aritmetika dan Geometri", link: "https://mathruangguru.github.io/game/snake-math/" },
+            { name: "Navigator Linear", pic: "Rohmat", topic: "Persamaan Garis Lurus", link: "https://matrohmatmath.com/game/navigator-linear" },
+            { name: "Battle Akar Kuadrat", pic: "Dhanar", topic: "Persamaan Kuadrat", link: "https://mathruangguru.github.io/game/battle-akar-kuadrat/" },
+            { name: "Sifat Fungsi Kuadrat", pic: "Dhanar", topic: "Fungsi Kuadrat", link: "https://mathruangguru.github.io/game/sifat-fungsi-kuadrat/" },
+            { name: "Klinik Optik", pic: "Rohmat", topic: "Cahaya dan Alat Optik", link: "https://matrohmatmath.com/game/klinik-optik" }
+        ];
+
+        const tbody = document.getElementById('gameTableBody');
+        const countSpan = document.getElementById('gameCount');
+        const emptyState = document.getElementById('emptyState');
+
+        function renderTable(data) {
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            data.forEach(game => {
+                const row = document.createElement('tr');
+                row.className = "hover:bg-indigo-50 transition-colors duration-150 border-b border-gray-100 last:border-0 grid grid-cols-12 gap-2 items-center py-2";
+                
+                // Layout Grid Row
+                row.innerHTML = `
+                    <td class="col-span-4 font-semibold text-indigo-700 truncate pr-2" title="${game.name}">${game.name}</td>
+                    <td class="col-span-2">
+                        <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                            ${game.pic}
+                        </span>
+                    </td>
+                    <td class="col-span-4 text-xs text-gray-600 truncate pr-2" title="${game.topic}">${game.topic}</td>
+                    <td class="col-span-2 text-center">
+                        <a href="${game.link}" target="_blank" class="inline-flex items-center justify-center px-3 py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-xs font-bold no-underline w-full shadow-sm hover:shadow-md transition-all">
+                            Main <i class="fas fa-play ml-1.5 text-[10px]"></i>
+                        </a>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            countSpan.textContent = data.length;
+        }
+
+        function filterTable() {
+            const input = document.getElementById('searchInput');
+            const filter = input.value.toLowerCase();
+            const filteredGames = games.filter(game => 
+                game.name.toLowerCase().includes(filter) || 
+                game.topic.toLowerCase().includes(filter) ||
+                game.pic.toLowerCase().includes(filter)
+            );
+            renderTable(filteredGames);
+        }
+
+        renderTable(games);
+    </script>
+</body>
+</html>
