@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Battle Akar Kuadrat (Rebound Rules)</title>
+    <title>Battle Akar Kuadrat (Layered Edition)</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -250,14 +250,14 @@
         
         /* Streak Styles */
         .streak-container {
-            display: flex; align-items: center; gap: 5px;
+            display: flex; align-items: center; gap: 3px;
             margin-top: 10px; font-weight: bold; font-size: 0.9rem;
             color: var(--gold);
         }
         .p2-panel .streak-container { justify-content: flex-end; }
         
         .streak-dot {
-            width: 12px; height: 12px; border-radius: 50%;
+            width: 10px; height: 10px; border-radius: 50%;
             background: rgba(255,255,255,0.2);
             border: 1px solid rgba(255,255,255,0.5);
         }
@@ -265,7 +265,7 @@
 
         /* --- TARGET BOX --- */
         .target-box {
-            flex: 1; height: 95%; max-width: 250px;
+            flex: 1; height: 95%; max-width: 300px;
             background: white; border: 4px solid var(--gold);
             border-radius: 15px;
             display: flex; flex-direction: column;
@@ -275,11 +275,13 @@
             z-index: 5;
             padding: 5px;
             overflow: hidden;
+            position: relative;
         }
         .target-label { color: #888; font-size: 0.7rem; font-weight: bold; letter-spacing: 1px; }
+        .target-level { position: absolute; top: 0; left: 0; width: 100%; background: var(--gold); color: #5a3e00; font-size: 0.6rem; font-weight: bold; text-align: center; padding: 2px; }
         .target-math { 
             color: #2b1055; 
-            font-size: clamp(1rem, 2vw, 1.4rem); 
+            font-size: clamp(1.2rem, 3vw, 1.8rem); 
             font-weight: bold; 
             line-height: 1.2; 
             margin: 5px 0;
@@ -300,35 +302,36 @@
             background: rgba(0,0,0,0.2);
             border: 2px solid rgba(255,255,255,0.1);
             border-radius: 15px;
-            padding: 5px;
+            padding: 10px;
             display: grid;
             grid-template-columns: repeat(10, 1fr); /* 10 kolom */
             grid-template-rows: auto;
-            gap: 2px;
+            gap: 4px;
             overflow-y: auto;
+            align-content: center;
         }
 
         .grid-cell {
             background: white;
             color: #2b1055;
-            border-radius: 4px;
+            border-radius: 8px;
             border: none;
             font-family: 'Fredoka', sans-serif;
             font-weight: bold;
-            font-size: clamp(0.6rem, 2vmin, 0.9rem);
+            font-size: clamp(0.8rem, 2.5vmin, 1.2rem);
             display: flex; justify-content: center; align-items: center;
             cursor: pointer;
-            box-shadow: 0 2px 0 #b0b0b0;
+            box-shadow: 0 3px 0 #b0b0b0;
             transition: all 0.1s;
-            padding: 5px 0;
-            min-height: 30px;
+            padding: 0;
+            aspect-ratio: 1/1; /* Kotak sempurna */
         }
         
-        .grid-cell:active { transform: translateY(2px); box-shadow: none; }
+        .grid-cell:active { transform: translateY(3px); box-shadow: none; }
         .grid-cell:disabled { cursor: default; }
 
-        .cell-correct { background: #88ff00 !important; box-shadow: 0 2px 0 #55aa00 !important; transform: scale(1.05); z-index: 2; }
-        .cell-wrong { background: #ff3333 !important; color: white !important; box-shadow: 0 2px 0 #990000 !important; opacity: 0.5; transform: scale(0.9); }
+        .cell-correct { background: #88ff00 !important; box-shadow: 0 3px 0 #55aa00 !important; transform: scale(1.05); z-index: 2; }
+        .cell-wrong { background: #ff3333 !important; color: white !important; box-shadow: 0 3px 0 #990000 !important; opacity: 0.5; transform: scale(0.9); }
         .cell-inactive { opacity: 0.5; }
 
         /* --- FOOTER --- */
@@ -338,6 +341,8 @@
             background: rgba(0,0,0,0.4);
             font-size: 0.9rem;
             color: rgba(255,255,255,0.6);
+            text-align: center;
+            padding: 0 20px;
         }
 
         /* --- SVG ICONS --- */
@@ -369,12 +374,13 @@
 
         <!-- Rules Box Updated -->
         <div style="background:rgba(0,0,0,0.4); padding:20px; border-radius:15px; margin-bottom:30px; border:1px solid rgba(255,255,255,0.1); max-width:500px; text-align:left; width:90%;">
-            <h3 style="margin-top:0; text-align:center; color:var(--gold); font-family:'Fredoka'; letter-spacing:1px; margin-bottom:15px;">ATURAN REBOUND</h3>
+            <h3 style="margin-top:0; text-align:center; color:var(--gold); font-family:'Fredoka'; letter-spacing:1px; margin-bottom:15px;">PERATURAN</h3>
             <ul style="padding-left:20px; margin:0; font-size:0.95rem; line-height:1.5; color:#eee;">
-                <li style="margin-bottom:8px;">🎯 <strong>Misi:</strong> Cari 2 Akar dari persamaan kuadrat (Rentang -50 sd 50).</li>
+                <li style="margin-bottom:8px;">🎯 <strong>Misi:</strong> Cari 2 Akar dari persamaan kuadrat (Rentang -24 s.d. 25).</li>
+                <li style="margin-bottom:8px;">📈 <strong>Bertingkat:</strong> Soal semakin sulit (7 Tipe). Ganti tipe tiap 2 soal.</li>
                 <li style="margin-bottom:8px;">⚠️ <strong>SALAH = LEMPAR:</strong> Jika salah klik, nyawa -1 dan giliran <strong>dilempar ke lawan</strong>.</li>
                 <li style="margin-bottom:8px;">🚫 <strong>GAGAL TOTAL:</strong> Jika lawan yang menerima lemparan juga salah, <strong>soal hangus</strong>.</li>
-                <li style="margin-bottom:8px;">🏆 <strong>Menang Instan:</strong> Dapatkan Streak <strong>PERFECT</strong> (Menjawab Benar) 3x berturut-turut.</li>
+                <li style="margin-bottom:8px;">🏆 <strong>Menang Instan:</strong> Dapatkan Streak <strong>PERFECT</strong> (Menjawab Benar) 5x berturut-turut.</li>
             </ul>
         </div>
 
@@ -424,11 +430,15 @@
                 <div id="p1-s1" class="streak-dot"></div>
                 <div id="p1-s2" class="streak-dot"></div>
                 <div id="p1-s3" class="streak-dot"></div>
+                <div id="p1-s4" class="streak-dot"></div>
+                <div id="p1-s5" class="streak-dot"></div>
             </div>
         </div>
 
         <!-- Target Center -->
         <div class="target-box">
+            <div id="level-indicator" class="target-level">LEVEL 1</div>
+            <span class="target-label" style="margin-top: 15px;">CARI AKAR (X1, X2)</span>
             <!-- MathJax Container -->
             <div id="target-math" class="target-math">
                 \[ x^2 - 5x + 6 = 0 \]
@@ -446,6 +456,8 @@
             </div>
             
             <div class="streak-container">
+                <div id="p2-s5" class="streak-dot"></div>
+                <div id="p2-s4" class="streak-dot"></div>
                 <div id="p2-s3" class="streak-dot"></div>
                 <div id="p2-s2" class="streak-dot"></div>
                 <div id="p2-s1" class="streak-dot"></div>
@@ -463,7 +475,7 @@
 
     <!-- FOOTER -->
     <footer id="game-footer" class="hidden">
-        Cari dan klik dua angka akar yang benar (-50 s.d 50)
+        Cari dan klik dua angka akar yang benar (-24 s.d 25)
     </footer>
 
     <script>
@@ -523,41 +535,130 @@
         const Game = {
             state: {
                 players: [
-                    { name: 'P1', lives: 3, time: 180, streak: 0 },
-                    { name: 'P2', lives: 3, time: 180, streak: 0 }
+                    { name: 'P1', lives: 5, time: 180, streak: 0 },
+                    { name: 'P2', lives: 5, time: 180, streak: 0 }
                 ],
                 activePlayer: 0,
                 roots: [], // Current correct answers [x1, x2]
                 foundRoots: [], // Track which roots have been clicked
                 gridStatus: {},
                 isRebound: false,
-                intervalId: null
+                intervalId: null,
+                questionCount: 0 // Track total questions asked
             },
             
             // LOGIC CONSTANTS
-            GRID_MIN: -50,
-            GRID_MAX: 50,
-            TARGET_STREAK: 3,
+            GRID_MIN: -24,
+            GRID_MAX: 25,
+            TARGET_STREAK: 5, // Updated target streak to 5
 
-            getRandomInt(min, max) {
-                return Math.floor(Math.random() * (max - min + 1)) + min;
+            getRandomInt(min, max, exclude = []) {
+                let val;
+                do {
+                    val = Math.floor(Math.random() * (max - min + 1)) + min;
+                } while (exclude.includes(val));
+                return val;
             },
             
-            generateQuestion() {
-                // Tentukan tipe soal secara acak
-                // Tipe 1: x^2 + bx + c = 0 (Umum) - 40%
-                // Tipe 2: x(x +/- b) = 0 atau x^2 +/- bx = 0 (Salah satu akar 0) - 30%
-                // Tipe 3: x^2 - a^2 = 0 (Selisih Kuadrat) - 30%
-                
-                const typeRoll = Math.random();
-                let x1, x2, latex;
+            // Helper to format terms like "+ 5", "- 3", or ""
+            formatTerm(val, suffix = "") {
+                if (val === 0) return "";
+                const sign = val > 0 ? "+" : "-";
+                const abs = Math.abs(val);
+                return `${sign} ${abs}${suffix}`;
+            },
 
-                if (typeRoll < 0.4) {
-                    // --- TIPE 1: ax^2 + bx + c = 0 ---
+            generateQuestion() {
+                this.state.questionCount++;
+                const count = this.state.questionCount;
+                let x1, x2, latex, levelLabel;
+
+                // --- LAYERED DIFFICULTY LOGIC (UPDATED: PER 2 SOAL) ---
+                
+                // Helper internal functions
+                const randRoot = () => this.getRandomInt(-24, 25);
+                const randNonZero = () => this.getRandomInt(-24, 25, [0]);
+                
+                // 1. x(x+a)=0  (Soal 1-2)
+                if (count <= 2) {
+                    levelLabel = "LEVEL 1";
+                    x1 = 0;
+                    x2 = randNonZero(); // Akar kedua
+                    // Bentuk x(x - x2) = 0
+                    const term = -x2; 
+                    const termStr = term > 0 ? `+ ${term}` : `- ${Math.abs(term)}`;
+                    latex = `\\[ x(x ${termStr}) = 0 \\]`;
+                }
+                
+                // 2. ax(x+b)=0 (Soal 3-4) -> Sama akarnya dengan level 1, tapi ada koefisien depan
+                else if (count <= 4) {
+                    levelLabel = "LEVEL 2";
+                    x1 = 0;
+                    x2 = randNonZero();
+                    const a = this.getRandomInt(2, 5); // Koefisien depan kecil
+                    const term = -x2;
+                    const termStr = term > 0 ? `+ ${term}` : `- ${Math.abs(term)}`;
+                    latex = `\\[ ${a}x(x ${termStr}) = 0 \\]`;
+                }
+
+                // 3. (x+a)(x+b)=0 (Soal 5-6) -> Pemfaktoran
+                else if (count <= 6) {
+                    levelLabel = "LEVEL 3";
+                    x1 = randNonZero();
+                    do { x2 = randNonZero(); } while (x1 === x2); // Beda akar
+                    
+                    const a = -x1;
+                    const b = -x2;
+                    
+                    const aStr = a > 0 ? `+ ${a}` : `- ${Math.abs(a)}`;
+                    const bStr = b > 0 ? `+ ${b}` : `- ${Math.abs(b)}`;
+                    
+                    latex = `\\[ (x ${aStr})(x ${bStr}) = 0 \\]`;
+                }
+
+                // 4. (x+a)(x-a)=0 (Soal 7-8) -> Selisih kuadrat bentuk faktor
+                else if (count <= 8) {
+                    levelLabel = "LEVEL 4";
+                    const a = Math.abs(randNonZero()); // Pastikan a positif untuk display
+                    x1 = -a;
+                    x2 = a;
+                    
+                    latex = `\\[ (x + ${a})(x - ${a}) = 0 \\]`;
+                }
+
+                // 5. x^2 + bx = 0 (Soal 9-10) -> Polinomial tanpa c
+                else if (count <= 10) {
+                    levelLabel = "LEVEL 5";
+                    x1 = 0;
+                    x2 = randNonZero();
+                    
+                    // x^2 - (sum)x = 0 -> sum = x2
+                    const b = -x2;
+                    let bStr = b > 0 ? `+ ${b}x` : `- ${Math.abs(b)}x`;
+                    if (Math.abs(b) === 1) bStr = b > 0 ? `+ x` : `- x`;
+                    
+                    latex = `\\[ x^2 ${bStr} = 0 \\]`;
+                }
+
+                // 6. x^2 - a^2 = 0 (Soal 11-12) -> Selisih kuadrat bentuk umum
+                else if (count <= 12) {
+                    levelLabel = "LEVEL 6";
+                    const a = Math.abs(randNonZero());
+                    x1 = a;
+                    x2 = -a;
+                    const c = a * a;
+                    
+                    latex = `\\[ x^2 - ${c} = 0 \\]`;
+                }
+
+                // 7. x^2 + bx + c = 0 (Soal 13++) -> Bentuk Umum
+                else {
+                    levelLabel = "LEVEL MAX";
+                    // Batasi agar hasil kali tidak terlalu besar, tapi akar tetap -24 sd 25
                     do {
-                        x1 = this.getRandomInt(-15, 15);
-                        x2 = this.getRandomInt(-15, 15);
-                    } while (x1 === x2 || x1 === 0 || x2 === 0 || x1 === -x2);
+                        x1 = this.getRandomInt(-15, 15, [0]); 
+                        x2 = this.getRandomInt(-15, 15, [0]);
+                    } while (x1 === x2 || x1 === -x2);
 
                     const b = -(x1 + x2);
                     const c = x1 * x2;
@@ -568,43 +669,12 @@
                     let cStr = c === 0 ? "" : (c > 0 ? `+ ${c}` : `- ${Math.abs(c)}`);
                     
                     latex = `\\[ x^2 ${bStr} ${cStr} = 0 \\]`;
-
-                } else if (typeRoll < 0.7) {
-                    // --- TIPE 2: Akar ada yang 0 ---
-                    x1 = 0;
-                    do {
-                        x2 = this.getRandomInt(-15, 15);
-                    } while (x2 === 0);
-
-                    // Acak tampilan: Antara x^2 + bx = 0 ATAU x(x + b) = 0
-                    if (Math.random() > 0.5) {
-                        // Tampilan Polinomial: x^2 + bx = 0
-                        const b = -x2;
-                        let bStr = b > 0 ? `+ ${b}x` : `- ${Math.abs(b)}x`;
-                        if (Math.abs(b) === 1) bStr = (b > 0 ? `+ x` : `- x`);
-                        latex = `\\[ x^2 ${bStr} = 0 \\]`;
-                    } else {
-                        // Tampilan Pemfaktoran: x(x - x2) = 0
-                        // Contoh: Akar 5 -> x(x - 5) = 0
-                        const val = -x2;
-                        let valStr = val > 0 ? `+ ${val}` : `- ${Math.abs(val)}`;
-                        latex = `\\[ x(x ${valStr}) = 0 \\]`;
-                    }
-
-                } else {
-                    // --- TIPE 3: x^2 - a^2 = 0 ---
-                    do {
-                        x1 = this.getRandomInt(1, 15); // Ambil positif saja
-                    } while (x1 === 0);
-                    x2 = -x1;
-                    
-                    const c = x1 * x1; // a^2
-                    latex = `\\[ x^2 - ${c} = 0 \\]`;
                 }
 
                 this.state.roots = [x1, x2];
                 this.state.foundRoots = [];
                 
+                document.getElementById('level-indicator').innerText = levelLabel;
                 const mathContainer = document.getElementById('target-math');
                 mathContainer.innerHTML = latex;
                 
@@ -629,11 +699,12 @@
                 const p2Name = document.getElementById('p2-name').value || 'Player 2';
                 
                 this.state.players = [
-                    { name: p1Name, lives: 3, time: 180, streak: 0 },
-                    { name: p2Name, lives: 3, time: 180, streak: 0 }
+                    { name: p1Name, lives: 5, time: 180, streak: 0 }, // Updated lives to 5
+                    { name: p2Name, lives: 5, time: 180, streak: 0 }  // Updated lives to 5
                 ];
                 this.state.activePlayer = 0;
-                
+                this.state.questionCount = 0; // Reset question counter
+
                 document.getElementById('hud-p1-name').textContent = p1Name;
                 document.getElementById('hud-p2-name').textContent = p2Name;
 
@@ -709,7 +780,7 @@
                     btn.className = "grid-cell cell-correct";
 
                     // Check completeness (Finding both roots)
-                    if (this.state.foundRoots.length === roots.length) {
+                    if (this.state.foundRoots.length === roots.length) { 
                          this.roundWin();
                     }
 
@@ -757,11 +828,11 @@
                 player.streak++;
                 
                 let msg = this.state.isRebound 
-                    ? `REBOUND SUKSES! Streak: ${player.streak}` 
-                    : `PERFECT! Streak: ${player.streak}`;
+                     ? `REBOUND SUKSES! Streak: ${player.streak}` 
+                     : `PERFECT! Streak: ${player.streak}`;
                 
                 if (player.streak >= this.TARGET_STREAK) {
-                    this.endGame(this.state.activePlayer, "Mencapai 3x PERFECT STREAK!");
+                    this.endGame(this.state.activePlayer, "Mencapai 5x PERFECT STREAK!");
                     return;
                 }
 
@@ -794,7 +865,7 @@
             renderGrid() {
                 const grid = document.getElementById('grid');
                 grid.innerHTML = '';
-                // Render from -50 to 50
+                // Render from -24 to 25 (Total 50 items)
                 for (let i = this.GRID_MIN; i <= this.GRID_MAX; i++) {
                     const btn = document.createElement('button');
                     btn.id = `cell-${i}`;
@@ -859,7 +930,7 @@
                 const container = document.getElementById(id);
                 container.innerHTML = '';
                 const svgIcon = `<svg class="icon-heart" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
-                for (let i = 0; i < 3; i++) {
+                for (let i = 0; i < 5; i++) { // Updated to loop 5 times
                     const span = document.createElement('span');
                     span.innerHTML = svgIcon;
                     if (i < count) span.querySelector('svg').classList.add('filled');
@@ -868,7 +939,7 @@
             },
 
             renderStreakDots(playerPrefix, streakCount) {
-                for (let i = 1; i <= 3; i++) {
+                for (let i = 1; i <= 5; i++) { // Updated to loop 5 times
                     const dot = document.getElementById(`${playerPrefix}-s${i}`);
                     if (dot) {
                         if (i <= streakCount) dot.classList.add('streak-active');
