@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Math: TV Edition (960x540)</title>
+    <style>
+        :root {
+            /* Warna Neon & Glassmorphism */
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.2);
+            --glass-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.37);
+            --neon-blue: #00f2ff;
+            --neon-purple: #bd00ff;
+            --text-main: #ffffff;
+            --text-secondary: #e0e0e0;
+            --accent-success: #00ff9d;
+            --accent-danger: #ff4d4d;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: var(--text-main);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            /* Animated Deep Background */
+            background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #1a0b2e);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: none; /* Mencegah scroll saat drag di layar sentuh */
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* --- MAIN MENU (Scaled for 540p) --- */
+        #main-menu {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(15px);
+            background: rgba(0,0,0,0.6);
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            transform: scale(0.9); /* Sedikit dikecilkan agar aman */
+        }
+
+        .menu-title {
+            font-size: 3rem; /* Disesuaikan */
+            font-weight: 800;
+            margin-bottom: 5px;
+            background: linear-gradient(to right, var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 20px rgba(189, 0, 255, 0.3);
+        }
+
+        .menu-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+        }
+
+        .mode-container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .mode-btn {
+            width: 220px;
+            padding: 20px;
+            border: var(--glass-border);
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            background: rgba(255,255,255,0.15);
+            box-shadow: 0 0 15px var(--neon-blue);
+            border-color: var(--neon-blue);
+        }
+        
+        .btn-arithmetic .icon { font-size: 2.5rem; color: var(--neon-blue); }
+        .btn-geometric .icon { font-size: 2.5rem; color: var(--neon-purple); }
+
+        /* --- GAME TV LAYOUT (960x540 Optimized) --- */
+        #game-container {
+            display: none; /* Hidden by default */
+            flex-direction: row; /* Landscape layout */
+            width: 96vw; /* Full width safe area */
+            height: 92vh; /* Full height safe area */
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* LEFT SIDE: GAME ARENA */
+        .arena-section {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .canvas-container {
+            position: relative;
+            border-radius: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+            background: rgba(0,0,0,0.3);
+            cursor: crosshair; /* Hint bahwa area ini bisa disentuh */
+        }
+
+        canvas {
+            display: block;
+            /* Grid halus neon - size 30px matches JS logic */
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 30px 30px; 
+        }
+
+        /* RIGHT SIDE: DASHBOARD */
+        .dashboard-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            height: 450px; /* Match canvas height approx */
+            justify-content: space-between;
+        }
+
+        /* Dashboard Components */
+        .dash-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: var(--glass-border);
+            border-radius: 15px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Header Info */
+        .header-info {
+            flex: 0 0 auto;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+        }
+        
+        .back-btn {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+            margin-right: auto; 
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 50, 50, 0.3);
+            border-color: rgba(255, 50, 50, 0.5);
+        }
+
+        .stat-item {
+            text-align: center;
+            margin-left: 15px;
+        }
+        .stat-label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;}
+        .stat-value { font-size: 1.2rem; font-weight: bold; color: var(--neon-blue); text-shadow: 0 0 8px rgba(0,242,255,0.5); }
+
+        /* --- Question Box --- */
+        .question-box {
+            flex: 1;
+            justify-content: space-evenly;
+            text-align: center;
+            position: relative;
+            overflow: visible;
+            padding: 10px;
+        }
+
+        .sequence-title { font-size: 0.9rem; color: var(--text-secondary); margin: 0; }
+        
+        .given-sequence {
+            font-family: 'Courier New', monospace;
+            font-size: 1.8rem; /* Ukuran pas untuk 540p */
+            font-weight: bold;
+            color: #fff;
+            margin: 0;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            border: 1px dashed var(--neon-purple);
+            width: 100%;
+            box-sizing: border-box; 
+            letter-spacing: 2px;
+        }
+
+        .target-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 0;
+            padding-bottom: 5px;
+        }
+        
+        .target-badge {
+            background: rgba(255,255,255,0.05);
+            padding: 8px 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1); 
+            font-weight: bold;
+            color: var(--text-secondary);
+            min-width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+        }
+        
+        .target-badge.active {
+            border-color: var(--neon-blue);
+            color: white;
+            box-shadow: 0 0 15px var(--neon-blue);
+            transform: scale(1.1);
+            background: rgba(0, 242, 255, 0.1);
+            z-index: 2;
+        }
+        
+        .target-badge.done {
+            background: var(--accent-success); 
+            color: black;
+            border-color: var(--accent-success);
+            box-shadow: 0 0 15px var(--accent-success);
+        }
+
+        /* Fraction CSS Styling */
+        .fraction { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; font-size: 0.8em; }
+        .fraction .top { border-bottom: 2px solid currentColor; padding: 0 2px; }
+        .fraction .bottom { padding: 0 2px; }
+
+        /* CONTROLS (Optimized size) */
+        .controls-container {
+            flex: 0 0 auto;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 10px;
+            width: 100%;
+            max-width: 220px; /* Lebar kontrol pas */
+        }
+
+        .ctrl-btn {
+            width: 100%;
+            aspect-ratio: 1/1;
+            border: var(--glass-border);
+            border-radius: 50%;
+            background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: white;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: all 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ctrl-btn:active {
+            transform: scale(0.95);
+            background: rgba(255,255,255,0.2);
+            box-shadow: 0 0 15px var(--neon-blue);
+        }
+
+        .btn-up { grid-column: 2; grid-row: 1; }
+        .btn-left { grid-column: 1; grid-row: 2; }
+        .btn-down { grid-column: 2; grid-row: 2; }
+        .btn-right { grid-column: 3; grid-row: 2; }
+
+        /* OVERLAYS */
+        #modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        #modal-content {
+            background: rgba(20, 20, 30, 0.9);
+            border: 2px solid var(--neon-blue);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.2);
+        }
+        #modal h2 { font-size: 2rem; margin-top: 0; }
+        
+        button.action-btn {
+            background: linear-gradient(45deg, var(--neon-blue), #00a8ff);
+            color: black;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 30px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-size: 1rem;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+            transition: transform 0.2s;
+        }
+        button.action-btn:hover { transform: scale(1.05); }
+
+        #levelup-overlay {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 255, 157, 0.9);
+            color: #000;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 1.5rem;
+            display: none;
+            pointer-events: none;
+            z-index: 20;
+            box-shadow: 0 0 20px var(--accent-success);
+        }
+
+        #countdown-overlay {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 6rem;
+            font-weight: 800;
+            color: var(--neon-purple);
+            text-shadow: 0 0 15px white;
+            display: none;
+            pointer-events: none;
+            z-index: 30;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- MAIN MENU -->
+    <div id="main-menu">
+        <div class="glass-panel">
+            <div class="menu-title">🐍 SNAKE MATH</div>
+            <div class="menu-subtitle">TV Edition • 960x540 Optimized</div>
+            
+            <div class="mode-container">
+                <div class="mode-btn btn-arithmetic" onclick="selectMode('aritmetika')">
+                    <span class="icon">➕</span>
+                    <span>Barisan Aritmetika<br>(Tambah / Kurang)</span>
+                </div>
+                
+                <div class="mode-btn btn-geometric" onclick="selectMode('geometri')">
+                    <span class="icon">✖️</span>
+                    <span>Barisan Geometri<br>(Kali / Bagi)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME AREA (SPLIT SCREEN) -->
+    <div id="game-container">
+        
+        <!-- LEFT: ARENA (450px) -->
+        <div class="arena-section">
+            <div class="canvas-container">
+                <!-- Canvas disesuaikan jadi 450x450 agar muat di tinggi 540p -->
+                <canvas id="gameCanvas" width="450" height="450"></canvas>
+                <div id="levelup-overlay">LEVEL UP!</div>
+                <div id="countdown-overlay">3</div>
+            </div>
+        </div>
+
+        <!-- RIGHT: DASHBOARD -->
+        <div class="dashboard-section">
+            
+            <!-- Stats Header -->
+            <div class="dash-card header-info">
+                <button class="back-btn" onclick="backToMenu()">
+                    <span>🏠</span> EXIT
+                </button>
+                
+                <div class="stat-item">
+                    <div class="stat-label">Lives</div>
+                    <div class="stat-value" id="lives-display">❤️❤️</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Level</div>
+                    <div class="stat-value"><span id="level">1</span><span style="font-size:0.8rem;color:#888;">/15</span></div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Score</div>
+                    <div class="stat-value" id="score">0</div>
+                </div>
+            </div>
+
+            <!-- Question Box -->
+            <div class="dash-card question-box">
+                <div class="sequence-title">ANALYZE THE PATTERN:</div>
+                <div class="given-sequence" id="given-sequence-display">...</div>
+                <div class="sequence-title">FIND NEXT NUMBERS:</div>
+                <div class="target-container" id="target-badges">
+                    <!-- Badges injected by JS -->
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="dash-card controls-container">
+                <div class="controls-grid">
+                    <button class="ctrl-btn btn-up" onclick="setDirection('UP')">▲</button>
+                    <button class="ctrl-btn btn-left" onclick="setDirection('LEFT')">◀</button>
+                    <button class="ctrl-btn btn-down" onclick="setDirection('DOWN')">▼</button>
+                    <button class="ctrl-btn btn-right" onclick="setDirection('RIGHT')">▶</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL GAME OVER / MISTAKE / VICTORY -->
+    <div id="modal">
+        <div id="modal-content">
+            <h2 id="modal-title">Game Over!</h2>
+            <p id="modal-msg" style="font-size:1.1rem; line-height:1.5; color:#ddd;"></p>
+            <div id="modal-actions"></div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const targetBadgesContainer = document.getElementById("target-badges");
+        const levelUpOverlay = document.getElementById("levelup-overlay");
+        const countdownOverlay = document.getElementById("countdown-overlay");
+        const livesDisplay = document.getElementById("lives-display");
+        
+        const mainMenu = document.getElementById("main-menu");
+        const gameContainer = document.getElementById("game-container");
+        const modal = document.getElementById("modal");
+        const modalTitle = document.getElementById("modal-title");
+        const modalMsg = document.getElementById("modal-msg");
+        const modalActions = document.getElementById("modal-actions");
+
+        // --- RESOLUSI DISESUAIKAN (450px) ---
+        const box = 30; 
+        const cols = canvas.width / box;
+        const rows = canvas.height / box;
+
+        let snake = [];
+        let score = 0;
+        let level = 1;
+        let lives = 2; 
+        let dir;
+        let gameInterval;
+        let isGameRunning = false;
+        let currentMode = 'aritmetika'; 
+
+        // Current Math State
+        let startNum, diff, ratio;
+        let initialSequence = []; 
+        let targetSequence = [];  
+        let foundSequence = [];   
+        let currentTargetIndex = 0; 
+        let foods = []; 
+
+        let usedQuestionIDs = []; 
+        let previousPatterns = []; 
+
+        // --- AUDIO SYSTEM ---
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        function playTone(freq, type, duration, startTime = 0) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime + startTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime + startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + startTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(audioCtx.currentTime + startTime);
+            osc.stop(audioCtx.currentTime + startTime + duration);
+        }
+        const sfx = {
+            click: () => playTone(400, 'sine', 0.1),
+            eat: () => { playTone(600, 'sine', 0.1); playTone(1000, 'sine', 0.1, 0.05); },
+            wrong: () => { playTone(150, 'sawtooth', 0.4); playTone(100, 'sawtooth', 0.4, 0.1); },
+            levelUp: () => { playTone(440, 'square', 0.1, 0); playTone(554, 'square', 0.1, 0.1); playTone(659, 'square', 0.2, 0.2); },
+            win: () => { [523, 659, 784, 1046, 784, 1046].forEach((f, i) => playTone(f, 'triangle', 0.2, i * 0.15)); }
+        };
+
+        // --- QUESTION BANK ---
+        const QUESTION_BANK = {
+            aritmetika: {
+                1: [{s: 1, d: 1}, {s: 2, d: 2}, {s: 3, d: 3}, {s: 4, d: 4}, {s: 5, d: 5}, {s: 6, d: 6}, {s: 7, d: 7}, {s: 8, d: 8}, {s: 9, d: 9}, {s: 10, d: 10}, {s: 1, d: 3}, {s: 1, d: 4}, {s: 1, d: 5}, {s: 2, d: 5}, {s: 2, d: 3}, {s: 3, d: 2}, {s: 3, d: 4}, {s: 4, d: 3}, {s: 5, d: 3}],
+                2: [{s: 50, d: 50}, {s: 100, d: 100}, {s: 500, d: 100}, {s: 200, d: 50}, {s: 100, d: -10}, {s: 200, d: -20}, {s: 150, d: -5}, {s: 150, d: -25}, {s: 90, d: 10}, {s: 90, d: -9}, {s: 100, d: -5}, {s: 1000, d: -100}],
+                3: [{s: -10, d: 2}, {s: -10, d: 3}, {s: -10, d: 4}, {s: -10, d: 5}, {s: -20, d: 2}, {s: -50, d: 10}, {s: -5, d: 1}, {s: 5, d: -2}, {s: -2, d: 2}, {s: 10, d: -20}, {s: -100, d: 50}, {s: 4, d: -4}],
+                4: [{s: 1, d: 0.5}, {s: 2, d: 0.5}, {s: 10, d: 2.5}, {s: 5.5, d: 0.5}, {s: 0.1, d: 0.1}, {s: 0.2, d: 0.2}, {s: 10.5, d: -0.5}, {s: 1.5, d: 1.5}, {s: 0.5, d: 0.5}, {s: 1.1, d: 0.1}],
+                5: [{s: 0.5, d: 0.5}, {s: 1.5, d: 0.5}, {s: 0.25, d: 0.25}, {s: 0.75, d: 0.25}, {s: 1.25, d: 0.25}, {s: 0.333, d: 0.333}, {s: 0.2, d: 0.2}, {s: 1.5, d: 1.5}, {s: 2.5, d: -0.5}, {s: 5.5, d: -1.5}]
+            },
+            geometri: {
+                1: [{s: 1, r: 2}, {s: 2, r: 2}, {s: 3, r: 2}, {s: 4, r: 2}, {s: 5, r: 2}, {s: 1, r: 3}, {s: 2, r: 3}, {s: 3, r: 3}, {s: 1, r: 4}, {s: 1, r: 5}],
+                2: [{s: 100, r: 2}, {s: 200, r: 2}, {s: 100, r: 0.1}, {s: 1000, r: 0.1}, {s: 100, r: 0.5}, {s: 200, r: 0.5}, {s: 400, r: 0.5}, {s: 800, r: 0.5}, {s: 64, r: 0.5}, {s: 128, r: 0.5}, {s: 256, r: 0.5}],
+                3: [{s: 1, r: -2}, {s: 2, r: -2}, {s: 3, r: -2}, {s: 4, r: -2}, {s: 5, r: -2}, {s: -1, r: 2}, {s: -2, r: 2}, {s: 1, r: -3}, {s: 2, r: -3}, {s: -1, r: -1}],
+                4: [{s: 0.5, r: 2}, {s: 0.25, r: 2}, {s: 0.125, r: 2}, {s: 0.5, r: 0.5}, {s: 0.0625, r: 2}, {s: 0.074, r: 3}, {s: 0.5, r: 3}],
+                5: [{s: 1.5, r: 2}, {s: 2.5, r: 2}, {s: 1.5, r: 1.5}, {s: 1.25, r: 2}, {s: 1.333, r: 2}, {s: 0.75, r: 2}, {s: 2.25, r: 2}, {s: 16, r: -0.5}]
+            }
+        };
+
+        function selectMode(mode) {
+            initAudio();
+            sfx.click();
+            currentMode = mode;
+            mainMenu.style.display = "none";
+            gameContainer.style.display = "flex";
+            resetGame();
+        }
+
+        function backToMenu() {
+            sfx.click();
+            clearInterval(gameInterval);
+            isGameRunning = false;
+            modal.style.display = "none";
+            gameContainer.style.display = "none";
+            mainMenu.style.display = "flex";
+        }
+
+        // --- MATH FORMATTER ---
+        function cleanFloat(val) {
+            if (Math.abs(val - Math.round(val)) < 0.00001) return Math.round(val);
+            return parseFloat(val.toFixed(5));
+        }
+
+        function toFraction(val) {
+            val = cleanFloat(val);
+            if (Number.isInteger(val)) return { n: val, d: 1, isInt: true };
+            const tolerance = 0.001;
+            let absVal = Math.abs(val);
+            let sign = val < 0 ? -1 : 1;
+            const common = [
+                {v: 0.5, n:1, d:2}, {v: 0.25, n:1, d:4}, {v: 0.75, n:3, d:4},
+                {v: 0.2, n:1, d:5}, {v: 0.4, n:2, d:5}, {v: 0.6, n:3, d:5}, {v: 0.8, n:4, d:5},
+                {v: 0.1, n:1, d:10}, {v: 0.333, n:1, d:3}, {v: 0.666, n:2, d:3},
+                {v: 0.125, n:1, d:8}, {v: 0.0625, n:1, d:16},
+                {v: 0.166, n:1, d:6}, {v: 0.833, n:5, d:6}, {v: 0.142, n:1, d:7}
+            ];
+            let whole = Math.floor(absVal);
+            let decimal = absVal - whole;
+            if (decimal < tolerance) return { n: whole * sign, d: 1, isInt: true };
+            if (Math.abs(decimal - 1) < tolerance) return { n: (whole + 1) * sign, d: 1, isInt: true };
+            for (let c of common) {
+                if (Math.abs(decimal - c.v) < tolerance) {
+                    let num = whole * c.d + c.n;
+                    return { n: num * sign, d: c.d, isInt: false };
+                }
+            }
+            return { n: Math.round(val*10), d: 10, isInt: false }; 
+        }
+
+        function formatValHTML(val) {
+            val = cleanFloat(val);
+            let f = toFraction(val);
+            if (f.isInt) return f.n;
+            return `<span class="fraction"><span class="top">${f.n}</span><span class="bottom">${f.d}</span></span>`;
+        }
+
+        function updateLivesUI() {
+            let hearts = "";
+            for(let i=0; i<2; i++) { 
+                if(i < lives) hearts += "❤️";
+                else hearts += "🖤"; 
+            }
+            livesDisplay.innerHTML = hearts;
+        }
+
+        function getBankLevel(gameLvl) { return Math.ceil(gameLvl / 3); }
+
+        function getQuestionFromBank(mode, gameLvl) {
+            let bankLvl = getBankLevel(gameLvl);
+            if (bankLvl > 5) bankLvl = 5;
+            let bank = QUESTION_BANK[mode];
+            let questions = bank[bankLvl];
+            let available = questions.filter(q => {
+                let id = `${mode}-${bankLvl}-${q.s}-${q.d || q.r}`;
+                return !usedQuestionIDs.includes(id);
+            });
+            if (available.length === 0) {
+                usedQuestionIDs = usedQuestionIDs.filter(id => !id.startsWith(`${mode}-${bankLvl}-`));
+                available = questions;
+            }
+            if (previousPatterns.length >= 2) {
+                let last = previousPatterns[previousPatterns.length - 1];
+                let secondLast = previousPatterns[previousPatterns.length - 2];
+                if (last === secondLast) {
+                    let forcedDiff = available.filter(q => {
+                        let val = q.d !== undefined ? q.d : q.r;
+                        return Math.abs(val - last) > 0.0001;
+                    });
+                    if (forcedDiff.length > 0) available = forcedDiff;
+                }
+            }
+            let q = available[Math.floor(Math.random() * available.length)];
+            let id = `${mode}-${bankLvl}-${q.s}-${q.d || q.r}`;
+            usedQuestionIDs.push(id);
+            let val = q.d !== undefined ? q.d : q.r;
+            previousPatterns.push(val);
+            if (previousPatterns.length > 2) previousPatterns.shift();
+            return q;
+        }
+
+        function initLevel() {
+            initialSequence = []; targetSequence = []; foundSequence = []; currentTargetIndex = 0;
+            let q = getQuestionFromBank(currentMode, level);
+            if (currentMode === 'aritmetika') {
+                startNum = cleanFloat(q.s); diff = cleanFloat(q.d);
+                for(let i=0; i<3; i++) initialSequence.push(cleanFloat(startNum + (i * diff)));
+                for(let i=3; i<6; i++) targetSequence.push(cleanFloat(startNum + (i * diff)));
+            } else {
+                startNum = cleanFloat(q.s); ratio = cleanFloat(q.r);
+                for(let i=0; i<6; i++) {
+                    let val = startNum * Math.pow(ratio, i);
+                    val = cleanFloat(val); 
+                    if (i < 3) initialSequence.push(val);
+                    else targetSequence.push(val);
+                }
+            }
+            updateUI();
+            spawnFoodsRound();
+        }
+
+        function updateUI() {
+            let seqHTML = initialSequence.map(val => formatValHTML(val)).join(", ") + ", ...";
+            document.getElementById("given-sequence-display").innerHTML = seqHTML;
+            document.getElementById("score").innerText = score;
+            document.getElementById("level").innerText = level;
+            updateLivesUI();
+            targetBadgesContainer.innerHTML = "";
+            targetSequence.forEach((val, idx) => {
+                let badge = document.createElement("div");
+                badge.className = "target-badge";
+                if (idx < currentTargetIndex) {
+                    badge.innerHTML = formatValHTML(val);
+                    badge.classList.add("done"); 
+                } else {
+                    badge.innerText = "?";
+                    if (idx === currentTargetIndex) badge.classList.add("active");
+                }
+                targetBadgesContainer.appendChild(badge);
+            });
+        }
+
+        function spawnFoodsRound() {
+            foods = [];
+            for(let i = currentTargetIndex; i < targetSequence.length; i++) {
+                let val = targetSequence[i];
+                let pos = getSafeRandomPos();
+                foods.push({ x: pos.x, y: pos.y, value: val, type: 'target' });
+            }
+            let distractorCount = 6; if (level > 9) distractorCount = 8; 
+            for(let i=0; i<distractorCount; i++) {
+                let distVal;
+                let baseTarget = targetSequence[Math.floor(Math.random() * targetSequence.length)];
+                if (currentMode === 'aritmetika') {
+                    let offset = (Math.random() < 0.5 ? -1 : 1) * (Math.floor(Math.random() * 3) + 1);
+                    if (Math.abs(diff % 1) > 0) offset = offset * 0.5; 
+                    distVal = cleanFloat(baseTarget + offset);
+                    if (baseTarget !== 0 && Math.random() < 0.2) distVal = -baseTarget;
+                } else {
+                    if (Math.abs(ratio) < 1) { 
+                        let invR = 1/ratio; distVal = cleanFloat(baseTarget * invR);
+                        if (Math.random() < 0.3) distVal = cleanFloat(baseTarget + 0.5);
+                    } else if (ratio < 0) { distVal = -baseTarget; 
+                    } else { distVal = cleanFloat(baseTarget + ratio); 
+                        if(Math.random() < 0.5) distVal = cleanFloat(baseTarget * 2); 
+                    }
+                }
+                let isDuplicate = false;
+                for(let f of foods) if(Math.abs(f.value - distVal) < 0.0001) isDuplicate = true;
+                for(let t of targetSequence) if(Math.abs(t - distVal) < 0.0001) isDuplicate = true;
+                for(let s of initialSequence) if(Math.abs(s - distVal) < 0.0001) isDuplicate = true;
+                if (!isDuplicate) {
+                    let pos = getSafeRandomPos();
+                    foods.push({ x: pos.x, y: pos.y, value: distVal, type: 'distractor' });
+                }
+            }
+            foods.forEach(f => {
+                f.value = cleanFloat(f.value);
+                let frac = toFraction(f.value);
+                f.fraction = frac; 
+            });
+        }
+
+        function getSafeRandomPos() {
+            let pos; let safe = false; let attempts = 0;
+            while (!safe && attempts < 100) {
+                pos = {
+                    x: Math.floor(Math.random() * (cols - 2) + 1) * box,
+                    y: Math.floor(Math.random() * (rows - 2) + 1) * box
+                };
+                safe = true;
+                for(let part of snake) if(part.x === pos.x && part.y === pos.y) safe = false;
+                for(let f of foods) if(f.x === pos.x && f.y === pos.y) safe = false;
+                attempts++;
+            }
+            return pos;
+        }
+
+        function resetGame() {
+            modal.style.display = "none"; level = 1; score = 0; lives = 2; usedQuestionIDs = []; previousPatterns = [];
+            startLevel();
+        }
+
+        function resetSnake() {
+            snake = [];
+            let midX = Math.floor(cols/2) * box;
+            let midY = Math.floor(rows/2) * box;
+            snake[0] = { x: midX, y: midY };
+            snake[1] = { x: midX - box, y: midY };
+            snake[2] = { x: midX - 2*box, y: midY };
+            dir = "RIGHT";
+        }
+
+        function startLevel() {
+            resetSnake(); initLevel(); draw(); startCountdown();
+        }
+
+        function startCountdown() {
+            isGameRunning = false; let count = 3;
+            countdownOverlay.innerText = count; countdownOverlay.style.display = "block";
+            let countInterval = setInterval(() => {
+                count--;
+                if (count > 0) countdownOverlay.innerText = count;
+                else if (count === 0) countdownOverlay.innerText = "GO!";
+                else {
+                    clearInterval(countInterval); countdownOverlay.style.display = "none";
+                    isGameRunning = true; 
+                    if (gameInterval) clearInterval(gameInterval);
+                    gameInterval = setInterval(gameLoop, 180); 
+                }
+            }, 1000);
+        }
+
+        // --- UPDATED INPUT HANDLING (Touch/Mouse) ---
+        function handleInput(inputX, inputY) {
+            if (!isGameRunning || snake.length === 0) return;
+
+            const head = snake[0];
+            const rect = canvas.getBoundingClientRect();
+            
+            // Map input coordinates to canvas space
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            const targetX = (inputX - rect.left) * scaleX;
+            const targetY = (inputY - rect.top) * scaleY;
+
+            const dx = targetX - head.x;
+            const dy = targetY - head.y;
+
+            // Simple deadzone to avoid jitter near head
+            if (Math.abs(dx) < box && Math.abs(dy) < box) return;
+
+            // Determine primary direction based on largest distance component
+            if (Math.abs(dx) > Math.abs(dy)) {
+                if (dx > 0) setDirection('RIGHT');
+                else setDirection('LEFT');
+            } else {
+                if (dy > 0) setDirection('DOWN');
+                else setDirection('UP');
+            }
+        }
+
+        function setDirection(newDir) {
+            if (!isGameRunning) return; 
+
+            // Only play sound if direction actually changes (prevents noise on drag)
+            if (newDir !== dir) {
+                // Check for 180 degree turns
+                if ((newDir === "LEFT" && dir !== "RIGHT") || 
+                    (newDir === "UP" && dir !== "DOWN") || 
+                    (newDir === "RIGHT" && dir !== "LEFT") || 
+                    (newDir === "DOWN" && dir !== "UP")) {
+                    
+                    sfx.click(); 
+                    dir = newDir;
+                }
+            }
+        }
+
+        // --- EVENT LISTENERS FOR TOUCH/MOUSE ---
+        canvas.addEventListener('mousedown', (e) => {
+            handleInput(e.clientX, e.clientY);
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            // Only follow if mouse is pressed (drag) or just follow? 
+            // Slither.io usually follows always, but for touch mapping 'drag' is best
+            if (e.buttons === 1) { 
+                handleInput(e.clientX, e.clientY);
+            }
+        });
+
+        // Touch events
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Prevent scrolling
+            if (e.touches.length > 0) {
+                handleInput(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault(); 
+            if (e.touches.length > 0) {
+                handleInput(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: false });
+
+
+        document.addEventListener("keydown", event => {
+            if (event.keyCode === 37) setDirection("LEFT");
+            if (event.keyCode === 38) setDirection("UP");
+            if (event.keyCode === 39) setDirection("RIGHT");
+            if (event.keyCode === 40) setDirection("DOWN");
+        });
+
+        function gameLoop() {
+            let snakeX = snake[0].x; let snakeY = snake[0].y;
+            if (dir === "LEFT") snakeX -= box;
+            if (dir === "UP") snakeY -= box;
+            if (dir === "RIGHT") snakeX += box;
+            if (dir === "DOWN") snakeY += box;
+
+            if (snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height) {
+                handleMistake("Dinding tertabrak!"); return;
+            }
+            for (let i = 0; i < snake.length; i++) {
+                if (snakeX === snake[i].x && snakeY === snake[i].y) {
+                    handleMistake("Jangan makan ekor sendiri!"); return;
+                }
+            }
+
+            let ateIndex = -1;
+            for (let i = 0; i < foods.length; i++) {
+                if (snakeX === foods[i].x && snakeY === foods[i].y) {
+                    ateIndex = i;
+                    let foodVal = foods[i].value;
+                    let targetVal = targetSequence[currentTargetIndex];
+                    if (Math.abs(foodVal - targetVal) < 0.0001) {
+                        sfx.eat(); score += 10; foundSequence.push(foodVal); currentTargetIndex++; foods.splice(i, 1); updateUI();
+                        if (currentTargetIndex >= targetSequence.length) {
+                            level++; sfx.levelUp(); clearInterval(gameInterval); 
+                            if (level > 15) showVictoryModal(); else showLevelUp();
+                            return; 
+                        }
+                    } else {
+                         let displayFood = formatValHTML(foodVal);
+                         let displayTarget = formatValHTML(targetVal);
+                         let msg = `<b>Ups! Salah Angka</b><br>Kamu makan ${displayFood}, seharusnya cari <b>${displayTarget}</b>.`;
+                         handleMistake(msg);
+                         return;
+                    }
+                    break;
+                }
+            }
+
+            if (ateIndex !== -1) {} else { snake.pop(); }
+            let newHead = { x: snakeX, y: snakeY };
+            snake.unshift(newHead);
+            draw();
+        }
+
+        function handleMistake(msg) {
+            sfx.wrong(); clearInterval(gameInterval); isGameRunning = false; lives--; updateLivesUI();
+            if (lives > 0) showMistakeModal(msg); else showGameOverModal(msg);
+        }
+
+        function showMistakeModal(msg) {
+            modalTitle.innerText = "Hati-hati!"; modalTitle.style.color = "#e67e22";
+            modalMsg.innerHTML = msg + `<br><br><b>Sisa Nyawa: ${lives}</b>`;
+            modalActions.innerHTML = `<button class="action-btn" onclick="resumeAfterMistake()">LANJUT</button>`;
+            modal.style.display = "flex";
+        }
+        function resumeAfterMistake() {
+            sfx.click(); modal.style.display = "none"; spawnFoodsRound(); resetSnake(); draw(); startCountdown();
+        }
+        function showGameOverModal(msg) {
+            modalTitle.innerText = "Game Over!"; modalTitle.style.color = "#ff4d4d";
+            modalMsg.innerHTML = msg + `<br><br>Skor Akhir: <b>${score}</b>`;
+            modalActions.innerHTML = `<button class="action-btn" onclick="resetGame()">MAIN LAGI</button><br><br><button style="background:none; border:none; color:#bbb; cursor:pointer;" onclick="backToMenu()">Kembali ke Menu</button>`;
+            modal.style.display = "flex";
+        }
+        function showVictoryModal() {
+            sfx.win(); modalTitle.innerText = "VICTORY! 🏆"; modalTitle.style.color = "#f1c40f";
+            modalMsg.innerHTML = `Luar Biasa! Semua level selesai.<br><br>Skor: <b>${score}</b>`;
+            modalActions.innerHTML = `<button class="action-btn" onclick="resetGame()">MAIN LAGI</button><br><br><button style="background:none; border:none; color:#bbb; cursor:pointer;" onclick="backToMenu()">Kembali ke Menu</button>`;
+            modal.style.display = "flex";
+        }
+        function showLevelUp() {
+            levelUpOverlay.style.display = "block";
+            setTimeout(() => { levelUpOverlay.style.display = "none"; startLevel(); }, 1500);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < snake.length; i++) {
+                let gradient = ctx.createLinearGradient(snake[i].x, snake[i].y, snake[i].x + box, snake[i].y + box);
+                if (i === 0) { gradient.addColorStop(0, "#00f2ff"); gradient.addColorStop(1, "#00c8d4"); } else { gradient.addColorStop(0, "rgba(0, 242, 255, 0.6)"); gradient.addColorStop(1, "rgba(0, 242, 255, 0.4)"); }
+                ctx.fillStyle = gradient;
+                ctx.shadowBlur = 15; ctx.shadowColor = "#00f2ff";
+                ctx.beginPath(); ctx.roundRect(snake[i].x, snake[i].y, box, box, 6); ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+            for (let f of foods) {
+                if (currentMode === 'aritmetika') ctx.fillStyle = "#ff9f43"; else ctx.fillStyle = "#9b59b6";
+                ctx.beginPath(); ctx.shadowBlur = 10; ctx.shadowColor = ctx.fillStyle; ctx.roundRect(f.x, f.y, box, box, 8); ctx.fill(); ctx.shadowBlur = 0;
+                ctx.fillStyle = "white";
+                let frac = f.fraction; if (!frac) frac = toFraction(f.value); 
+                if (frac.isInt) {
+                    let valStr = frac.n.toString(); let fontSize = 16; if (valStr.length >= 3) fontSize = 12;
+                    ctx.font = "bold " + fontSize + "px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(frac.n, f.x + (box/2), f.y + (box/2) + 1);
+                } else {
+                    let cx = f.x + (box/2); let cy = f.y + (box/2);
+                    ctx.strokeStyle = "white"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(cx - 8, cy); ctx.lineTo(cx + 8, cy); ctx.stroke();
+                    ctx.font = "bold 10px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "bottom"; ctx.fillText(frac.n, cx, cy - 2); ctx.textBaseline = "top"; ctx.fillText(frac.d, cx, cy + 2);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
