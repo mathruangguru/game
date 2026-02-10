@@ -170,95 +170,111 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
         }
 
-        /* Header Info (Level, Lives, Score) */
+        /* Header Info (Level, Lives, Score, EXIT Btn) */
         .header-info {
             flex: 0 0 auto;
             flex-direction: row;
-            justify-content: space-between;
-            padding: 15px 30px;
-        }
-        .stat-item {
-            text-align: center;
-        }
-        .stat-label { font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;}
-        .stat-value { font-size: 1.8rem; font-weight: bold; color: var(--neon-blue); text-shadow: 0 0 10px rgba(0,242,255,0.5); }
-
-        /* Question Box */
-        .question-box {
-            flex: 1; /* Takes available space */
-            justify-content: flex-start;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
+            justify-content: space-between; /* Item menyebar rata */
+            align-items: center; /* Item sejajar secara vertikal */
+            padding: 15px 25px;
         }
         
         .back-btn {
-            position: absolute;
-            top: 10px; right: 10px;
-            background: rgba(255,255,255,0.1);
-            border: none;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
             color: white;
-            padding: 5px 10px;
-            border-radius: 8px;
+            padding: 8px 15px;
+            border-radius: 12px;
             cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+            margin-right: auto; 
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 50, 50, 0.3);
+            border-color: rgba(255, 50, 50, 0.5);
+             box-shadow: 0 0 10px rgba(255, 50, 50, 0.3);
         }
 
-        .sequence-title { font-size: 1rem; color: var(--text-secondary); margin-bottom: 10px; }
+        .stat-item {
+            text-align: center;
+            margin-left: 20px; /* Jarak antar stat */
+        }
+        .stat-label { font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;}
+        .stat-value { font-size: 1.5rem; font-weight: bold; color: var(--neon-blue); text-shadow: 0 0 10px rgba(0,242,255,0.5); }
+
+        /* --- Question Box (FIXED) --- */
+        .question-box {
+            flex: 1; /* Mengisi sisa ruang */
+            justify-content: space-evenly; /* PERBAIKAN: Bagi jarak secara rata vertikal */
+            text-align: center;
+            position: relative;
+            overflow: visible; /* PERBAIKAN: Jangan hidden supaya glow/shadow tidak kepotong */
+            padding: 20px; /* Padding keliling */
+        }
+
+        .sequence-title { font-size: 1rem; color: var(--text-secondary); margin: 0; }
         
         .given-sequence {
             font-family: 'Courier New', monospace;
-            font-size: 2rem;
+            font-size: 2.2rem; /* Sedikit diperbesar */
             font-weight: bold;
             color: #fff;
-            margin: 10px 0;
-            padding: 15px;
+            margin: 0;
+            padding: 20px;
             background: rgba(0,0,0,0.3);
-            border-radius: 12px;
+            border-radius: 16px;
             border: 1px dashed var(--neon-purple);
-            width: 90%;
-            word-spacing: 10px;
+            width: 100%;
+            box-sizing: border-box; 
+            letter-spacing: 2px;
         }
 
         .target-container {
             display: flex;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 20px;
             justify-content: center;
-            margin-top: 15px;
+            margin: 0;
+            padding-bottom: 10px; /* Jarak aman bawah */
         }
         
         .target-badge {
             background: rgba(255,255,255,0.05);
-            padding: 10px 20px;
-            border-radius: 12px;
+            padding: 15px 25px; /* Badge lebih besar sedikit */
+            border-radius: 16px;
             border: 2px solid rgba(255,255,255,0.1); 
             font-weight: bold;
             color: var(--text-secondary);
-            min-width: 40px;
-            height: 40px;
+            min-width: 50px;
+            height: 50px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             transition: all 0.3s;
         }
         
         .target-badge.active {
             border-color: var(--neon-blue);
             color: white;
-            box-shadow: 0 0 15px var(--neon-blue);
+            box-shadow: 0 0 25px var(--neon-blue);
             transform: scale(1.1);
             background: rgba(0, 242, 255, 0.1);
+            z-index: 2; /* Supaya shadow tampil di atas */
         }
         
         .target-badge.done {
             background: var(--accent-success); 
             color: black;
             border-color: var(--accent-success);
-            box-shadow: 0 0 15px var(--accent-success);
+            box-shadow: 0 0 20px var(--accent-success);
         }
 
         /* Fraction CSS Styling */
@@ -382,6 +398,7 @@
 </head>
 <body>
 
+    <!-- MAIN MENU -->
     <div id="main-menu">
         <div class="glass-panel">
             <div class="menu-title">🐍 SNAKE MATH</div>
@@ -401,8 +418,10 @@
         </div>
     </div>
 
+    <!-- GAME AREA (SPLIT SCREEN) -->
     <div id="game-container">
         
+        <!-- LEFT: ARENA -->
         <div class="arena-section">
             <div class="canvas-container">
                 <canvas id="gameCanvas" width="600" height="600"></canvas>
@@ -411,10 +430,15 @@
             </div>
         </div>
 
+        <!-- RIGHT: DASHBOARD -->
         <div class="dashboard-section">
             
+            <!-- Stats Header -->
             <div class="dash-card header-info">
-                <button class="back-btn" onclick="backToMenu()">🏠 EXIT</button>
+                <button class="back-btn" onclick="backToMenu()">
+                    <span>🏠</span> EXIT
+                </button>
+                
                 <div class="stat-item">
                     <div class="stat-label">Lives</div>
                     <div class="stat-value" id="lives-display">❤️❤️</div>
@@ -429,14 +453,17 @@
                 </div>
             </div>
 
+            <!-- Question Box -->
             <div class="dash-card question-box">
                 <div class="sequence-title">ANALYZE THE PATTERN:</div>
                 <div class="given-sequence" id="given-sequence-display">...</div>
-                <div class="sequence-title" style="margin-top:15px;">FIND NEXT NUMBERS:</div>
+                <div class="sequence-title">FIND NEXT NUMBERS:</div>
                 <div class="target-container" id="target-badges">
-                    </div>
+                    <!-- Badges injected by JS -->
+                </div>
             </div>
 
+            <!-- Controls -->
             <div class="dash-card controls-container">
                 <div class="controls-grid">
                     <button class="ctrl-btn btn-up" onclick="setDirection('UP')">▲</button>
@@ -448,6 +475,7 @@
         </div>
     </div>
 
+    <!-- MODAL GAME OVER / MISTAKE / VICTORY -->
     <div id="modal">
         <div id="modal-content">
             <h2 id="modal-title">Game Over!</h2>
@@ -457,7 +485,6 @@
     </div>
 
     <script>
-        // --- LOGIC GAME TETAP SAMA, HANYA DISESUAIKAN VISUALNYA ---
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         const targetBadgesContainer = document.getElementById("target-badges");
@@ -472,8 +499,6 @@
         const modalMsg = document.getElementById("modal-msg");
         const modalActions = document.getElementById("modal-actions");
 
-        // Perbesar ukuran box karena canvas membesar (600x600)
-        // Sebelumnya canvas 360, box 20. Skala naik ~1.6x. Kita pakai 30px atau 40px.
         const box = 30; 
         const cols = canvas.width / box;
         const rows = canvas.height / box;
@@ -498,7 +523,7 @@
         let usedQuestionIDs = []; 
         let previousPatterns = []; 
 
-        // --- AUDIO SYSTEM (Simple Synth) ---
+        // --- AUDIO SYSTEM ---
         let audioCtx;
         function initAudio() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -525,7 +550,7 @@
             win: () => { [523, 659, 784, 1046, 784, 1046].forEach((f, i) => playTone(f, 'triangle', 0.2, i * 0.15)); }
         };
 
-        // --- QUESTION BANK (COPY PASTE DARI KODE LAMA) ---
+        // --- QUESTION BANK ---
         const QUESTION_BANK = {
             aritmetika: {
                 1: [{s: 1, d: 1}, {s: 2, d: 2}, {s: 3, d: 3}, {s: 4, d: 4}, {s: 5, d: 5}, {s: 6, d: 6}, {s: 7, d: 7}, {s: 8, d: 8}, {s: 9, d: 9}, {s: 10, d: 10}, {s: 1, d: 3}, {s: 1, d: 4}, {s: 1, d: 5}, {s: 2, d: 5}, {s: 2, d: 3}, {s: 3, d: 2}, {s: 3, d: 4}, {s: 4, d: 3}, {s: 5, d: 3}],
@@ -748,7 +773,6 @@
 
         function resetSnake() {
             snake = [];
-            // Posisi awal di tengah agak bawah
             let midX = Math.floor(cols/2) * box;
             let midY = Math.floor(rows/2) * box;
             snake[0] = { x: midX, y: midY };
@@ -799,11 +823,9 @@
             if (dir === "RIGHT") snakeX += box;
             if (dir === "DOWN") snakeY += box;
 
-            // Wall Collision
             if (snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height) {
                 handleMistake("Dinding tertabrak!"); return;
             }
-            // Self Collision
             for (let i = 0; i < snake.length; i++) {
                 if (snakeX === snake[i].x && snakeY === snake[i].y) {
                     handleMistake("Jangan makan ekor sendiri!"); return;
@@ -872,71 +894,27 @@
         }
 
         function draw() {
-            // Bersihkan Canvas (Transparan)
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Draw Snake
             for (let i = 0; i < snake.length; i++) {
-                // Gradient untuk ular neon
                 let gradient = ctx.createLinearGradient(snake[i].x, snake[i].y, snake[i].x + box, snake[i].y + box);
-                if (i === 0) {
-                    gradient.addColorStop(0, "#00f2ff");
-                    gradient.addColorStop(1, "#00c8d4");
-                } else {
-                    gradient.addColorStop(0, "rgba(0, 242, 255, 0.6)");
-                    gradient.addColorStop(1, "rgba(0, 242, 255, 0.4)");
-                }
+                if (i === 0) { gradient.addColorStop(0, "#00f2ff"); gradient.addColorStop(1, "#00c8d4"); } else { gradient.addColorStop(0, "rgba(0, 242, 255, 0.6)"); gradient.addColorStop(1, "rgba(0, 242, 255, 0.4)"); }
                 ctx.fillStyle = gradient;
-                
-                // Shadow effect (glow)
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = "#00f2ff";
-                
-                ctx.beginPath();
-                ctx.roundRect(snake[i].x, snake[i].y, box, box, 6);
-                ctx.fill();
-                
-                // Reset shadow biar text gak blur
+                ctx.shadowBlur = 15; ctx.shadowColor = "#00f2ff";
+                ctx.beginPath(); ctx.roundRect(snake[i].x, snake[i].y, box, box, 6); ctx.fill();
                 ctx.shadowBlur = 0;
             }
-
-            // Draw Foods
             for (let f of foods) {
-                // Warna target vs distraktor
-                if (currentMode === 'aritmetika') ctx.fillStyle = "#ff9f43";
-                else ctx.fillStyle = "#9b59b6";
-                
-                // Kotak Makanan
-                ctx.beginPath();
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = ctx.fillStyle;
-                ctx.roundRect(f.x, f.y, box, box, 8);
-                ctx.fill();
-                ctx.shadowBlur = 0;
-
-                // Teks Angka
+                if (currentMode === 'aritmetika') ctx.fillStyle = "#ff9f43"; else ctx.fillStyle = "#9b59b6";
+                ctx.beginPath(); ctx.shadowBlur = 10; ctx.shadowColor = ctx.fillStyle; ctx.roundRect(f.x, f.y, box, box, 8); ctx.fill(); ctx.shadowBlur = 0;
                 ctx.fillStyle = "white";
-                let frac = f.fraction;
-                if (!frac) frac = toFraction(f.value); 
-
-                // Responsive Font Size based on box size (30px)
+                let frac = f.fraction; if (!frac) frac = toFraction(f.value); 
                 if (frac.isInt) {
-                    let valStr = frac.n.toString();
-                    let fontSize = 16; 
-                    if (valStr.length >= 3) fontSize = 12;
-                    ctx.font = "bold " + fontSize + "px Arial";
-                    ctx.textAlign = "center";
-                    ctx.textBaseline = "middle";
-                    ctx.fillText(frac.n, f.x + (box/2), f.y + (box/2) + 1);
+                    let valStr = frac.n.toString(); let fontSize = 16; if (valStr.length >= 3) fontSize = 12;
+                    ctx.font = "bold " + fontSize + "px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(frac.n, f.x + (box/2), f.y + (box/2) + 1);
                 } else {
-                    // Pecahan
-                    let cx = f.x + (box/2);
-                    let cy = f.y + (box/2);
-                    ctx.strokeStyle = "white"; ctx.lineWidth = 1.5;
-                    ctx.beginPath(); ctx.moveTo(cx - 8, cy); ctx.lineTo(cx + 8, cy); ctx.stroke();
-                    ctx.font = "bold 10px Arial"; ctx.textAlign = "center";
-                    ctx.textBaseline = "bottom"; ctx.fillText(frac.n, cx, cy - 2);
-                    ctx.textBaseline = "top"; ctx.fillText(frac.d, cx, cy + 2);
+                    let cx = f.x + (box/2); let cy = f.y + (box/2);
+                    ctx.strokeStyle = "white"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(cx - 8, cy); ctx.lineTo(cx + 8, cy); ctx.stroke();
+                    ctx.font = "bold 10px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "bottom"; ctx.fillText(frac.n, cx, cy - 2); ctx.textBaseline = "top"; ctx.fillText(frac.d, cx, cy + 2);
                 }
             }
         }
