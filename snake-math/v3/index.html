@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snake Math: TV Edition (960x540)</title>
+    <title>Snake Math: TV Edition (Full Touch)</title>
     <style>
         :root {
             /* Warna Neon & Glassmorphism */
@@ -33,7 +33,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            touch-action: none; /* Mencegah scroll saat drag di layar sentuh */
+            touch-action: none; 
         }
 
         @keyframes gradientBG {
@@ -42,7 +42,7 @@
             100% { background-position: 0% 50%; }
         }
 
-        /* --- MAIN MENU (Scaled for 540p) --- */
+        /* --- MAIN MENU --- */
         #main-menu {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -64,11 +64,11 @@
             border-radius: 20px;
             padding: 30px;
             text-align: center;
-            transform: scale(0.9); /* Sedikit dikecilkan agar aman */
+            transform: scale(0.9); 
         }
 
         .menu-title {
-            font-size: 3rem; /* Disesuaikan */
+            font-size: 3rem;
             font-weight: 800;
             margin-bottom: 5px;
             background: linear-gradient(to right, var(--neon-blue), var(--neon-purple));
@@ -81,7 +81,52 @@
         .menu-subtitle {
             font-size: 1.1rem;
             color: var(--text-secondary);
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+        }
+
+        /* SPEED SELECTOR */
+        .speed-selector {
+            margin-bottom: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .speed-label {
+            font-size: 1rem;
+            color: #e0e0e0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .speed-options {
+            display: flex;
+            gap: 15px;
+            background: rgba(0,0,0,0.3);
+            padding: 8px;
+            border-radius: 12px;
+        }
+        .speed-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-secondary);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .speed-btn:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        .speed-btn.active {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--neon-blue);
+            color: white;
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
         }
 
         .mode-container {
@@ -117,20 +162,23 @@
         .btn-arithmetic .icon { font-size: 2.5rem; color: var(--neon-blue); }
         .btn-geometric .icon { font-size: 2.5rem; color: var(--neon-purple); }
 
-        /* --- GAME TV LAYOUT (960x540 Optimized) --- */
+        /* --- GAME TV LAYOUT (MAXIMIZED CANVAS) --- */
         #game-container {
-            display: none; /* Hidden by default */
-            flex-direction: row; /* Landscape layout */
-            width: 96vw; /* Full width safe area */
-            height: 92vh; /* Full height safe area */
+            display: none;
+            flex-direction: row;
+            /* Gunakan hampir seluruh lebar dan tinggi */
+            width: 98vw; 
+            height: 96vh; 
             gap: 20px;
             align-items: center;
             justify-content: center;
+            box-sizing: border-box;
         }
 
         /* LEFT SIDE: GAME ARENA */
         .arena-section {
             flex: 0 0 auto;
+            height: 100%; /* Pakai tinggi penuh container */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -139,20 +187,25 @@
         .canvas-container {
             position: relative;
             border-radius: 16px;
-            border: 2px solid rgba(255,255,255,0.3);
-            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            border: 3px solid rgba(255,255,255,0.3);
+            box-shadow: 0 0 40px rgba(0,0,0,0.6);
             overflow: hidden;
             background: rgba(0,0,0,0.3);
-            cursor: crosshair; /* Hint bahwa area ini bisa disentuh */
+            cursor: crosshair; 
+            /* Memaksa aspek rasio kotak & mengisi tinggi */
+            aspect-ratio: 1/1;
+            height: 100%;
+            width: auto;
         }
 
         canvas {
             display: block;
-            /* Grid halus neon - size 30px matches JS logic */
             background-image: 
                 linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
             background-size: 30px 30px; 
+            width: 100%;
+            height: 100%;
         }
 
         /* RIGHT SIDE: DASHBOARD */
@@ -160,8 +213,8 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            height: 450px; /* Match canvas height approx */
+            gap: 15px;
+            height: 100%; /* Match canvas height */
             justify-content: space-between;
         }
 
@@ -171,30 +224,31 @@
             backdrop-filter: blur(12px);
             border: var(--glass-border);
             border-radius: 15px;
-            padding: 15px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
         }
 
         /* Header Info */
         .header-info {
-            flex: 0 0 auto;
+            flex: 0 0 auto; /* Ukuran sesuai isi */
             flex-direction: row;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 20px;
+            padding: 15px 25px;
         }
         
         .back-btn {
             background: rgba(255,255,255,0.15);
             border: 1px solid rgba(255,255,255,0.3);
             color: white;
-            padding: 5px 12px;
-            border-radius: 8px;
+            padding: 8px 16px;
+            border-radius: 10px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 0.9rem;
+            font-size: 1rem;
             display: flex;
             align-items: center;
             gap: 5px;
@@ -209,68 +263,68 @@
 
         .stat-item {
             text-align: center;
-            margin-left: 15px;
+            margin-left: 20px;
         }
-        .stat-label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;}
-        .stat-value { font-size: 1.2rem; font-weight: bold; color: var(--neon-blue); text-shadow: 0 0 8px rgba(0,242,255,0.5); }
+        .stat-label { font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;}
+        .stat-value { font-size: 1.5rem; font-weight: bold; color: var(--neon-blue); text-shadow: 0 0 8px rgba(0,242,255,0.5); }
 
-        /* --- Question Box --- */
+        /* --- Question Box (Takes remaining height) --- */
         .question-box {
-            flex: 1;
-            justify-content: space-evenly;
+            flex: 1; /* Mengisi sisa ruang vertikal */
+            justify-content: center;
             text-align: center;
             position: relative;
             overflow: visible;
-            padding: 10px;
+            padding: 20px;
+            gap: 20px;
         }
 
-        .sequence-title { font-size: 0.9rem; color: var(--text-secondary); margin: 0; }
+        .sequence-title { font-size: 1.1rem; color: var(--text-secondary); margin: 0; }
         
         .given-sequence {
             font-family: 'Courier New', monospace;
-            font-size: 1.8rem; /* Ukuran pas untuk 540p */
+            font-size: 2.5rem; /* Font diperbesar */
             font-weight: bold;
             color: #fff;
             margin: 0;
-            padding: 10px;
+            padding: 15px;
             background: rgba(0,0,0,0.3);
-            border-radius: 12px;
-            border: 1px dashed var(--neon-purple);
+            border-radius: 16px;
+            border: 2px dashed var(--neon-purple);
             width: 100%;
             box-sizing: border-box; 
-            letter-spacing: 2px;
+            letter-spacing: 3px;
         }
 
         .target-container {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 15px;
             justify-content: center;
             margin: 0;
-            padding-bottom: 5px;
         }
         
         .target-badge {
             background: rgba(255,255,255,0.05);
-            padding: 8px 15px;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.1); 
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: 2px solid rgba(255,255,255,0.1); 
             font-weight: bold;
             color: var(--text-secondary);
-            min-width: 40px;
-            height: 40px;
+            min-width: 50px;
+            height: 50px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.1rem;
+            font-size: 1.4rem;
             transition: all 0.3s;
         }
         
         .target-badge.active {
             border-color: var(--neon-blue);
             color: white;
-            box-shadow: 0 0 15px var(--neon-blue);
-            transform: scale(1.1);
+            box-shadow: 0 0 20px var(--neon-blue);
+            transform: scale(1.15);
             background: rgba(0, 242, 255, 0.1);
             z-index: 2;
         }
@@ -287,52 +341,6 @@
         .fraction .top { border-bottom: 2px solid currentColor; padding: 0 2px; }
         .fraction .bottom { padding: 0 2px; }
 
-        /* CONTROLS (Optimized size) */
-        .controls-container {
-            flex: 0 0 auto;
-            padding: 10px;
-            background: transparent;
-            border: none;
-            box-shadow: none;
-        }
-
-        .controls-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(2, 1fr);
-            gap: 10px;
-            width: 100%;
-            max-width: 220px; /* Lebar kontrol pas */
-        }
-
-        .ctrl-btn {
-            width: 100%;
-            aspect-ratio: 1/1;
-            border: var(--glass-border);
-            border-radius: 50%;
-            background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: white;
-            backdrop-filter: blur(5px);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            transition: all 0.1s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .ctrl-btn:active {
-            transform: scale(0.95);
-            background: rgba(255,255,255,0.2);
-            box-shadow: 0 0 15px var(--neon-blue);
-        }
-
-        .btn-up { grid-column: 2; grid-row: 1; }
-        .btn-left { grid-column: 1; grid-row: 2; }
-        .btn-down { grid-column: 2; grid-row: 2; }
-        .btn-right { grid-column: 3; grid-row: 2; }
-
         /* OVERLAYS */
         #modal {
             display: none;
@@ -347,25 +355,25 @@
         #modal-content {
             background: rgba(20, 20, 30, 0.9);
             border: 2px solid var(--neon-blue);
-            padding: 30px;
-            border-radius: 20px;
+            padding: 40px;
+            border-radius: 25px;
             text-align: center;
-            max-width: 400px;
-            box-shadow: 0 0 30px rgba(0, 242, 255, 0.2);
+            max-width: 500px;
+            box-shadow: 0 0 40px rgba(0, 242, 255, 0.3);
         }
-        #modal h2 { font-size: 2rem; margin-top: 0; }
+        #modal h2 { font-size: 2.5rem; margin-top: 0; }
         
         button.action-btn {
             background: linear-gradient(45deg, var(--neon-blue), #00a8ff);
             color: black;
             border: none;
-            padding: 10px 30px;
+            padding: 12px 35px;
             border-radius: 30px;
             cursor: pointer;
-            margin-top: 15px;
-            font-size: 1rem;
+            margin-top: 20px;
+            font-size: 1.2rem;
             font-weight: bold;
-            box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.4);
             transition: transform 0.2s;
         }
         button.action-btn:hover { transform: scale(1.05); }
@@ -376,24 +384,24 @@
             transform: translate(-50%, -50%);
             background: rgba(0, 255, 157, 0.9);
             color: #000;
-            padding: 15px 30px;
+            padding: 20px 40px;
             border-radius: 30px;
             font-weight: bold;
-            font-size: 1.5rem;
+            font-size: 2rem;
             display: none;
             pointer-events: none;
             z-index: 20;
-            box-shadow: 0 0 20px var(--accent-success);
+            box-shadow: 0 0 30px var(--accent-success);
         }
 
         #countdown-overlay {
             position: absolute;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 6rem;
+            font-size: 8rem;
             font-weight: 800;
             color: var(--neon-purple);
-            text-shadow: 0 0 15px white;
+            text-shadow: 0 0 20px white;
             display: none;
             pointer-events: none;
             z-index: 30;
@@ -407,8 +415,21 @@
     <div id="main-menu">
         <div class="glass-panel">
             <div class="menu-title">🐍 SNAKE MATH</div>
-            <div class="menu-subtitle">TV Edition • 960x540 Optimized</div>
+            <div class="menu-subtitle">TV Edition • Full Touch Control</div>
             
+            <!-- SPEED SELECTOR -->
+            <div class="speed-selector">
+                <div class="speed-label">KECEPATAN ULAR:</div>
+                <div class="speed-options">
+                    <button id="btn-speed-fast" class="speed-btn active" onclick="setSpeed('fast')">
+                        <span>🚀</span> Normal
+                    </button>
+                    <button id="btn-speed-slow" class="speed-btn" onclick="setSpeed('slow')">
+                        <span>🐢</span> Santai
+                    </button>
+                </div>
+            </div>
+
             <div class="mode-container">
                 <div class="mode-btn btn-arithmetic" onclick="selectMode('aritmetika')">
                     <span class="icon">➕</span>
@@ -426,10 +447,10 @@
     <!-- GAME AREA (SPLIT SCREEN) -->
     <div id="game-container">
         
-        <!-- LEFT: ARENA (450px) -->
+        <!-- LEFT: ARENA (MAXIMIZED) -->
         <div class="arena-section">
             <div class="canvas-container">
-                <!-- Canvas disesuaikan jadi 450x450 agar muat di tinggi 540p -->
+                <!-- Canvas 450x450, will scale via CSS aspect-ratio -->
                 <canvas id="gameCanvas" width="450" height="450"></canvas>
                 <div id="levelup-overlay">LEVEL UP!</div>
                 <div id="countdown-overlay">3</div>
@@ -468,16 +489,6 @@
                     <!-- Badges injected by JS -->
                 </div>
             </div>
-
-            <!-- Controls -->
-            <div class="dash-card controls-container">
-                <div class="controls-grid">
-                    <button class="ctrl-btn btn-up" onclick="setDirection('UP')">▲</button>
-                    <button class="ctrl-btn btn-left" onclick="setDirection('LEFT')">◀</button>
-                    <button class="ctrl-btn btn-down" onclick="setDirection('DOWN')">▼</button>
-                    <button class="ctrl-btn btn-right" onclick="setDirection('RIGHT')">▶</button>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -505,7 +516,6 @@
         const modalMsg = document.getElementById("modal-msg");
         const modalActions = document.getElementById("modal-actions");
 
-        // --- RESOLUSI DISESUAIKAN (450px) ---
         const box = 30; 
         const cols = canvas.width / box;
         const rows = canvas.height / box;
@@ -518,6 +528,7 @@
         let gameInterval;
         let isGameRunning = false;
         let currentMode = 'aritmetika'; 
+        let gameSpeed = 180; 
 
         // Current Math State
         let startNum, diff, ratio;
@@ -556,6 +567,23 @@
             levelUp: () => { playTone(440, 'square', 0.1, 0); playTone(554, 'square', 0.1, 0.1); playTone(659, 'square', 0.2, 0.2); },
             win: () => { [523, 659, 784, 1046, 784, 1046].forEach((f, i) => playTone(f, 'triangle', 0.2, i * 0.15)); }
         };
+
+        // --- SPEED SETTING ---
+        function setSpeed(type) {
+            initAudio(); 
+            sfx.click();
+            const btnFast = document.getElementById('btn-speed-fast');
+            const btnSlow = document.getElementById('btn-speed-slow');
+            if (type === 'fast') {
+                gameSpeed = 180; 
+                btnFast.classList.add('active');
+                btnSlow.classList.remove('active');
+            } else {
+                gameSpeed = 360; 
+                btnSlow.classList.add('active');
+                btnFast.classList.remove('active');
+            }
+        }
 
         // --- QUESTION BANK ---
         const QUESTION_BANK = {
@@ -803,7 +831,7 @@
                     clearInterval(countInterval); countdownOverlay.style.display = "none";
                     isGameRunning = true; 
                     if (gameInterval) clearInterval(gameInterval);
-                    gameInterval = setInterval(gameLoop, 180); 
+                    gameInterval = setInterval(gameLoop, gameSpeed); 
                 }
             }, 1000);
         }
