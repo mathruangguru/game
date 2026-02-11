@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daftar Game Edukasi (TV Mode - Admin Local)</title>
+    <title>Daftar Game Edukasi (TV Mode - Static)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -39,24 +39,6 @@
         .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
         .custom-scroll::-webkit-scrollbar-thumb:hover { background: #555; }
-
-        /* Modal Styles */
-        .modal-overlay {
-            background-color: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(2px);
-        }
-
-        /* Styles untuk Drag and Drop */
-        .dragging {
-            opacity: 0.5;
-            background-color: #e0e7ff !important; /* Indigo 100 */
-        }
-        .drag-over {
-            border-top: 2px solid #4f46e5; /* Indigo 600 */
-        }
-        .cursor-move {
-            cursor: move;
-        }
     </style>
 </head>
 <body>
@@ -68,7 +50,7 @@
                 <img src="https://imgix3.ruangguru.com/assets/miscellaneous/png_zekej2_3984.png" alt="Logo Ruangguru" class="h-10 bg-white rounded p-1 shadow-sm">
                 <div>
                     <h1 class="text-xl font-bold leading-tight">Direktori Game</h1>
-                    <p class="text-indigo-200 text-xs">Menu Interaktif TV (Local)</p>
+                    <p class="text-indigo-200 text-xs">Menu Interaktif TV</p>
                 </div>
             </div>
             
@@ -85,30 +67,23 @@
                         class="w-full pl-8 pr-3 py-1.5 rounded-md text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 shadow-inner">
                     <i class="fas fa-search absolute left-2.5 top-2.5 text-gray-400 text-xs"></i>
                 </div>
-
-                <button id="authBtn" onclick="toggleLoginModal()" class="bg-indigo-800 hover:bg-indigo-900 text-white text-xs px-3 py-2 rounded transition font-bold border border-indigo-500">
-                    <i class="fas fa-lock mr-1"></i> Admin
-                </button>
-                <button id="logoutBtn" onclick="logout()" class="hidden bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-2 rounded transition font-bold border border-red-500">
-                    <i class="fas fa-sign-out-alt mr-1"></i> Logout
-                </button>
             </div>
         </div>
 
         <!-- Header Tabel -->
         <div class="bg-indigo-50 border-b border-indigo-100 px-6 py-2 grid grid-cols-12 gap-2 text-xs font-bold text-indigo-800 uppercase tracking-wider shrink-0">
-            <div class="col-span-3">Nama Game</div>
+            <div class="col-span-4">Nama Game</div> <!-- Diperlebar sedikit karena tidak ada grip drag -->
             <div class="col-span-2">PIC</div>
             <div class="col-span-3">Topik</div>
             <div class="col-span-2">Digunakan di</div>
-            <div class="col-span-2 text-center">Aksi</div>
+            <div class="col-span-1 text-center">Aksi</div>
         </div>
 
         <!-- Content Area -->
         <div class="flex-1 overflow-y-auto custom-scroll px-6 py-2 bg-white relative">
             <table class="w-full text-left border-collapse">
                 <tbody id="gameTableBody" class="text-sm text-gray-700">
-                    <!-- Data inserted here -->
+                    <!-- Data inserted here via JS -->
                 </tbody>
             </table>
             
@@ -121,86 +96,22 @@
         <!-- Link Request & Feedback Section -->
         <div class="bg-indigo-50 px-6 py-2.5 border-t border-indigo-100 flex justify-between items-center shrink-0 z-10">
             <!-- Kiri: Request Game -->
-            <a href="https://docs.google.com/forms/d/e/1FAIpQLSc02dPz-9g0Wv3FjjbrzQ0cVYVrjcJ-uyBcFm67jb8VWXE-ZA/viewform" target="_blank" 
-               class="flex items-center gap-2 px-3 py-1.5 bg-white border border-indigo-200 rounded-full shadow-sm text-indigo-700 text-xs font-bold hover:bg-indigo-50 hover:border-indigo-300 transition transform hover:scale-105 no-underline">
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLSc02dPz-9g0Wv3FjjbrzQ0cVYVrjcJ-uyBcFm67jb8VWXE-ZA/viewform" target="_blank"
+                class="flex items-center gap-2 px-3 py-1.5 bg-white border border-indigo-200 rounded-full shadow-sm text-indigo-700 text-xs font-bold hover:bg-indigo-50 hover:border-indigo-300 transition transform hover:scale-105 no-underline">
                 <i class="fas fa-plus-circle text-indigo-500"></i> Request pembuatan game?
             </a>
 
             <!-- Kanan: Feedback -->
-            <a href="https://docs.google.com/forms/d/e/1FAIpQLSc5VRNNOB7WHRwPYM9PbwGs_XrA20no4g0WqgpgW3Ap4bRmPA/viewform" target="_blank" 
-               class="flex items-center gap-2 px-3 py-1.5 bg-white border border-green-200 rounded-full shadow-sm text-green-700 text-xs font-bold hover:bg-green-50 hover:border-green-300 transition transform hover:scale-105 no-underline">
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLSc5VRNNOB7WHRwPYM9PbwGs_XrA20no4g0WqgpgW3Ap4bRmPA/viewform" target="_blank"
+                class="flex items-center gap-2 px-3 py-1.5 bg-white border border-green-200 rounded-full shadow-sm text-green-700 text-xs font-bold hover:bg-green-50 hover:border-green-300 transition transform hover:scale-105 no-underline">
                 <i class="fas fa-comment-dots text-green-500"></i> Isi feedback disini ya
             </a>
         </div>
 
         <!-- Footer -->
         <div class="bg-gray-50 px-6 py-2 text-xs text-gray-500 border-t border-gray-200 flex justify-between items-center shrink-0 h-8">
-            <span>Resolusi Asli: 960x540 | Mode: <span id="modeIndicator" class="font-bold text-green-600">Guest</span></span>
+            <span>Resolusi Asli: 960x540 | Mode: <span class="font-bold text-gray-600">Static View</span></span>
             <span>Total Game: <span id="gameCount" class="font-bold text-indigo-600">0</span></span>
-        </div>
-
-        <!-- Floating Add Button -->
-        <button id="addGameFab" onclick="toggleAddModal()" class="hidden absolute bottom-12 right-6 bg-green-600 hover:bg-green-700 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl transition transform hover:scale-110 z-20">
-            <i class="fas fa-plus"></i>
-        </button>
-
-        <!-- MODAL: LOGIN -->
-        <div id="loginModal" class="hidden modal-overlay absolute inset-0 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg shadow-2xl w-80 p-6 border border-gray-200">
-                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                    <i class="fas fa-user-shield text-indigo-600"></i> Admin Login
-                </h3>
-                <div class="space-y-3">
-                    <input type="text" id="usernameInput" placeholder="Username" class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                    <input type="password" id="passwordInput" placeholder="Password" class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                    <p id="loginError" class="text-red-500 text-xs hidden">Username atau Password salah!</p>
-                </div>
-                <div class="mt-4 flex justify-end gap-2">
-                    <button onclick="toggleLoginModal()" class="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700">Batal</button>
-                    <button onclick="attemptLogin()" class="px-4 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded hover:bg-indigo-700">Masuk</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- MODAL: ADD GAME -->
-        <div id="addModal" class="hidden modal-overlay absolute inset-0 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg shadow-2xl w-96 p-6 border border-gray-200">
-                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                    <i class="fas fa-gamepad text-green-600"></i> Tambah Game Baru
-                </h3>
-                <form onsubmit="event.preventDefault(); addNewGame();" class="space-y-3">
-                    <div>
-                        <label class="text-xs font-bold text-gray-500">Nama Game</label>
-                        <input required type="text" id="newGameName" class="w-full border rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-green-500 outline-none">
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="text-xs font-bold text-gray-500">PIC</label>
-                            <input required type="text" id="newGamePic" class="w-full border rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-green-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold text-gray-500">Digunakan di</label>
-                            <select id="newGameDevice" class="w-full border rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-green-500 outline-none bg-white">
-                                <option value="TV">TV</option>
-                                <option value="Gadget">Gadget</option>
-                                <option value="TV/Gadget">TV/Gadget</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="text-xs font-bold text-gray-500">Topik</label>
-                        <input required type="text" id="newGameTopic" class="w-full border rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-green-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="text-xs font-bold text-gray-500">Link URL</label>
-                        <input required type="url" id="newGameLink" placeholder="https://..." class="w-full border rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-green-500 outline-none">
-                    </div>
-                    <div class="mt-5 flex justify-end gap-2">
-                        <button type="button" onclick="toggleAddModal()" class="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700">Batal</button>
-                        <button type="submit" class="px-4 py-1.5 bg-green-600 text-white text-xs font-bold rounded hover:bg-green-700">Simpan</button>
-                    </div>
-                </form>
-            </div>
         </div>
     </div>
 
@@ -212,80 +123,39 @@
             const targetHeight = 540;
             const windowWidth = window.innerWidth;
             const windowHeight = window.innerHeight;
+            
+            // Hitung scale agar fit di layar
             const scale = Math.min(windowWidth / targetWidth, windowHeight / targetHeight);
+            
             viewport.style.transform = `scale(${scale})`;
         }
         window.addEventListener('resize', scaleToFit);
         window.addEventListener('load', scaleToFit);
         scaleToFit();
 
-        // --- DATA & STATE (LOCAL) ---
-        const defaultGames = [
-            { id: 1, name: "Algebra Rush", pic: "Dhanar", topic: "Persamaan Linear Satu Variabel", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/algebra-rush/" },
-            { id: 2, name: "Integer Zap", pic: "Dhanar", topic: "Operasi Hitung Bilangan Bulat", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/integer-zap/" },
-            { id: 3, name: "Probability Battle Cards", pic: "Rohmat", topic: "Peluang", device: "TV/Gadget", link: "https://matrohmatmath.com/game/probability-battle-cards/" },
-            { id: 4, name: "Battle Kelipatan", pic: "Dhanar", topic: "Kelipatan Persekutuan", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/battle-kelipatan/" },
-            { id: 5, name: "Battle Faktor", pic: "Dhanar", topic: "Faktor Persekutuan", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/battle-faktor/" },
-            { id: 6, name: "Substitute the Operator", pic: "Dhanar", topic: "Operasi Bilangan", device: "Gadget", link: "https://mathruangguru.github.io/game/substitute-the-operator/" },
-            { id: 7, name: "Picto Resto", pic: "Rohmat", topic: "Piktogram", device: "TV/Gadget", link: "https://matrohmatmath.com/game/picto-resto/" },
-            { id: 8, name: "Rocket Rounding", pic: "Mayang", topic: "Pembulatan/Taksiran", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/pembulatan/" },
-            { id: 9, name: "Math Snake", pic: "Mayang", topic: "Barisan Aritmetika dan Geometri", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/snake-math/v3/" },
-            { id: 10, name: "Navigator Linear", pic: "Rohmat", topic: "Persamaan Garis Lurus", device: "TV/Gadget", link: "https://matrohmatmath.com/game/navigator-linear" },
-            { id: 11, name: "Battle Akar Kuadrat", pic: "Dhanar", topic: "Persamaan Kuadrat", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/battle-akar-kuadrat/" },
-            { id: 12, name: "Sifat Fungsi Kuadrat", pic: "Dhanar", topic: "Fungsi Kuadrat", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/sifat-fungsi-kuadrat/" },
-            { id: 13, name: "Klinik Optik", pic: "Rohmat", topic: "Cahaya dan Alat Optik", device: "TV/Gadget", link: "https://matrohmatmath.com/game/klinik-optik" }
+        // --- DATA GAME (EDIT DI SINI UNTUK MENAMBAH/MENGUBAH) ---
+        // Format: { name: "Judul", pic: "Nama PIC", topic: "Topik Materi", device: "TV/Gadget", link: "URL" }
+        const games = [
+            { name: "Algebra Rush", pic: "Dhanar", topic: "Persamaan Linear Satu Variabel", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/algebra-rush/" },
+            { name: "Integer Zap", pic: "Dhanar", topic: "Operasi Hitung Bilangan Bulat", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/integer-zap/" },
+            { name: "Probability Battle Cards", pic: "Rohmat", topic: "Peluang", device: "TV/Gadget", link: "https://matrohmatmath.com/game/probability-battle-cards/" },
+            { name: "Battle Kelipatan", pic: "Dhanar", topic: "Kelipatan Persekutuan", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/battle-kelipatan/" },
+            { name: "Battle Faktor", pic: "Dhanar", topic: "Faktor Persekutuan", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/battle-faktor/" },
+            { name: "Substitute the Operator", pic: "Dhanar", topic: "Operasi Bilangan", device: "Gadget", link: "https://mathruangguru.github.io/game/substitute-the-operator/" },
+            { name: "Picto Resto", pic: "Rohmat", topic: "Piktogram", device: "TV/Gadget", link: "https://matrohmatmath.com/game/picto-resto/" },
+            { name: "Rocket Rounding", pic: "Mayang", topic: "Pembulatan/Taksiran", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/pembulatan/" },
+            { name: "Math Snake", pic: "Mayang", topic: "Barisan Aritmetika dan Geometri", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/snake-math/v3/" },
+            { name: "Navigator Linear", pic: "Rohmat", topic: "Persamaan Garis Lurus", device: "TV/Gadget", link: "https://matrohmatmath.com/game/navigator-linear" },
+            { name: "Battle Akar Kuadrat", pic: "Dhanar", topic: "Persamaan Kuadrat", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/battle-akar-kuadrat/" },
+            { name: "Sifat Fungsi Kuadrat", pic: "Dhanar", topic: "Fungsi Kuadrat", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/sifat-fungsi-kuadrat/" },
+            { name: "Klinik Optik", pic: "Rohmat", topic: "Cahaya dan Alat Optik", device: "TV/Gadget", link: "https://matrohmatmath.com/game/klinik-optik" }
         ];
 
-        // LOAD DATA DARI LOCALSTORAGE
-        let games = JSON.parse(localStorage.getItem('eduGamesList')) || defaultGames;
-        
-        let isAdmin = false;
-        const ADMIN_USER = "IFP Academics";
-        const ADMIN_PASS = "MSIGlt33";
-
+        // --- ELEMEN UI ---
         const tbody = document.getElementById('gameTableBody');
         const countSpan = document.getElementById('gameCount');
         const emptyState = document.getElementById('emptyState');
         const searchInput = document.getElementById('searchInput');
-
-        // --- DRAG & DROP LOGIC (Hanya aktif di mode Local) ---
-        let dragStartIndex;
-
-        function dragStart(e) {
-            dragStartIndex = +this.getAttribute('data-index');
-            this.classList.add('dragging');
-            e.dataTransfer.effectAllowed = 'move';
-        }
-
-        function dragOver(e) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            this.classList.add('drag-over');
-        }
-
-        function dragLeave(e) {
-            this.classList.remove('drag-over');
-        }
-
-        function dragDrop(e) {
-            e.stopPropagation();
-            const dragEndIndex = +this.getAttribute('data-index');
-            swapItems(dragStartIndex, dragEndIndex);
-            this.classList.remove('drag-over');
-            return false;
-        }
-
-        function dragEnd() {
-            this.classList.remove('dragging');
-            document.querySelectorAll('#gameTableBody tr').forEach(row => row.classList.remove('drag-over'));
-        }
-
-        function swapItems(fromIndex, toIndex) {
-            if (fromIndex === toIndex) return;
-            const item = games.splice(fromIndex, 1)[0];
-            games.splice(toIndex, 0, item);
-            saveData(); 
-        }
 
         // --- RENDER TABLE ---
         function renderTable(data) {
@@ -297,65 +167,46 @@
                 emptyState.classList.add('hidden');
             }
 
-            // Drag aktif jika Admin & tidak sedang search
-            const isSortEnabled = isAdmin && searchInput.value.trim() === '';
-
-            data.forEach((game, index) => {
+            data.forEach((game) => {
                 const row = document.createElement('tr');
                 row.className = "hover:bg-indigo-50 transition-colors duration-150 border-b border-gray-100 last:border-0 grid grid-cols-12 gap-2 items-center py-2 bg-white";
-                row.setAttribute('data-index', index);
-
-                if (isSortEnabled) {
-                    row.setAttribute('draggable', 'true');
-                    row.classList.add('cursor-move');
-                    row.addEventListener('dragstart', dragStart);
-                    row.addEventListener('dragover', dragOver);
-                    row.addEventListener('drop', dragDrop);
-                    row.addEventListener('dragleave', dragLeave);
-                    row.addEventListener('dragend', dragEnd);
-                }
-
-                // Nama dengan Grip Ikon (Jika Admin)
-                let nameHtml = `<span class="truncate" title="${game.name}">${game.name}</span>`;
-                if (isSortEnabled) {
-                    nameHtml = `
-                        <div class="flex items-center gap-2 overflow-hidden">
-                            <i class="fas fa-grip-vertical text-gray-400 cursor-move hover:text-indigo-600"></i>
-                            ${nameHtml}
-                        </div>
-                    `;
-                }
-
-                let actionButtons = `
-                    <a href="${game.link}" target="_blank" class="inline-flex items-center justify-center px-3 py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-xs font-bold no-underline w-full shadow-sm hover:shadow-md transition-all">
-                        Main <i class="fas fa-play ml-1.5 text-[10px]"></i>
-                    </a>`;
-
-                if (isAdmin) {
-                    actionButtons = `
-                        <div class="flex gap-1">
-                             <a href="${game.link}" target="_blank" class="flex-1 inline-flex items-center justify-center px-2 py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-xs font-bold no-underline shadow-sm"><i class="fas fa-play"></i></a>
-                            <button onclick="deleteGame(${index})" class="w-8 flex items-center justify-center bg-red-100 text-red-600 rounded hover:bg-red-200 border border-red-200 transition"><i class="fas fa-trash-alt text-[10px]"></i></button>
-                        </div>`;
-                }
-
+                
+                // Badge Warna untuk Device
                 let deviceBadgeColor = "bg-gray-100 text-gray-600";
                 const device = game.device || "TV/Gadget";
                 if(device === 'TV') deviceBadgeColor = "bg-blue-100 text-blue-700";
                 if(device === 'Gadget') deviceBadgeColor = "bg-purple-100 text-purple-700";
 
                 row.innerHTML = `
-                    <td class="col-span-3 font-semibold text-indigo-700 pr-2 flex items-center">${nameHtml}</td>
-                    <td class="col-span-2"><span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-gray-100 text-gray-600 border border-gray-200">${game.pic}</span></td>
-                    <td class="col-span-3 text-xs text-gray-600 truncate pr-2" title="${game.topic}">${game.topic}</td>
-                    <td class="col-span-2 text-xs"><span class="px-2 py-0.5 text-[10px] font-bold rounded ${deviceBadgeColor} border border-opacity-20 border-gray-400">${device}</span></td>
-                    <td class="col-span-2 text-center">${actionButtons}</td>
+                    <td class="col-span-4 font-semibold text-indigo-700 pr-2 truncate" title="${game.name}">
+                        ${game.name}
+                    </td>
+                    <td class="col-span-2">
+                        <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                            ${game.pic}
+                        </span>
+                    </td>
+                    <td class="col-span-3 text-xs text-gray-600 truncate pr-2" title="${game.topic}">
+                        ${game.topic}
+                    </td>
+                    <td class="col-span-2 text-xs">
+                        <span class="px-2 py-0.5 text-[10px] font-bold rounded ${deviceBadgeColor} border border-opacity-20 border-gray-400">
+                            ${device}
+                        </span>
+                    </td>
+                    <td class="col-span-1 text-center">
+                        <a href="${game.link}" target="_blank" class="inline-flex items-center justify-center px-3 py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-xs font-bold no-underline shadow-sm hover:shadow-md transition-all">
+                            <i class="fas fa-play text-[10px]"></i>
+                        </a>
+                    </td>
                 `;
                 tbody.appendChild(row);
             });
-            countSpan.textContent = games.length;
+            
+            countSpan.textContent = data.length;
         }
 
+        // --- SEARCH FUNCTION ---
         function filterTable() {
             const filter = searchInput.value.toLowerCase();
             const filteredGames = games.filter(game => 
@@ -364,101 +215,6 @@
                 game.pic.toLowerCase().includes(filter)
             );
             renderTable(filteredGames);
-        }
-
-        function saveData() {
-            localStorage.setItem('eduGamesList', JSON.stringify(games));
-            filterTable();
-        }
-
-        // --- AUTH ---
-        function toggleLoginModal() {
-            document.getElementById('loginModal').classList.toggle('hidden');
-            document.getElementById('loginError').classList.add('hidden');
-            document.getElementById('usernameInput').value = '';
-            document.getElementById('passwordInput').value = '';
-        }
-
-        function attemptLogin() {
-            const u = document.getElementById('usernameInput').value;
-            const p = document.getElementById('passwordInput').value;
-            if (u === ADMIN_USER && p === ADMIN_PASS) {
-                isAdmin = true;
-                toggleLoginModal();
-                updateAdminUI();
-            } else {
-                document.getElementById('loginError').classList.remove('hidden');
-            }
-        }
-
-        function logout() {
-            isAdmin = false;
-            updateAdminUI();
-        }
-
-        function updateAdminUI() {
-            const authBtn = document.getElementById('authBtn');
-            const logoutBtn = document.getElementById('logoutBtn');
-            const addBtn = document.getElementById('addGameFab');
-            const modeInd = document.getElementById('modeIndicator');
-
-            if (isAdmin) {
-                authBtn.classList.add('hidden');
-                logoutBtn.classList.remove('hidden');
-                addBtn.classList.remove('hidden');
-                modeInd.textContent = "Admin";
-                modeInd.className = "font-bold text-red-600";
-            } else {
-                authBtn.classList.remove('hidden');
-                logoutBtn.classList.add('hidden');
-                addBtn.classList.add('hidden');
-                modeInd.textContent = "Guest";
-                modeInd.className = "font-bold text-green-600";
-            }
-            filterTable();
-        }
-
-        // --- CRUD LOCAL ---
-        function toggleAddModal() {
-            document.getElementById('addModal').classList.toggle('hidden');
-            document.getElementById('newGameName').value = '';
-            document.getElementById('newGamePic').value = '';
-            document.getElementById('newGameTopic').value = '';
-            document.getElementById('newGameLink').value = '';
-        }
-
-        function addNewGame() {
-            const name = document.getElementById('newGameName').value;
-            const pic = document.getElementById('newGamePic').value;
-            const topic = document.getElementById('newGameTopic').value;
-            const link = document.getElementById('newGameLink').value;
-            const device = document.getElementById('newGameDevice').value;
-
-            if(name && pic && topic && link) {
-                games.push({ name, pic, topic, device, link });
-                saveData();
-                toggleAddModal();
-            }
-        }
-
-        function deleteGame(index) {
-            if(confirm('Hapus game ini?')) {
-                // Handle delete saat sedang search
-                const currentFilter = searchInput.value.toLowerCase();
-                if(currentFilter === '') {
-                    games.splice(index, 1);
-                } else {
-                    const filtered = games.filter(game => 
-                        game.name.toLowerCase().includes(currentFilter) || 
-                        game.topic.toLowerCase().includes(currentFilter) ||
-                        game.pic.toLowerCase().includes(currentFilter)
-                    );
-                    const gameToDelete = filtered[index];
-                    const realIndex = games.indexOf(gameToDelete);
-                    if (realIndex > -1) games.splice(realIndex, 1);
-                }
-                saveData();
-            }
         }
 
         // Initialize
