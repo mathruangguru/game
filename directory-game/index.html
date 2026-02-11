@@ -55,6 +55,15 @@
             background-color: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(2px);
         }
+
+        /* Styles untuk Drag and Drop */
+        .dragging {
+            opacity: 0.5;
+            background-color: #e0e7ff !important; /* Indigo 100 */
+        }
+        .drag-over {
+            border-top: 2px solid #4f46e5; /* Indigo 600 */
+        }
     </style>
 </head>
 <body>
@@ -228,6 +237,49 @@
         const emptyState = document.getElementById('emptyState');
         const searchInput = document.getElementById('searchInput');
 
+        // --- DRAG AND DROP HANDLERS ---
+        let dragStartIndex;
+
+        function dragStart(e) {
+            dragStartIndex = +this.getAttribute('data-index');
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function dragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            this.classList.add('drag-over');
+        }
+
+        function dragLeave(e) {
+            this.classList.remove('drag-over');
+        }
+
+        function dragDrop(e) {
+            e.stopPropagation();
+            const dragEndIndex = +this.getAttribute('data-index');
+            swapItems(dragStartIndex, dragEndIndex);
+            this.classList.remove('drag-over');
+            return false;
+        }
+
+        function dragEnd() {
+            this.classList.remove('dragging');
+            const rows = document.querySelectorAll('#gameTableBody tr');
+            rows.forEach(row => row.classList.remove('drag-over'));
+        }
+
+        function swapItems(fromIndex, toIndex) {
+            if (fromIndex === toIndex) return;
+            
+            // Remove from old pos and insert at new pos
+            const item = games.splice(fromIndex, 1)[0];
+            games.splice(toIndex, 0, item);
+            
+            saveData(); // Save and re-render
+        }
+
         // --- UI FUNCTIONS ---
 
         function renderTable(data) {
@@ -239,10 +291,36 @@
                 emptyState.classList.add('hidden');
             }
 
+            // Validasi: Drag & Drop hanya aktif jika Admin DAN tidak sedang search
+            const isSortEnabled = isAdmin && searchInput.value.trim() === '';
+
             data.forEach((game, index) => {
                 const row = document.createElement('tr');
-                row.className = "hover:bg-indigo-50 transition-colors duration-150 border-b border-gray-100 last:border-0 grid grid-cols-12 gap-2 items-center py-2";
+                row.className = "hover:bg-indigo-50 transition-colors duration-150 border-b border-gray-100 last:border-0 grid grid-cols-12 gap-2 items-center py-2 bg-white";
+                row.setAttribute('data-index', index);
+
+                // Attach Drag Events if Enabled
+                if (isSortEnabled) {
+                    row.setAttribute('draggable', 'true');
+                    row.classList.add('cursor-move');
+                    row.addEventListener('dragstart', dragStart);
+                    row.addEventListener('dragover', dragOver);
+                    row.addEventListener('drop', dragDrop);
+                    row.addEventListener('dragleave', dragLeave);
+                    row.addEventListener('dragend', dragEnd);
+                }
                 
+                // Grip Icon Logic
+                let nameHtml = `<span class="truncate" title="${game.name}">${game.name}</span>`;
+                if (isSortEnabled) {
+                    nameHtml = `
+                        <div class="flex items-center gap-2 overflow-hidden">
+                            <i class="fas fa-grip-vertical text-gray-400 cursor-move hover:text-indigo-600"></i>
+                            ${nameHtml}
+                        </div>
+                    `;
+                }
+
                 // Action Buttons Logic
                 let actionButtons = `
                     <a href="${game.link}" target="_blank" class="inline-flex items-center justify-center px-3 py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-xs font-bold no-underline w-full shadow-sm hover:shadow-md transition-all">
@@ -264,7 +342,9 @@
                 }
 
                 row.innerHTML = `
-                    <td class="col-span-4 font-semibold text-indigo-700 truncate pr-2" title="${game.name}">${game.name}</td>
+                    <td class="col-span-4 font-semibold text-indigo-700 pr-2 flex items-center">
+                        ${nameHtml}
+                    </td>
                     <td class="col-span-2">
                         <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-gray-100 text-gray-600 border border-gray-200">
                             ${game.pic}
@@ -342,7 +422,7 @@
                 modeInd.textContent = "Guest";
                 modeInd.className = "font-bold text-green-600";
             }
-            filterTable(); // Re-render to show/hide delete buttons
+            filterTable(); // Re-render to show/hide delete buttons and drag handles
         }
 
         // --- CRUD LOGIC ---
