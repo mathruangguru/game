@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daftar Game Edukasi (TV Mode - Admin - Online)</title>
+    <title>Daftar Game Edukasi (TV Mode - Admin Local)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -18,7 +18,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden; /* Mencegah scroll pada body utama */
+            overflow: hidden; 
         }
 
         /* Container Utama dengan Resolusi Tetap 960x540 */
@@ -31,49 +31,47 @@
             box-shadow: 0 0 50px rgba(0,0,0,0.5);
             display: flex;
             flex-direction: column;
-            /* Transform origin center untuk scaling yang rapi */
             transform-origin: center center;
         }
 
-        /* Scrollbar kustom agar tidak terlalu mengganggu di TV */
-        .custom-scroll::-webkit-scrollbar {
-            width: 8px;
-        }
-        .custom-scroll::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-        .custom-scroll::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 4px;
-        }
-        .custom-scroll::-webkit-scrollbar-thumb:hover {
-            background: #555;
-        }
+        /* Scrollbar kustom */
+        .custom-scroll::-webkit-scrollbar { width: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #555; }
 
         /* Modal Styles */
         .modal-overlay {
             background-color: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(2px);
         }
+
+        /* Styles untuk Drag and Drop */
+        .dragging {
+            opacity: 0.5;
+            background-color: #e0e7ff !important; /* Indigo 100 */
+        }
+        .drag-over {
+            border-top: 2px solid #4f46e5; /* Indigo 600 */
+        }
+        .cursor-move {
+            cursor: move;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Viewport 960x540 -->
     <div id="tv-viewport">
-        
-        <!-- Header Section (Fixed Height) -->
+        <!-- Header Section -->
         <div class="bg-indigo-600 px-6 py-4 text-white flex justify-between items-center shadow-md z-10 shrink-0 h-20 relative">
-            <!-- Left: Logo -->
             <div class="flex items-center gap-3 w-1/3">
                 <img src="https://imgix3.ruangguru.com/assets/miscellaneous/png_zekej2_3984.png" alt="Logo Ruangguru" class="h-10 bg-white rounded p-1 shadow-sm">
                 <div>
                     <h1 class="text-xl font-bold leading-tight">Direktori Game</h1>
-                    <p class="text-indigo-200 text-xs">Menu Interaktif TV (Online)</p>
+                    <p class="text-indigo-200 text-xs">Menu Interaktif TV (Local)</p>
                 </div>
             </div>
             
-            <!-- Center: How To Play Button -->
             <div class="flex justify-center w-1/3">
                 <a href="https://www.youtube.com/watch?v=x21Oi3wsCqA" target="_blank"
                     class="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-400 text-white px-4 py-2 rounded-full font-bold text-xs border border-indigo-400 shadow-sm transition transform hover:scale-105 no-underline">
@@ -81,16 +79,13 @@
                 </a>
             </div>
             
-            <!-- Right: Search & Admin -->
             <div class="flex items-center gap-3 justify-end w-1/3">
-                <!-- Search Bar -->
                 <div class="relative w-48">
-                    <input type="text" id="searchInput" placeholder="Cari game..." 
+                    <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Cari game..." 
                         class="w-full pl-8 pr-3 py-1.5 rounded-md text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 shadow-inner">
                     <i class="fas fa-search absolute left-2.5 top-2.5 text-gray-400 text-xs"></i>
                 </div>
 
-                <!-- Admin Button -->
                 <button id="authBtn" onclick="toggleLoginModal()" class="bg-indigo-800 hover:bg-indigo-900 text-white text-xs px-3 py-2 rounded transition font-bold border border-indigo-500">
                     <i class="fas fa-lock mr-1"></i> Admin
                 </button>
@@ -100,7 +95,7 @@
             </div>
         </div>
 
-        <!-- Header Tabel (Fixed) -->
+        <!-- Header Tabel -->
         <div class="bg-indigo-50 border-b border-indigo-100 px-6 py-2 grid grid-cols-12 gap-2 text-xs font-bold text-indigo-800 uppercase tracking-wider shrink-0">
             <div class="col-span-3">Nama Game</div>
             <div class="col-span-2">PIC</div>
@@ -109,28 +104,42 @@
             <div class="col-span-2 text-center">Aksi</div>
         </div>
 
-        <!-- Content Area (Scrollable) -->
+        <!-- Content Area -->
         <div class="flex-1 overflow-y-auto custom-scroll px-6 py-2 bg-white relative">
             <table class="w-full text-left border-collapse">
                 <tbody id="gameTableBody" class="text-sm text-gray-700">
-                    <!-- Data rows inserted from Firebase -->
+                    <!-- Data inserted here -->
                 </tbody>
             </table>
             
-            <!-- Empty State for Search/No Data -->
             <div id="emptyState" class="hidden text-center py-10 text-gray-500">
                 <i class="fas fa-ghost text-3xl mb-2"></i>
-                <p id="emptyStateText">Memuat data dari server...</p>
+                <p>Game tidak ditemukan</p>
             </div>
         </div>
 
-        <!-- Footer (Fixed Height) -->
-        <div class="bg-gray-50 px-6 py-2 text-xs text-gray-500 border-t border-gray-200 flex justify-between items-center shrink-0 h-8">
-            <span>Resolusi Asli: 960x540 | Mode: <span id="modeIndicator" class="font-bold text-green-600">Guest</span></span>
-            <span>Total Game: <span id="gameCount" class="font-bold text-indigo-600">...</span></span>
+        <!-- Link Request & Feedback Section -->
+        <div class="bg-indigo-50 px-6 py-2.5 border-t border-indigo-100 flex justify-between items-center shrink-0 z-10">
+            <!-- Kiri: Request Game -->
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLSc02dPz-9g0Wv3FjjbrzQ0cVYVrjcJ-uyBcFm67jb8VWXE-ZA/viewform" target="_blank" 
+               class="flex items-center gap-2 px-3 py-1.5 bg-white border border-indigo-200 rounded-full shadow-sm text-indigo-700 text-xs font-bold hover:bg-indigo-50 hover:border-indigo-300 transition transform hover:scale-105 no-underline">
+                <i class="fas fa-plus-circle text-indigo-500"></i> Request pembuatan game?
+            </a>
+
+            <!-- Kanan: Feedback -->
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLSc5VRNNOB7WHRwPYM9PbwGs_XrA20no4g0WqgpgW3Ap4bRmPA/viewform" target="_blank" 
+               class="flex items-center gap-2 px-3 py-1.5 bg-white border border-green-200 rounded-full shadow-sm text-green-700 text-xs font-bold hover:bg-green-50 hover:border-green-300 transition transform hover:scale-105 no-underline">
+                <i class="fas fa-comment-dots text-green-500"></i> Isi feedback disini ya
+            </a>
         </div>
 
-        <!-- Floating Add Button (Admin Only) -->
+        <!-- Footer -->
+        <div class="bg-gray-50 px-6 py-2 text-xs text-gray-500 border-t border-gray-200 flex justify-between items-center shrink-0 h-8">
+            <span>Resolusi Asli: 960x540 | Mode: <span id="modeIndicator" class="font-bold text-green-600">Guest</span></span>
+            <span>Total Game: <span id="gameCount" class="font-bold text-indigo-600">0</span></span>
+        </div>
+
+        <!-- Floating Add Button -->
         <button id="addGameFab" onclick="toggleAddModal()" class="hidden absolute bottom-12 right-6 bg-green-600 hover:bg-green-700 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl transition transform hover:scale-110 z-20">
             <i class="fas fa-plus"></i>
         </button>
@@ -159,7 +168,7 @@
                 <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                     <i class="fas fa-gamepad text-green-600"></i> Tambah Game Baru
                 </h3>
-                <form onsubmit="event.preventDefault(); window.addNewGame();" class="space-y-3">
+                <form onsubmit="event.preventDefault(); addNewGame();" class="space-y-3">
                     <div>
                         <label class="text-xs font-bold text-gray-500">Nama Game</label>
                         <input required type="text" id="newGameName" class="w-full border rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-green-500 outline-none">
@@ -193,36 +202,43 @@
                 </form>
             </div>
         </div>
-
     </div>
 
-    <!-- LOGIC FIREBASE & APP -->
-    <script type="module">
-        // 1. IMPORT FIREBASE (Versi Web/CDN)
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push, onValue, remove } 
-               from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    <script>
+        // --- TV SCALING ---
+        function scaleToFit() {
+            const viewport = document.getElementById('tv-viewport');
+            const targetWidth = 960;
+            const targetHeight = 540;
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            const scale = Math.min(windowWidth / targetWidth, windowHeight / targetHeight);
+            viewport.style.transform = `scale(${scale})`;
+        }
+        window.addEventListener('resize', scaleToFit);
+        window.addEventListener('load', scaleToFit);
+        scaleToFit();
 
-        // 2. KONFIGURASI FIREBASE (Dari data yang kamu berikan)
-        const firebaseConfig = {
-            apiKey: "AIzaSyB-x8XFhrs95CpTC6RNWtRGkwJ7LP_aInA",
-            authDomain: "tv-interaktif.firebaseapp.com",
-            projectId: "tv-interaktif",
-            storageBucket: "tv-interaktif.firebasestorage.app",
-            messagingSenderId: "552722590410",
-            appId: "1:552722590410:web:8a29c3897cfc6860e76233",
-            measurementId: "G-J3V94YCG5H",
-            // Penting: URL Database harus ada
-            databaseURL: "https://tv-interaktif-default-rtdb.firebaseio.com" 
-        };
+        // --- DATA & STATE (LOCAL) ---
+        const defaultGames = [
+            { id: 1, name: "Algebra Rush", pic: "Dhanar", topic: "Persamaan Linear Satu Variabel", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/algebra-rush/" },
+            { id: 2, name: "Integer Zap", pic: "Dhanar", topic: "Operasi Hitung Bilangan Bulat", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/integer-zap/" },
+            { id: 3, name: "Probability Battle Cards", pic: "Rohmat", topic: "Peluang", device: "TV/Gadget", link: "https://matrohmatmath.com/game/probability-battle-cards/" },
+            { id: 4, name: "Battle Kelipatan", pic: "Dhanar", topic: "Kelipatan Persekutuan", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/battle-kelipatan/" },
+            { id: 5, name: "Battle Faktor", pic: "Dhanar", topic: "Faktor Persekutuan", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/battle-faktor/" },
+            { id: 6, name: "Substitute the Operator", pic: "Dhanar", topic: "Operasi Bilangan", device: "Gadget", link: "https://mathruangguru.github.io/game/substitute-the-operator/" },
+            { id: 7, name: "Picto Resto", pic: "Rohmat", topic: "Piktogram", device: "TV/Gadget", link: "https://matrohmatmath.com/game/picto-resto/" },
+            { id: 8, name: "Rocket Rounding", pic: "Mayang", topic: "Pembulatan/Taksiran", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/pembulatan/" },
+            { id: 9, name: "Math Snake", pic: "Mayang", topic: "Barisan Aritmetika dan Geometri", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/snake-math/v3/" },
+            { id: 10, name: "Navigator Linear", pic: "Rohmat", topic: "Persamaan Garis Lurus", device: "TV/Gadget", link: "https://matrohmatmath.com/game/navigator-linear" },
+            { id: 11, name: "Battle Akar Kuadrat", pic: "Dhanar", topic: "Persamaan Kuadrat", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/battle-akar-kuadrat/" },
+            { id: 12, name: "Sifat Fungsi Kuadrat", pic: "Dhanar", topic: "Fungsi Kuadrat", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/sifat-fungsi-kuadrat/" },
+            { id: 13, name: "Klinik Optik", pic: "Rohmat", topic: "Cahaya dan Alat Optik", device: "TV/Gadget", link: "https://matrohmatmath.com/game/klinik-optik" }
+        ];
 
-        // 3. INISIALISASI APP & DATABASE
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const gamesRef = ref(db, 'games'); // Lokasi data: root/games
-
-        // --- VARIABLES & STATE ---
-        let games = []; // Data akan diisi otomatis dari Firebase
+        // LOAD DATA DARI LOCALSTORAGE
+        let games = JSON.parse(localStorage.getItem('eduGamesList')) || defaultGames;
+        
         let isAdmin = false;
         const ADMIN_USER = "IFP Academics";
         const ADMIN_PASS = "MSIGlt33";
@@ -230,140 +246,154 @@
         const tbody = document.getElementById('gameTableBody');
         const countSpan = document.getElementById('gameCount');
         const emptyState = document.getElementById('emptyState');
-        const emptyStateText = document.getElementById('emptyStateText');
         const searchInput = document.getElementById('searchInput');
 
-        // --- 4. BACA DATA REALTIME (Jantung Aplikasi) ---
-        onValue(gamesRef, (snapshot) => {
-            const data = snapshot.val();
-            games = []; // Reset array lokal
-            
-            if (data) {
-                // Konversi Object Firebase { "id1": {...}, "id2": {...} } menjadi Array
-                Object.keys(data).forEach(key => {
-                    games.push({
-                        id: key, // Simpan ID unik Firebase untuk keperluan hapus/edit
-                        ...data[key]
-                    });
-                });
-            }
-            
-            // Render ulang tabel setiap ada perubahan data di server
-            window.filterTable();
-        });
+        // --- DRAG & DROP LOGIC (Hanya aktif di mode Local) ---
+        let dragStartIndex;
 
-        // --- 5. UI FUNCTIONS (RENDER) ---
-        // Kita tempel ke 'window' agar bisa dipanggil dari HTML (onclick)
-        
-        window.renderTable = function(data) {
+        function dragStart(e) {
+            dragStartIndex = +this.getAttribute('data-index');
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function dragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            this.classList.add('drag-over');
+        }
+
+        function dragLeave(e) {
+            this.classList.remove('drag-over');
+        }
+
+        function dragDrop(e) {
+            e.stopPropagation();
+            const dragEndIndex = +this.getAttribute('data-index');
+            swapItems(dragStartIndex, dragEndIndex);
+            this.classList.remove('drag-over');
+            return false;
+        }
+
+        function dragEnd() {
+            this.classList.remove('dragging');
+            document.querySelectorAll('#gameTableBody tr').forEach(row => row.classList.remove('drag-over'));
+        }
+
+        function swapItems(fromIndex, toIndex) {
+            if (fromIndex === toIndex) return;
+            const item = games.splice(fromIndex, 1)[0];
+            games.splice(toIndex, 0, item);
+            saveData(); 
+        }
+
+        // --- RENDER TABLE ---
+        function renderTable(data) {
             tbody.innerHTML = '';
             
-            if (games.length === 0 && data.length === 0) {
-                // Case: Database benar-benar kosong
+            if (data.length === 0) {
                 emptyState.classList.remove('hidden');
-                emptyStateText.textContent = "Belum ada data game. Login admin untuk menambah.";
-            } else if (data.length === 0) {
-                // Case: Ada data, tapi tidak ketemu di Search
-                emptyState.classList.remove('hidden');
-                emptyStateText.textContent = "Game tidak ditemukan.";
             } else {
                 emptyState.classList.add('hidden');
             }
 
-            data.forEach((game) => {
+            // Drag aktif jika Admin & tidak sedang search
+            const isSortEnabled = isAdmin && searchInput.value.trim() === '';
+
+            data.forEach((game, index) => {
                 const row = document.createElement('tr');
                 row.className = "hover:bg-indigo-50 transition-colors duration-150 border-b border-gray-100 last:border-0 grid grid-cols-12 gap-2 items-center py-2 bg-white";
-                
-                // Logic Tombol (Guest vs Admin)
-                let actionButtons = `
-                    <a href="${game.link}" target="_blank" class="inline-flex items-center justify-center px-3 py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-xs font-bold no-underline w-full shadow-sm hover:shadow-md transition-all">
-                        Main <i class="fas fa-play ml-1.5 text-[10px]"></i>
-                    </a>
-                `;
+                row.setAttribute('data-index', index);
 
-                if (isAdmin) {
-                    // Perhatikan: window.deleteGame menggunakan ID string
-                    actionButtons = `
-                        <div class="flex gap-1">
-                             <a href="${game.link}" target="_blank" class="flex-1 inline-flex items-center justify-center px-2 py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-xs font-bold no-underline shadow-sm">
-                                <i class="fas fa-play"></i>
-                            </a>
-                            <button onclick="window.deleteGame('${game.id}')" class="w-8 flex items-center justify-center bg-red-100 text-red-600 rounded hover:bg-red-200 border border-red-200 transition">
-                                <i class="fas fa-trash-alt text-[10px]"></i>
-                            </button>
+                if (isSortEnabled) {
+                    row.setAttribute('draggable', 'true');
+                    row.classList.add('cursor-move');
+                    row.addEventListener('dragstart', dragStart);
+                    row.addEventListener('dragover', dragOver);
+                    row.addEventListener('drop', dragDrop);
+                    row.addEventListener('dragleave', dragLeave);
+                    row.addEventListener('dragend', dragEnd);
+                }
+
+                // Nama dengan Grip Ikon (Jika Admin)
+                let nameHtml = `<span class="truncate" title="${game.name}">${game.name}</span>`;
+                if (isSortEnabled) {
+                    nameHtml = `
+                        <div class="flex items-center gap-2 overflow-hidden">
+                            <i class="fas fa-grip-vertical text-gray-400 cursor-move hover:text-indigo-600"></i>
+                            ${nameHtml}
                         </div>
                     `;
                 }
 
-                // Warna Badge Device
+                let actionButtons = `
+                    <a href="${game.link}" target="_blank" class="inline-flex items-center justify-center px-3 py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-xs font-bold no-underline w-full shadow-sm hover:shadow-md transition-all">
+                        Main <i class="fas fa-play ml-1.5 text-[10px]"></i>
+                    </a>`;
+
+                if (isAdmin) {
+                    actionButtons = `
+                        <div class="flex gap-1">
+                             <a href="${game.link}" target="_blank" class="flex-1 inline-flex items-center justify-center px-2 py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-xs font-bold no-underline shadow-sm"><i class="fas fa-play"></i></a>
+                            <button onclick="deleteGame(${index})" class="w-8 flex items-center justify-center bg-red-100 text-red-600 rounded hover:bg-red-200 border border-red-200 transition"><i class="fas fa-trash-alt text-[10px]"></i></button>
+                        </div>`;
+                }
+
                 let deviceBadgeColor = "bg-gray-100 text-gray-600";
                 const device = game.device || "TV/Gadget";
                 if(device === 'TV') deviceBadgeColor = "bg-blue-100 text-blue-700";
                 if(device === 'Gadget') deviceBadgeColor = "bg-purple-100 text-purple-700";
 
                 row.innerHTML = `
-                    <td class="col-span-3 font-semibold text-indigo-700 pr-2 flex items-center">
-                        <span class="truncate" title="${game.name}">${game.name}</span>
-                    </td>
-                    <td class="col-span-2">
-                        <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-gray-100 text-gray-600 border border-gray-200">
-                            ${game.pic}
-                        </span>
-                    </td>
+                    <td class="col-span-3 font-semibold text-indigo-700 pr-2 flex items-center">${nameHtml}</td>
+                    <td class="col-span-2"><span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-gray-100 text-gray-600 border border-gray-200">${game.pic}</span></td>
                     <td class="col-span-3 text-xs text-gray-600 truncate pr-2" title="${game.topic}">${game.topic}</td>
-                    <td class="col-span-2 text-xs">
-                        <span class="px-2 py-0.5 text-[10px] font-bold rounded ${deviceBadgeColor} border border-opacity-20 border-gray-400">
-                             ${device}
-                        </span>
-                    </td>
-                    <td class="col-span-2 text-center">
-                        ${actionButtons}
-                    </td>
+                    <td class="col-span-2 text-xs"><span class="px-2 py-0.5 text-[10px] font-bold rounded ${deviceBadgeColor} border border-opacity-20 border-gray-400">${device}</span></td>
+                    <td class="col-span-2 text-center">${actionButtons}</td>
                 `;
                 tbody.appendChild(row);
             });
             countSpan.textContent = games.length;
         }
 
-        window.filterTable = function() {
+        function filterTable() {
             const filter = searchInput.value.toLowerCase();
-            // Filter dijalankan di client-side (karena data tidak terlalu banyak)
             const filteredGames = games.filter(game => 
-                (game.name && game.name.toLowerCase().includes(filter)) || 
-                (game.topic && game.topic.toLowerCase().includes(filter)) ||
-                (game.pic && game.pic.toLowerCase().includes(filter))
+                game.name.toLowerCase().includes(filter) || 
+                game.topic.toLowerCase().includes(filter) ||
+                game.pic.toLowerCase().includes(filter)
             );
-            window.renderTable(filteredGames);
+            renderTable(filteredGames);
         }
 
-        // --- 6. AUTHENTICATION (Simulasi Admin) ---
-        window.toggleLoginModal = function() {
-            const modal = document.getElementById('loginModal');
-            modal.classList.toggle('hidden');
+        function saveData() {
+            localStorage.setItem('eduGamesList', JSON.stringify(games));
+            filterTable();
+        }
+
+        // --- AUTH ---
+        function toggleLoginModal() {
+            document.getElementById('loginModal').classList.toggle('hidden');
             document.getElementById('loginError').classList.add('hidden');
             document.getElementById('usernameInput').value = '';
             document.getElementById('passwordInput').value = '';
         }
 
-        window.attemptLogin = function() {
+        function attemptLogin() {
             const u = document.getElementById('usernameInput').value;
             const p = document.getElementById('passwordInput').value;
-
             if (u === ADMIN_USER && p === ADMIN_PASS) {
                 isAdmin = true;
-                window.toggleLoginModal();
+                toggleLoginModal();
                 updateAdminUI();
-                alert("Login Admin Berhasil! Anda sekarang bisa menambah/menghapus game.");
             } else {
                 document.getElementById('loginError').classList.remove('hidden');
             }
         }
 
-        window.logout = function() {
-            if(confirm("Keluar dari mode Admin?")) {
-                isAdmin = false;
-                updateAdminUI();
-            }
+        function logout() {
+            isAdmin = false;
+            updateAdminUI();
         }
 
         function updateAdminUI() {
@@ -385,16 +415,19 @@
                 modeInd.textContent = "Guest";
                 modeInd.className = "font-bold text-green-600";
             }
-            window.filterTable(); // Render ulang untuk memunculkan tombol hapus
+            filterTable();
         }
 
-        // --- 7. CRUD OPERATIONS (WRITE TO FIREBASE) ---
-
-        window.toggleAddModal = function() {
+        // --- CRUD LOCAL ---
+        function toggleAddModal() {
             document.getElementById('addModal').classList.toggle('hidden');
+            document.getElementById('newGameName').value = '';
+            document.getElementById('newGamePic').value = '';
+            document.getElementById('newGameTopic').value = '';
+            document.getElementById('newGameLink').value = '';
         }
 
-        window.addNewGame = function() {
+        function addNewGame() {
             const name = document.getElementById('newGameName').value;
             const pic = document.getElementById('newGamePic').value;
             const topic = document.getElementById('newGameTopic').value;
@@ -402,65 +435,34 @@
             const device = document.getElementById('newGameDevice').value;
 
             if(name && pic && topic && link) {
-                // Tampilkan loading sederhana (opsional)
-                const btn = document.querySelector('#addModal button[type="submit"]');
-                const oriText = btn.textContent;
-                btn.textContent = "Menyimpan...";
-                btn.disabled = true;
-
-                // PUSH data ke Firebase
-                push(gamesRef, {
-                    name, pic, topic, link, device
-                }).then(() => {
-                    alert("Game berhasil disimpan ke Cloud Database!");
-                    window.toggleAddModal();
-                    // Reset Form
-                    document.getElementById('newGameName').value = '';
-                    document.getElementById('newGameLink').value = '';
-                    document.getElementById('newGameTopic').value = '';
-                }).catch((error) => {
-                    alert("Gagal menyimpan: " + error.message);
-                }).finally(() => {
-                    btn.textContent = oriText;
-                    btn.disabled = false;
-                });
-            } else {
-                alert("Mohon lengkapi semua data!");
+                games.push({ name, pic, topic, device, link });
+                saveData();
+                toggleAddModal();
             }
         }
 
-        window.deleteGame = function(id) {
-            if(confirm('Yakin ingin menghapus game ini selamanya dari Server?')) {
-                // HAPUS data spesifik berdasarkan ID
-                const itemRef = ref(db, `games/${id}`);
-                remove(itemRef).then(() => {
-                    // Sukses, tidak perlu alert, tabel akan update otomatis via onValue
-                }).catch((error) => {
-                    alert("Gagal menghapus: " + error.message);
-                });
+        function deleteGame(index) {
+            if(confirm('Hapus game ini?')) {
+                // Handle delete saat sedang search
+                const currentFilter = searchInput.value.toLowerCase();
+                if(currentFilter === '') {
+                    games.splice(index, 1);
+                } else {
+                    const filtered = games.filter(game => 
+                        game.name.toLowerCase().includes(currentFilter) || 
+                        game.topic.toLowerCase().includes(currentFilter) ||
+                        game.pic.toLowerCase().includes(currentFilter)
+                    );
+                    const gameToDelete = filtered[index];
+                    const realIndex = games.indexOf(gameToDelete);
+                    if (realIndex > -1) games.splice(realIndex, 1);
+                }
+                saveData();
             }
         }
 
-        // --- 8. TV SCALING ---
-        function scaleToFit() {
-            const viewport = document.getElementById('tv-viewport');
-            const targetWidth = 960;
-            const targetHeight = 540;
-            
-            const windowWidth = window.innerWidth;
-            const windowHeight = window.innerHeight;
-            
-            const scale = Math.min(windowWidth / targetWidth, windowHeight / targetHeight);
-            
-            viewport.style.transform = `scale(${scale})`;
-        }
-        window.addEventListener('resize', scaleToFit);
-        window.addEventListener('load', scaleToFit);
-        scaleToFit();
-
-        // Listen Search Input
-        searchInput.addEventListener('keyup', window.filterTable);
-
+        // Initialize
+        renderTable(games);
     </script>
 </body>
 </html>
