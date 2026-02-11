@@ -415,6 +415,42 @@
             100% { transform: scale(1); }
         }
 
+        /* --- NEW GAME RULES STYLES --- */
+        .game-rules {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 15px 25px;
+            margin-bottom: 20px;
+            text-align: left;
+            max-width: 600px;
+            width: 90%;
+        }
+        .game-rules h3 {
+            color: var(--accent);
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .rules-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .rules-list li {
+            font-size: 0.95rem;
+            color: #E5E7EB;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .icon { font-size: 1.2rem; }
+
         /* --- FEEDBACK ANIMATION --- */
         .feedback {
             position: absolute;
@@ -454,6 +490,17 @@
         <h1 class="title">ROCKET ROUNDING</h1>
         <p class="subtitle">Misi Penyelamatan Angka: Duel Kelas 4 SD</p>
         
+        <!-- RULE BOX ADDED HERE -->
+        <div class="game-rules">
+            <h3>Aturan Main</h3>
+            <ul class="rules-list">
+                <li><span class="icon">🎯</span> Jawab soal pembulatan</li>
+                <li><span class="icon">🚀</span> Benar = Roket Meluncur</li>
+                <li><span class="icon">💥</span> Salah = Roket Meledak</li>
+                <li><span class="icon">☠️</span> 3x Salah = Stasiun Hancur</li>
+            </ul>
+        </div>
+
         <div class="level-select">
             <button class="btn-level active" onclick="setLevel('puluhan')">Puluhan & Ratusan</button>
             <button class="btn-level" onclick="setLevel('desimal')">Desimal (Koma)</button>
