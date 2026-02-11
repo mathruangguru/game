@@ -179,21 +179,31 @@
         .clear-btn:active { transform: translateY(5px); box-shadow: none; }
         .clear-btn:hover { filter: brightness(1.1); }
 
-        /* Overlays */
+        /* Overlays - FIXED POSITION FIX */
         .msg-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(44, 62, 80, 0.9); display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 100;
+            position: fixed; /* Changed from absolute to fixed to cover full screen */
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(44, 62, 80, 0.95); /* Slightly darker for focus */
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center; 
+            z-index: 2000; /* High z-index to stay on top */
             color: white; backdrop-filter: blur(8px);
         }
         
         .rules-card {
             background: #fff; color: #333; padding: 40px; border-radius: 30px;
-            max-width: 800px; text-align: center;
+            max-width: 800px; width: 90%; text-align: center;
             box-shadow: 0 20px 50px rgba(0,0,0,0.3);
             border: 8px solid var(--p1-main);
             position: relative; overflow: hidden;
+            animation: slideIn 0.5s ease-out;
         }
+        
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
         .rules-card h1 { 
             color: var(--p1-main); font-size: 3rem; margin-top: 0; margin-bottom: 20px;
             text-shadow: 2px 2px 0px #eee;
@@ -248,34 +258,6 @@
 
     <div id="game-arena">
         <canvas id="gameCanvas"></canvas>
-        
-        <!-- START SCREEN -->
-        <div id="start-screen" class="msg-overlay" style="display: flex;">
-            <div class="rules-card">
-                <h1>🎮 Math Defenders</h1>
-                <div class="rules-list">
-                    <div>🎯 <strong>MISI:</strong> Lindungi Markas dari serangan bangun datar!</div>
-                    <div>📐 <strong>CARA MAIN:</strong>
-                        <ul style="margin:5px 0; padding-left:20px;">
-                            <li>Lihat musuh turun (Misal: <span class="tag" style="background:#f39c12">L=9</span> butuh Luas 9).</li>
-                            <li><strong>Ketuk atau Geser (Drag)</strong> di grid untuk menggambar dengan cepat!</li>
-                            <li>Tank akan <strong>menembak otomatis</strong> jika angka cocok!</li>
-                        </ul>
-                    </div>
-                    <div>🏆 <strong>MENANG:</strong> Skor tertinggi saat waktu habis.</div>
-                </div>
-                <button class="start-btn" onclick="window.startGame()">SIAP TEMPUR!</button>
-            </div>
-        </div>
-
-        <!-- END SCREEN -->
-        <div id="end-screen" class="msg-overlay" style="display: none;">
-            <div class="rules-card" style="border-color: #f1c40f;">
-                <h1 id="winner-text" class="win-glow">WINNER!</h1>
-                <div id="final-scores" style="font-size: 2.5rem; margin: 30px; font-weight: bold; color: #555;"></div>
-                <button class="start-btn" style="background:#3498db; box-shadow: 0 8px 0 #2980b9;" onclick="location.reload()">MAIN LAGI</button>
-            </div>
-        </div>
     </div>
 
     <div id="controls-area">
@@ -315,6 +297,37 @@
                 <div class="builder-grid" id="p2-grid"></div>
             </div>
             <button class="clear-btn" onclick="window.clearGrid(2)">↺ ULANG (CLEAR)</button>
+        </div>
+    </div>
+
+    <!-- START SCREEN -->
+    <div id="start-screen" class="msg-overlay" style="display: flex;">
+        <div class="rules-card">
+            <h1>🎮 Math Defenders</h1>
+            <div class="rules-list">
+                <div>🎯 <strong>MISI:</strong> Lindungi Markas dari serangan bangun datar!</div>
+                <div>📐 <strong>CARA MAIN:</strong>
+                    <ul style="margin:5px 0; padding-left:20px;">
+                        <li>Lihat musuh turun. Misal: 
+                            <br><span class="tag" style="background:#f39c12">L=9</span> artinya butuh <strong>Luas 9</strong>
+                            <br><span class="tag" style="background:#9b59b6">K=12</span> artinya butuh <strong>Keliling 12</strong>
+                        </li>
+                        <li><strong>Ketuk atau Geser (Drag)</strong> di grid untuk menggambar dengan cepat!</li>
+                        <li>Tank akan <strong>menembak otomatis</strong> jika angka cocok!</li>
+                    </ul>
+                </div>
+                <div>🏆 <strong>MENANG:</strong> Skor tertinggi saat waktu habis.</div>
+            </div>
+            <button class="start-btn" onclick="window.startGame()">SIAP TEMPUR!</button>
+        </div>
+    </div>
+
+    <!-- END SCREEN -->
+    <div id="end-screen" class="msg-overlay" style="display: none;">
+        <div class="rules-card" style="border-color: #f1c40f;">
+            <h1 id="winner-text" class="win-glow">WINNER!</h1>
+            <div id="final-scores" style="font-size: 2.5rem; margin: 30px; font-weight: bold; color: #555;"></div>
+            <button class="start-btn" style="background:#3498db; box-shadow: 0 8px 0 #2980b9;" onclick="location.reload()">MAIN LAGI</button>
         </div>
     </div>
 
