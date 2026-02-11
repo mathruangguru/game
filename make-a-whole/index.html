@@ -1,0 +1,1161 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Battle Make a Whole (TV Mode)</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;600&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <!-- MathJax for rendering equations -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            /* Palette */
+            --bg-color: #2b1055; 
+            --bg-gradient: radial-gradient(circle at center top, #4b1d85 0%, #2b1055 100%);
+            --p1-color: #00d2ff; 
+            --p1-dark: #009ac2;
+            --p1-bg: rgba(0, 210, 255, 0.2);
+            --p2-color: #ff47bc; 
+            --p2-dark: #c2007e;
+            --p2-bg: rgba(255, 71, 188, 0.2);
+            --gold: #ffd700;
+            --text-color: #ffffff;
+            --danger: #ff3333;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            background-image: var(--bg-gradient);
+            color: var(--text-color);
+            font-family: 'Nunito', sans-serif;
+        }
+
+        /* --- MODE STYLES --- */
+        body.single-mode .p2-only { display: none !important; }
+        
+        body.single-mode header {
+            justify-content: center;
+            gap: 20px;
+        }
+        body.single-mode .player-panel {
+            width: 40%;
+            max-width: 300px;
+        }
+        body.single-mode .target-box {
+            max-width: 50%;
+            flex: 1;
+        }
+
+        /* --- MAIN WRAPPER --- */
+        .main-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100vh; 
+            width: 100vw;
+        }
+
+        /* --- UTILS --- */
+        .hidden { display: none !important; }
+        .flex-center { display: flex; justify-content: center; align-items: center; }
+        .font-fredoka { font-family: 'Fredoka', cursive; }
+
+        /* --- OVERLAYS --- */
+        #setup-screen, #gameover-screen, #summary-screen, #turn-alert {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(43, 16, 85, 0.98);
+            z-index: 100;
+            flex-direction: column;
+            text-align: center;
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        #gameover-screen { background: rgba(20, 5, 40, 0.98); }
+        #summary-screen { background: rgba(0, 0, 0, 0.9); z-index: 150; overflow: hidden; }
+
+        /* --- ALERTS --- */
+        #turn-alert {
+            background: rgba(0,0,0,0.8);
+            z-index: 200;
+            display: none; 
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .alert-box {
+            background: white;
+            color: #2b1055;
+            padding: 20px 40px;
+            border-radius: 20px;
+            border: 4px solid var(--gold);
+            font-family: 'Fredoka';
+            font-size: 5vmin;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        h1 {
+            font-family: 'Fredoka', cursive;
+            font-size: 8vmin;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 1.5vh;
+            color: #fff;
+            text-shadow: 3px 3px 0px #000;
+            line-height: 1.1;
+            margin-top: 2vh;
+        }
+
+        /* --- SETUP UI --- */
+        .mode-selector {
+            display: flex;
+            gap: 2vw;
+            margin-bottom: 2vh;
+            background: rgba(0,0,0,0.3);
+            padding: 1vh;
+            border-radius: 50px;
+        }
+        
+        .btn-mode {
+            background: transparent;
+            border: 2px solid rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.7);
+            padding: 1vh 4vw;
+            border-radius: 30px;
+            font-family: 'Fredoka';
+            font-weight: bold;
+            font-size: 3.5vmin;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-mode.active {
+            background: var(--p1-color);
+            color: #fff;
+            border-color: var(--p1-color);
+            box-shadow: 0 0 15px var(--p1-bg);
+            transform: scale(1.05);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 2vh;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .name-input {
+            font-family: 'Fredoka', cursive;
+            font-size: 3.5vmin;
+            padding: 1vh 2vw;
+            border-radius: 30px;
+            border: 3px solid #fff;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            text-align: center;
+            width: 30vw;
+            outline: none;
+        }
+        #input-p1 { border-color: var(--p1-color); }
+        #input-p2 { border-color: var(--p2-color); }
+
+        /* --- DIFFICULTY SELECTOR --- */
+        .diff-container {
+            margin-bottom: 3vh;
+            display: flex;
+            flex-direction: column;
+            gap: 1vh;
+            align-items: center;
+        }
+        .diff-label { font-family: 'Fredoka'; font-size: 3vmin; color: var(--gold); letter-spacing: 1px; }
+        .diff-options { display: flex; gap: 1vw; background: rgba(0,0,0,0.3); padding: 1vh; border-radius: 50px; flex-wrap: wrap; justify-content: center; }
+        .btn-diff {
+            background: transparent;
+            border: 2px solid rgba(255,255,255,0.3);
+            color: rgba(255,255,255,0.6);
+            padding: 0.8vh 2.5vw;
+            border-radius: 30px;
+            font-family: 'Fredoka';
+            font-weight: bold;
+            font-size: 2.5vmin;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-diff.active {
+            background: var(--gold); color: #5a3e00; border-color: var(--gold);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); transform: scale(1.05);
+        }
+
+        .btn-primary {
+            font-family: 'Fredoka', cursive;
+            background: linear-gradient(180deg, #ffd700, #ffaa00);
+            border: 3px solid #fff;
+            padding: 1.5vh 6vw;
+            font-size: 4.5vmin;
+            font-weight: 600;
+            color: #5a3e00;
+            border-radius: 40px;
+            cursor: pointer;
+            box-shadow: 0 0.6vh 0 #b37700;
+            transition: transform 0.1s;
+        }
+        .btn-primary:active { transform: translateY(0.6vh); box-shadow: 0 0 0 #b37700; }
+
+        .btn-green {
+            background: #00cc00; color: white; box-shadow: 0 0.6vh 0 #008000;
+            border: none; border-radius: 15px; padding: 1.5vh 5vw; font-size: 4vmin; cursor: pointer;
+        }
+        .btn-green:active { transform: translateY(0.6vh); box-shadow: none; }
+
+        /* --- HUD --- */
+        header {
+            flex: 0 0 auto; 
+            height: 22vh; 
+            min-height: 90px;
+            display: flex;
+            justify-content: space-between;
+            align-items: stretch;
+            padding: 1vh 1.5vw;
+            background: rgba(43, 16, 85, 0.95);
+            border-bottom: 3px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        .player-panel {
+            width: 26%;
+            border-radius: 15px;
+            padding: 0.5vh 1vw;
+            position: relative;
+            border: 3px solid transparent;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .p1-panel { border-color: var(--p1-color); background: rgba(255,255,255,0.05); }
+        .p2-panel { border-color: var(--p2-color); background: rgba(255,255,255,0.05); text-align: right; }
+
+        .active-p1 { background: var(--p1-bg); box-shadow: 0 0 20px var(--p1-color); }
+        .active-p2 { background: var(--p2-bg); box-shadow: 0 0 20px var(--p2-color); }
+        .inactive { opacity: 0.6; filter: grayscale(80%); }
+
+        .turn-badge {
+            position: absolute;
+            top: -1.2vh; left: 50%; transform: translateX(-50%);
+            background: white; color: #2b1055;
+            font-size: 2.2vmin; font-weight: bold;
+            padding: 0.3vh 1.5vw; border-radius: 15px;
+            z-index: 10;
+            white-space: nowrap;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+        }
+
+        .rebound-badge {
+            background: #ff3333 !important; color: white !important; animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.1); }
+            100% { transform: translateX(-50%) scale(1); }
+        }
+
+        .timer-badge {
+            position: absolute; top: 0.5vh;
+            font-family: 'Fredoka', monospace; font-size: 3.5vmin; font-weight: bold;
+            padding: 0.3vh 1vw; border-radius: 8px;
+            background: rgba(0,0,0,0.4); color: rgba(255,255,255,0.7);
+        }
+        .p1-panel .timer-badge { right: 5px; }
+        .p2-panel .timer-badge { left: 5px; }
+        
+        .active-timer {
+            background: #ff3333 !important; color: white !important;
+            box-shadow: 0 0 10px red; transform: scale(1.1);
+        }
+
+        .player-name {
+            font-family: 'Fredoka', cursive; font-size: 4vmin; margin-top: 1vh;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .hearts { display: flex; gap: 0.3vw; margin-top: 0.5vh; height: 3vh; align-items: center; }
+        .p2-panel .hearts { justify-content: flex-end; }
+        .icon-heart { width: 3.5vmin; height: 3.5vmin; fill: #555; }
+        .icon-heart.filled { fill: #ff3333; filter: drop-shadow(0 0 3px red); }
+
+        .streak-container {
+            display: flex; align-items: center; gap: 0.3vw;
+            margin-top: 0.5vh; font-weight: bold; font-size: 3vmin;
+            color: var(--gold);
+        }
+        .p2-panel .streak-container { justify-content: flex-end; }
+        
+        .streak-dot {
+            width: 2.5vmin; height: 2.5vmin; border-radius: 50%;
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.5);
+            display: none; 
+        }
+        .streak-dot.visible { display: block; }
+        .streak-active { background: var(--gold); box-shadow: 0 0 8px var(--gold); border-color: #fff; }
+
+        /* --- TARGET BOX --- */
+        .target-box {
+            flex: 1; 
+            background: white; border: 4px solid var(--gold);
+            border-radius: 15px;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            box-shadow: 0 0.6vh 0 #b37700;
+            margin: 0 1.5vw; padding: 0.5vh;
+            overflow: hidden; position: relative;
+            max-width: 45%;
+        }
+        .target-label { 
+            color: #888; 
+            font-size: 2.8vmin; 
+            font-weight: bold; 
+            letter-spacing: 1px; 
+            margin-top: 5.5vh; 
+        }
+        .target-level { 
+            position: absolute; top: 0; left: 0; width: 100%; 
+            background: var(--gold); color: #5a3e00; 
+            font-size: 2.5vmin; font-weight: bold; 
+            text-align: center; padding: 0.5vh; 
+        }
+        .target-math { 
+            color: #2b1055; font-size: 7.5vmin; font-weight: bold; 
+            line-height: 1.2; margin: 0.5vh 0; width: 100%; text-align: center;
+            font-family: 'Fredoka', cursive;
+        }
+
+        /* --- GRID AREA --- */
+        #game-area {
+            flex: 1; width: 100%; overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+            padding: 1vh 2vw;
+        }
+
+        .grid-container {
+            width: 95%; max-width: 98vw; height: 95%; 
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 2vmin; padding-bottom: 0; 
+        }
+
+        .grid-cell {
+            background: white; color: #2b1055;
+            border-radius: 15px; border: none;
+            font-family: 'Nunito', sans-serif; font-weight: bold;
+            font-size: 4vmin; 
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer;
+            box-shadow: 0 0.6vh 0 #b0b0b0; transition: all 0.1s;
+            height: 100%; min-height: 0;
+            position: relative;
+        }
+        
+        .grid-cell:active { transform: translateY(0.4vh); box-shadow: none; }
+        .grid-cell:disabled { cursor: default; }
+        
+        .cell-selected { 
+            background: var(--p1-color) !important; 
+            color: white !important; 
+            box-shadow: 0 0.6vh 0 #009ac2 !important; 
+            transform: translateY(0.2vh);
+        }
+
+        .cell-correct { 
+            background: #88ff00 !important; 
+            box-shadow: 0 0.6vh 0 #55aa00 !important; 
+            transform: scale(1.05); z-index: 2; 
+            color: #2b1055 !important;
+        }
+        
+        .cell-wrong { 
+            background: #ff3333 !important; 
+            color: white !important; 
+            box-shadow: 0 0.6vh 0 #990000 !important; 
+            opacity: 0.5; transform: scale(0.9); 
+        }
+
+        /* --- FOOTER --- */
+        footer {
+            flex: 0 0 auto; padding: 1vh; font-size: 3vmin; 
+            color: rgba(255,255,255,0.6); text-align: center; background: rgba(0,0,0,0.2);
+        }
+
+    </style>
+</head>
+<body>
+    <div class="main-wrapper">
+        <div id="turn-alert" class="flex-center">
+            <div class="alert-box">
+                <div id="alert-icon" style="font-size: 10vmin; margin-bottom: 1.5vh;">⚠️</div>
+                <div id="alert-msg">SALAH!</div>
+                <div id="alert-sub" style="font-size: 4vmin; color:#666; margin-top:1vh;">Giliran dilempar ke lawan</div>
+            </div>
+        </div>
+
+        <div id="setup-screen" class="flex-center">
+            <h1>Make a<br><span style="color:var(--gold); font-size:0.6em; font-family:'Nunito'">WHOLE</span></h1>
+            
+            <div class="mode-selector">
+                <button id="btn-mode-1p" class="btn-mode" onclick="Game.setMode('single')">1 PLAYER</button>
+                <button id="btn-mode-2p" class="btn-mode active" onclick="Game.setMode('multi')">2 PLAYERS</button>
+            </div>
+
+            <div class="input-group">
+                <input type="text" id="p1-name" class="name-input" placeholder="Nama P1" value="Player 1">
+                <span id="vs-label" style="font-size:6vmin; font-weight:bold; color:var(--gold)">VS</span>
+                <input type="text" id="p2-name" class="name-input p2-only" placeholder="Nama P2" value="Player 2">
+            </div>
+
+            <div class="diff-container">
+                <div class="diff-label">PILIH TINGKAT KESULITAN:</div>
+                <div class="diff-options">
+                    <button id="btn-easy" class="btn-diff active" onclick="Game.setDifficulty('easy')">EASY</button>
+                    <button id="btn-medium" class="btn-diff" onclick="Game.setDifficulty('medium')">MEDIUM</button>
+                    <button id="btn-hard" class="btn-diff" onclick="Game.setDifficulty('hard')">HARD</button>
+                    <button id="btn-veryhard" class="btn-diff" onclick="Game.setDifficulty('veryhard')">V. HARD</button>
+                </div>
+            </div>
+
+            <div style="background:rgba(0,0,0,0.4); padding:2vh 2vw; border-radius:20px; margin-bottom:3vh; border:2px solid rgba(255,255,255,0.1); max-width:850px; text-align:left;">
+                <h3 style="margin-top:0; text-align:center; color:var(--gold); font-family:'Fredoka'; letter-spacing:1px; font-size:4vmin; margin-bottom:1.5vh;">PERATURAN</h3>
+                <ul id="rules-list" style="padding-left:20px; margin:0; font-size:3vmin; line-height:1.5; color:#eee;">
+                </ul>
+            </div>
+
+            <button class="btn-primary" onclick="Game.start()">MULAI BATTLE</button>
+        </div>
+
+        <div id="gameover-screen" class="flex-center hidden">
+            <svg width="18vmin" height="18vmin" viewBox="0 0 24 24" fill="none" stroke="gold" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:2vh; filter:drop-shadow(0 0 15px gold);">
+                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+                <path d="M4 22h16"></path>
+                <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
+                <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
+                <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+            </svg>
+            <h1>SELESAI!</h1>
+            <h2 id="winner-text" style="color:var(--p1-color); margin-bottom:1.5vh; font-size: 7vmin;">Menang!</h2>
+            <p id="win-reason" style="background:rgba(255,255,255,0.1); padding:1.5vh 3vw; border-radius:15px; margin-bottom:3vh; font-size:3.5vmin; max-width: 85%;">Alasan</p>
+
+            <button class="btn-primary" onclick="Game.setup()">MAIN LAGI</button>
+        </div>
+
+        <div id="summary-screen" class="flex-center hidden">
+            <div style="background:white; color:#2b1055; padding:4vh 4vw; border-radius:30px; max-width:85vw; border:0.8vmin solid var(--gold);">
+                <h2 class="font-fredoka" style="margin-top:0; font-size: 6vmin;">RONDE SELESAI</h2>
+                <p id="summary-msg" style="font-size:4vmin; font-weight:bold; margin-bottom:3vh;">Pesan</p>
+                <button class="btn-green font-fredoka" onclick="Game.nextRound(true)">LANJUT SOAL BARU ▶</button>
+            </div>
+        </div>
+
+        <header id="game-hud" class="hidden">
+            <div id="p1-panel" class="player-panel p1-panel">
+                <div id="p1-turn-badge" class="turn-badge hidden">GILIRANMU</div>
+                <div id="p1-timer" class="timer-badge">03:00</div>
+                
+                <div>
+                    <div id="hud-p1-name" class="player-name">Player 1</div>
+                    <div class="hearts" id="p1-hearts"></div>
+                </div>
+                
+                <div class="streak-container" id="p1-streak-container">
+                    <span>Streak:</span>
+                </div>
+            </div>
+
+            <div class="target-box">
+                <div id="level-indicator" class="target-level">LEVEL 1</div>
+                <span class="target-label" id="target-label">CARI PASANGAN JUMLAH 1</span>
+                <div id="target-math" class="target-math">
+                    MAKE 1
+                </div>
+            </div>
+
+            <div id="p2-panel" class="player-panel p2-panel p2-only">
+                <div id="p2-turn-badge" class="turn-badge hidden">GILIRANMU</div>
+                <div id="p2-timer" class="timer-badge">03:00</div>
+                
+                <div style="display:flex; flex-direction:column; align-items:flex-end;">
+                    <div id="hud-p2-name" class="player-name">Player 2</div>
+                    <div class="hearts" id="p2-hearts"></div>
+                </div>
+                
+                <div class="streak-container" id="p2-streak-container">
+                    <span>:Streak</span>
+                </div>
+            </div>
+        </header>
+
+        <section id="game-area" class="hidden">
+            <div class="grid-container" id="grid">
+            </div>
+        </section>
+
+        <footer id="game-footer" class="hidden">
+            Klik kotak yang jika dijumlahkan hasilnya 1.
+        </footer>
+    </div>
+
+    <script>
+        const AudioEngine = {
+            ctx: null,
+            init() {
+                if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            },
+            play(type) {
+                if (!this.ctx) this.init();
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                const now = this.ctx.currentTime;
+
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, now);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now); osc.stop(now + 0.1);
+                } else if (type === 'correct') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523, now); 
+                    osc.frequency.setValueAtTime(659, now + 0.1); 
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now); osc.stop(now + 0.3);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.linearRampToValueAtTime(80, now + 0.3);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now); osc.stop(now + 0.3);
+                } else if (type === 'win') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523, now);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 1.5);
+                    osc.start(now); osc.stop(now + 1.5);
+                } else if (type === 'pass') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+                    gain.gain.setValueAtTime(0.1, now);
+                    osc.start(now); osc.stop(now + 0.3);
+                } else if (type === 'round_complete') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.setValueAtTime(880, now + 0.2);
+                    gain.gain.setValueAtTime(0.2, now);
+                    osc.start(now); osc.stop(now + 0.4);
+                }
+            }
+        };
+
+        const MathHelper = {
+            reduce: (numerator, denominator) => {
+                const gcd = (a, b) => b ? MathHelper.reduce(b, a % b).gcd : a;
+                const divisor = gcd(numerator, denominator);
+                return { 
+                    n: numerator / divisor, 
+                    d: denominator / divisor, 
+                    gcd: divisor 
+                };
+            },
+            
+            toLatexFrac: (n, d) => {
+                const r = MathHelper.reduce(n, d);
+                return `\\[ \\frac{${r.n}}{${r.d}} \\]`;
+            },
+            
+            format: (val, type) => {
+                if (type === 'decimal') return parseFloat(val.toFixed(3)).toString().replace('.', ','); 
+                if (type === 'percent') return parseFloat((val * 100).toFixed(2)).toString().replace('.', ',') + '%';
+                if (type === 'permill') return parseFloat((val * 1000).toFixed(1)).toString().replace('.', ',') + '‰';
+                if (type === 'fraction') {
+                    const tolerance = 1.0E-6;
+                    let h1 = 1, k1 = 0, h2 = 0, k2 = 1;
+                    let b = val;
+                    do {
+                        let a = Math.floor(b);
+                        let aux = h1; h1 = a * h1 + h2; h2 = aux;
+                        aux = k1; k1 = a * k1 + k2; k2 = aux;
+                        b = 1 / (b - a);
+                    } while (Math.abs(val - h1 / k1) > val * tolerance);
+                    return MathHelper.toLatexFrac(h1, k1);
+                }
+                return val;
+            }
+        };
+
+        const Game = {
+            state: {
+                mode: 'multi', 
+                players: [],
+                activePlayer: 0,
+                gridItems: [], 
+                selections: [], 
+                targetCount: 2, 
+                isRebound: false,
+                intervalId: null,
+                difficulty: 'easy'
+            },
+            
+            GRID_SIZE: 10,
+            
+            get TARGET_STREAK() {
+                return this.state.mode === 'single' ? 8 : 5;
+            },
+
+            setMode(mode) {
+                this.state.mode = mode;
+                const btn1 = document.getElementById('btn-mode-1p');
+                const btn2 = document.getElementById('btn-mode-2p');
+                const p2Inputs = document.querySelectorAll('.p2-only');
+                const vsLabel = document.getElementById('vs-label');
+
+                if (mode === 'single') {
+                    btn1.classList.add('active');
+                    btn2.classList.remove('active');
+                    p2Inputs.forEach(el => el.classList.add('hidden'));
+                    vsLabel.classList.add('hidden');
+                } else {
+                    btn1.classList.remove('active');
+                    btn2.classList.add('active');
+                    p2Inputs.forEach(el => el.classList.remove('hidden'));
+                    vsLabel.classList.remove('hidden');
+                }
+                this.updateRulesText();
+            },
+
+            setDifficulty(level) {
+                this.state.difficulty = level;
+                ['easy', 'medium', 'hard', 'veryhard'].forEach(l => {
+                    const btn = document.getElementById(`btn-${l}`);
+                    if (l === level) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                });
+            },
+
+            updateRulesText() {
+                const list = document.getElementById('rules-list');
+                const isSingle = this.state.mode === 'single';
+                
+                list.innerHTML = `
+                    <li style="margin-bottom:0.5vh;">🎯 <strong>Misi:</strong> Cari 2 (atau 3) kotak yang dijumlah = 1.</li>
+                    <li style="margin-bottom:0.5vh;">📈 <strong>Level:</strong> Very Hard perlu 3 kotak!</li>
+                    <li style="margin-bottom:0.5vh;">⚠️ <strong>SALAH:</strong> 
+                        ${isSingle ? "Nyawa -1 dan Streak Reset." : "Nyawa -1 dan giliran <strong>dilempar ke lawan</strong>."}
+                    </li>
+                    <li style="margin-bottom:0.5vh;">🏆 <strong>Menang:</strong> 
+                        ${isSingle ? "Capai <strong>STREAK 8x</strong>." : "Streak <strong>5x</strong> atau lawan mati."}
+                    </li>
+                `;
+            },
+
+            getRandomInt(min, max) {
+                return Math.floor(Math.random() * (max - min + 1)) + min;
+            },
+
+            generateQuestion() {
+                const diff = this.state.difficulty;
+                let items = [];
+                
+                if (diff === 'veryhard') {
+                    this.state.targetCount = 3;
+                    document.getElementById('target-label').innerText = "CARI 3 ANGKA JUMLAH 1";
+                    document.getElementById('game-footer').innerText = "Klik 3 kotak yang jika dijumlahkan hasilnya 1.";
+                } else {
+                    this.state.targetCount = 2;
+                    document.getElementById('target-label').innerText = "CARI 2 ANGKA JUMLAH 1";
+                    document.getElementById('game-footer').innerText = "Klik 2 kotak yang jika dijumlahkan hasilnya 1.";
+                }
+
+                if (diff === 'easy') {
+                    const denom = this.getRandomInt(2, 9);
+                    const num1 = this.getRandomInt(1, denom - 1);
+                    const val1 = num1 / denom;
+                    const val2 = (denom - num1) / denom;
+                    items.push({ val: val1, display: `\\[ \\frac{${num1}}{${denom}} \\]`, isTarget: true });
+                    items.push({ val: val2, display: `\\[ \\frac{${denom-num1}}{${denom}} \\]`, isTarget: true });
+                } 
+                else if (diff === 'medium') {
+                    const denom = this.getRandomInt(3, 12);
+                    const num1 = this.getRandomInt(1, denom - 1);
+                    const val1 = num1 / denom;
+                    const val2 = 1 - val1;
+                    items.push({ val: val1, display: MathHelper.format(val1, 'fraction'), isTarget: true });
+                    items.push({ val: val2, display: MathHelper.format(val2, 'fraction'), isTarget: true });
+                } 
+                else if (diff === 'hard') {
+                    const bases = [2, 4, 5, 10];
+                    const denom = bases[Math.floor(Math.random() * bases.length)];
+                    const num1 = this.getRandomInt(1, denom - 1);
+                    const val1 = num1 / denom;
+                    const val2 = 1 - val1;
+                    
+                    if (Math.random() > 0.5) {
+                        items.push({ val: val1, display: MathHelper.format(val1, 'fraction'), isTarget: true });
+                        items.push({ val: val2, display: MathHelper.format(val2, 'decimal'), isTarget: true });
+                    } else {
+                        items.push({ val: val1, display: MathHelper.format(val1, 'decimal'), isTarget: true });
+                        items.push({ val: val2, display: MathHelper.format(val2, 'fraction'), isTarget: true });
+                    }
+                } 
+                else { 
+                    const bases = [10, 20, 100];
+                    const denom = bases[Math.floor(Math.random() * bases.length)];
+                    
+                    let r1 = this.getRandomInt(1, Math.floor(denom/2));
+                    let r2 = this.getRandomInt(1, Math.floor((denom - r1)/2));
+                    if (r1 + r2 >= denom) r2 = 1;
+                    let r3 = denom - r1 - r2;
+
+                    const vals = [r1/denom, r2/denom, r3/denom];
+                    const types = ['fraction', 'decimal', 'percent', 'permill'];
+                    
+                    vals.forEach(v => {
+                        const t = types[Math.floor(Math.random() * types.length)];
+                        items.push({ val: v, display: MathHelper.format(v, t), isTarget: true });
+                    });
+                }
+
+                const needed = 10 - items.length;
+                
+                for(let i=0; i<needed; i++) {
+                    const bases = [2, 3, 4, 5, 8, 10];
+                    const denom = bases[Math.floor(Math.random() * bases.length)];
+                    const num = this.getRandomInt(1, denom * 2); 
+                    let val = num / denom;
+                    
+                    if (val === 0 || val === 1 || items.some(it => Math.abs(it.val - val) < 0.001)) {
+                        i--; continue;
+                    }
+
+                    let dType = 'fraction';
+                    if (diff === 'hard') dType = Math.random() > 0.5 ? 'decimal' : 'fraction';
+                    if (diff === 'veryhard') {
+                         const types = ['fraction', 'decimal', 'percent', 'permill'];
+                         dType = types[Math.floor(Math.random() * types.length)];
+                    }
+
+                    items.push({ val: val, display: MathHelper.format(val, dType), isTarget: false });
+                }
+
+                items.sort(() => Math.random() - 0.5);
+                this.state.gridItems = items;
+                
+                const label = `${diff.toUpperCase()} - CARI ${this.state.targetCount} KOTAK`;
+                document.getElementById('level-indicator').innerText = label;
+            },
+
+            setup() {
+                document.getElementById('setup-screen').classList.remove('hidden');
+                document.getElementById('gameover-screen').classList.add('hidden');
+                document.getElementById('game-hud').classList.add('hidden');
+                document.getElementById('game-area').classList.add('hidden');
+                document.getElementById('game-footer').classList.add('hidden');
+                this.stopTimer();
+                this.setMode('multi'); 
+                this.setDifficulty('easy');
+            },
+
+            start() {
+                const p1Name = document.getElementById('p1-name').value || 'Player 1';
+                const p2Name = document.getElementById('p2-name').value || 'Player 2';
+                
+                this.state.players = [
+                    { name: p1Name, lives: 5, time: 180, streak: 0 }, 
+                    { name: p2Name, lives: 5, time: 180, streak: 0 }
+                ];
+                this.state.activePlayer = 0;
+
+                if (this.state.mode === 'single') {
+                    document.body.classList.add('single-mode');
+                } else {
+                    document.body.classList.remove('single-mode');
+                }
+
+                document.getElementById('hud-p1-name').textContent = p1Name;
+                document.getElementById('hud-p2-name').textContent = p2Name;
+
+                this.setupStreakDotsUI();
+
+                document.getElementById('setup-screen').classList.add('hidden');
+                document.getElementById('game-hud').classList.remove('hidden');
+                document.getElementById('game-area').classList.remove('hidden');
+                document.getElementById('game-footer').classList.remove('hidden');
+
+                this.nextRound(true); 
+                this.startTimer();
+            },
+
+            setupStreakDotsUI() {
+                const max = this.TARGET_STREAK;
+                const p1Container = document.getElementById('p1-streak-container');
+                p1Container.innerHTML = '<span>Streak:</span>';
+                for(let i=1; i<=max; i++) {
+                    const d = document.createElement('div');
+                    d.id = `p1-s${i}`; d.className = 'streak-dot visible';
+                    p1Container.appendChild(d);
+                }
+
+                const p2Container = document.getElementById('p2-streak-container');
+                p2Container.innerHTML = '';
+                for(let i=max; i>=1; i--) {
+                    const d = document.createElement('div');
+                    d.id = `p2-s${i}`; d.className = 'streak-dot visible';
+                    p2Container.appendChild(d);
+                }
+                const span = document.createElement('span');
+                span.textContent = ':Streak';
+                p2Container.appendChild(span);
+            },
+
+            nextRound(isNewQuestion = true) {
+                this.state.isRebound = false;
+                this.state.selections = []; 
+                
+                if (isNewQuestion) this.generateQuestion();
+                
+                this.renderGrid();
+                this.updateHUD();
+                document.getElementById('summary-screen').classList.add('hidden');
+                
+                const grid = document.getElementById('grid');
+                grid.style.pointerEvents = 'auto';
+            },
+
+            startTimer() {
+                this.stopTimer();
+                this.state.intervalId = setInterval(() => {
+                    const p = this.state.players[this.state.activePlayer];
+                    p.time--;
+                    
+                    if (p.time <= 0) {
+                        this.endGame(this.state.activePlayer === 0 ? 1 : 0, "Waktu Habis!");
+                    }
+                    this.updateTimers();
+                }, 1000);
+            },
+
+            stopTimer() {
+                if (this.state.intervalId) clearInterval(this.state.intervalId);
+            },
+
+            showAlert(icon, msg, sub, callback) {
+                const box = document.getElementById('turn-alert');
+                document.getElementById('alert-icon').textContent = icon;
+                document.getElementById('alert-msg').textContent = msg;
+                document.getElementById('alert-sub').textContent = sub;
+                
+                box.style.display = 'flex';
+                
+                setTimeout(() => {
+                    box.style.display = 'none';
+                    if (callback) callback();
+                }, 1500); 
+            },
+
+            handleGridClick(index) {
+                const btn = document.getElementById(`cell-${index}`);
+                if (btn.classList.contains('cell-wrong') || btn.classList.contains('cell-correct')) return;
+                
+                const alreadySelectedIdx = this.state.selections.findIndex(s => s.index === index);
+                if (alreadySelectedIdx !== -1) {
+                    this.state.selections.splice(alreadySelectedIdx, 1);
+                    btn.classList.remove('cell-selected');
+                    AudioEngine.play('click');
+                    return;
+                }
+
+                if (this.state.selections.length >= this.state.targetCount) return;
+
+                AudioEngine.play('click');
+                const item = this.state.gridItems[index];
+                
+                this.state.selections.push({ index: index, val: item.val });
+                btn.classList.add('cell-selected');
+
+                if (this.state.selections.length === this.state.targetCount) {
+                    this.checkAnswer();
+                }
+            },
+
+            checkAnswer() {
+                const sum = this.state.selections.reduce((acc, curr) => acc + curr.val, 0);
+                const isMatch = Math.abs(sum - 1.0) < 0.0001;
+                
+                // Copy current selections to a local array to handle visual reset
+                const currentSelections = [...this.state.selections];
+
+                if (isMatch) {
+                    AudioEngine.play('correct');
+                    currentSelections.forEach(sel => {
+                        const btn = document.getElementById(`cell-${sel.index}`);
+                        btn.className = "grid-cell cell-correct";
+                    });
+                    this.roundWin();
+                } else {
+                    AudioEngine.play('wrong');
+                    currentSelections.forEach(sel => {
+                        const btn = document.getElementById(`cell-${sel.index}`);
+                        btn.classList.add('cell-wrong');
+                        btn.classList.remove('cell-selected');
+                    });
+                    
+                    this.state.selections = []; 
+
+                    const player = this.state.players[this.state.activePlayer];
+                    player.lives--;
+                    player.streak = 0; 
+                    
+                    if (player.lives <= 0) {
+                        if (this.state.mode === 'single') {
+                            this.endGame(1, "Nyawa Habis! Coba Lagi."); 
+                        } else {
+                            this.endGame(this.state.activePlayer === 0 ? 1 : 0, "Lawan Kehabisan Nyawa!");
+                        }
+                        return;
+                    }
+
+                    if (this.state.mode === 'single') {
+                        this.showAlert("❌", "SALAH!", "Streak Reset.", () => {
+                            // Reset buttons to original state for another try
+                            currentSelections.forEach(sel => {
+                                const btn = document.getElementById(`cell-${sel.index}`);
+                                btn.classList.remove('cell-wrong');
+                            });
+                            this.updateHUD();
+                        });
+                    } else {
+                        if (this.state.isRebound) {
+                            this.showAlert("☠️", "DUA-DUANYA SALAH!", "Soal Hangus.", () => {
+                                this.state.activePlayer = this.state.activePlayer === 0 ? 1 : 0;
+                                this.nextRound(true);
+                            });
+                        } else {
+                            this.state.isRebound = true;
+                            const nextName = this.state.players[this.state.activePlayer === 0 ? 1 : 0].name;
+                            this.showAlert("🔄", "SALAH!", `Giliran dilempar ke ${nextName}`, () => {
+                                // REBOUND FIX: Return buttons to clickable state for the next player
+                                currentSelections.forEach(sel => {
+                                    const btn = document.getElementById(`cell-${sel.index}`);
+                                    btn.classList.remove('cell-wrong');
+                                });
+                                this.state.activePlayer = this.state.activePlayer === 0 ? 1 : 0;
+                                AudioEngine.play('pass');
+                                this.updateHUD(); 
+                            });
+                        }
+                    }
+                    this.updateHUD();
+                }
+            },
+
+            roundWin() {
+                AudioEngine.play('round_complete');
+                const player = this.state.players[this.state.activePlayer];
+                player.streak++;
+                
+                if (player.streak >= this.TARGET_STREAK) {
+                    const msg = this.state.mode === 'single' 
+                        ? "SOLO MASTER! 8x WIN STREAK!" 
+                        : "CHAMPION! 5x WIN STREAK!";
+                    this.endGame(this.state.activePlayer, msg);
+                    return;
+                }
+
+                let msg;
+                if (this.state.mode === 'single') {
+                    msg = `BENAR! Streak: ${player.streak} / ${this.TARGET_STREAK}`;
+                } else {
+                    msg = this.state.isRebound 
+                        ? `REBOUND SUKSES! Streak: ${player.streak}` 
+                       : `PERFECT! Streak: ${player.streak}`;
+                }
+
+                document.getElementById('summary-msg').textContent = msg;
+                document.getElementById('summary-screen').classList.remove('hidden');
+                document.getElementById('grid').style.pointerEvents = 'none';
+                
+                if (this.state.mode === 'multi') {
+                    this.state.activePlayer = this.state.activePlayer === 0 ? 1 : 0;
+                }
+            },
+
+            endGame(winnerIdx, reason) {
+                this.stopTimer();
+                const winner = this.state.players[winnerIdx];
+                
+                document.getElementById('gameover-screen').classList.remove('hidden');
+                document.getElementById('game-hud').classList.add('hidden');
+                document.getElementById('game-area').classList.add('hidden');
+                document.getElementById('game-footer').classList.add('hidden');
+                document.getElementById('summary-screen').classList.add('hidden');
+
+                if (this.state.mode === 'single') {
+                    if (winnerIdx === 0) { 
+                        AudioEngine.play('win');
+                        document.getElementById('winner-text').textContent = "KAMU MENANG!";
+                        document.getElementById('winner-text').style.color = "var(--gold)";
+                    } else {
+                        document.getElementById('winner-text').textContent = "GAME OVER";
+                        document.getElementById('winner-text').style.color = "var(--danger)";
+                    }
+                } else {
+                    AudioEngine.play('win');
+                    document.getElementById('winner-text').textContent = `${winner.name} Menang!`;
+                    document.getElementById('winner-text').style.color = winnerIdx === 0 ? 'var(--p1-color)' : 'var(--p2-color)';
+                }
+                
+                document.getElementById('win-reason').textContent = reason;
+            },
+
+            renderGrid() {
+                const grid = document.getElementById('grid');
+                grid.innerHTML = '';
+                
+                this.state.gridItems.forEach((item, index) => {
+                    const btn = document.createElement('button');
+                    btn.id = `cell-${index}`;
+                    btn.className = 'grid-cell';
+                    btn.innerHTML = item.display;
+                    btn.onclick = () => this.handleGridClick(index);
+                    grid.appendChild(btn);
+                });
+
+                if (window.MathJax) {
+                    MathJax.typesetPromise([grid]).catch((err) => console.log(err));
+                }
+            },
+
+            updateHUD() {
+                const p1 = this.state.players[0];
+                const p2 = this.state.players[1];
+                const active = this.state.activePlayer;
+
+                const p1Panel = document.getElementById('p1-panel');
+                const p2Panel = document.getElementById('p2-panel');
+                const p1Badge = document.getElementById('p1-turn-badge');
+                const p2Badge = document.getElementById('p2-turn-badge');
+
+                if (this.state.mode === 'single') {
+                    p1Panel.classList.add('active-p1');
+                    p1Badge.classList.add('hidden'); 
+                    document.getElementById('p1-timer').classList.add('active-timer');
+                } else {
+                    if (active === 0) {
+                        p1Panel.classList.add('active-p1'); p1Panel.classList.remove('inactive');
+                        p2Panel.classList.remove('active-p2'); p2Panel.classList.add('inactive');
+                        p1Badge.classList.remove('hidden'); p2Badge.classList.add('hidden');
+                        document.getElementById('p1-timer').classList.add('active-timer');
+                        document.getElementById('p2-timer').classList.remove('active-timer');
+                    } else {
+                        p1Panel.classList.remove('active-p1'); p1Panel.classList.add('inactive');
+                        p2Panel.classList.add('active-p2'); p2Panel.classList.remove('inactive');
+                        p1Badge.classList.add('hidden'); p2Badge.classList.remove('hidden');
+                        document.getElementById('p1-timer').classList.remove('active-timer');
+                        document.getElementById('p2-timer').classList.add('active-timer');
+                    }
+                    
+                    if (this.state.isRebound) {
+                        const txt = "DAPAT LEMPARAN!";
+                        if (active === 0) { p1Badge.textContent = txt; p1Badge.classList.add('rebound-badge'); }
+                        else { p2Badge.textContent = txt; p2Badge.classList.add('rebound-badge'); }
+                    } else {
+                        p1Badge.textContent = "GILIRANMU"; p1Badge.classList.remove('rebound-badge');
+                        p2Badge.textContent = "GILIRANMU"; p2Badge.classList.remove('rebound-badge');
+                    }
+                }
+
+                this.renderHearts('p1-hearts', p1.lives);
+                if(this.state.mode === 'multi') this.renderHearts('p2-hearts', p2.lives);
+
+                this.renderStreakDots('p1', p1.streak);
+                if(this.state.mode === 'multi') this.renderStreakDots('p2', p2.streak);
+
+                this.updateTimers();
+            },
+
+            renderHearts(id, count) {
+                const container = document.getElementById(id);
+                container.innerHTML = '';
+                const svgIcon = `<svg class="icon-heart" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+                for (let i = 0; i < 5; i++) {
+                    const span = document.createElement('span');
+                    span.innerHTML = svgIcon;
+                    if (i < count) span.querySelector('svg').classList.add('filled');
+                    container.appendChild(span);
+                }
+            },
+
+            renderStreakDots(playerPrefix, streakCount) {
+                const max = this.TARGET_STREAK;
+                for (let i = 1; i <= max; i++) {
+                    const dot = document.getElementById(`${playerPrefix}-s${i}`);
+                    if (dot) {
+                        if (i <= streakCount) dot.classList.add('streak-active');
+                        else dot.classList.remove('streak-active');
+                    }
+                }
+            },
+
+            updateTimers() {
+                const fmt = (s) => {
+                    const m = Math.floor(s/60).toString().padStart(2,'0');
+                    const sec = (s%60).toString().padStart(2,'0');
+                    return `${m}:${sec}`;
+                };
+                document.getElementById('p1-timer').textContent = fmt(this.state.players[0].time);
+                if (this.state.mode === 'multi') {
+                    document.getElementById('p2-timer').textContent = fmt(this.state.players[1].time);
+                }
+            }
+        };
+
+        window.onload = () => {
+            Game.setMode('multi'); 
+            Game.setup();
+        };
+
+    </script>
+</body>
+</html>
