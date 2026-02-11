@@ -63,7 +63,8 @@
             overflow-y: auto; 
             overflow-x: hidden;
             display: flex;
-            align-items: flex-start; /* Allows margin:auto to center vertically safely */
+            align-items: center; /* Center vertically for TV look */
+            justify-content: center;
             -webkit-overflow-scrolling: touch;
         }
 
@@ -71,82 +72,136 @@
         .content-wrapper {
             margin: auto;
             width: 100%;
+            max-width: 900px; /* Limit width for TV */
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 40px 20px; /* Extra padding for scroll UX */
+            padding: 10px; /* Reduced padding */
             text-align: center;
         }
 
         h1 {
             font-family: 'Fredoka', cursive;
-            font-size: clamp(2rem, 5vw, 4rem);
+            font-size: 2.2rem; /* Optimized for 540p */
             text-transform: uppercase;
             letter-spacing: 2px;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             color: #fff;
-            text-shadow: 4px 4px 0px #000, 0 0 20px var(--p1-color);
+            text-shadow: 3px 3px 0px #000, 0 0 15px var(--p1-color);
             line-height: 1.1;
         }
 
         .input-group {
             display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: 10px;
+            margin-bottom: 10px;
             align-items: center;
             flex-wrap: wrap;
             justify-content: center;
+            transition: all 0.3s;
         }
 
         .name-input {
             font-family: 'Fredoka', cursive;
-            font-size: clamp(1rem, 2.5vw, 1.5rem);
-            padding: 10px;
+            font-size: 1rem;
+            padding: 8px 15px;
             border-radius: 50px;
-            border: 3px solid #fff;
+            border: 2px solid #fff;
             background: rgba(255,255,255,0.1);
             color: #fff;
             text-align: center;
-            width: clamp(120px, 30vw, 250px);
+            width: 180px;
             transition: all 0.3s;
         }
         .name-input:focus { outline: none; background: rgba(255,255,255,0.2); }
         #input-p1 { border-color: var(--p1-color); }
         #input-p2 { border-color: var(--p2-color); }
 
+        /* Mode & Difficulty Selector */
+        .selector-label {
+            margin-bottom: 5px; 
+            color: #ddd; 
+            font-family: 'Fredoka'; 
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .toggle-container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 5px;
+            background: rgba(255,255,255,0.1);
+            padding: 4px;
+            border-radius: 50px;
+        }
+        .toggle-btn {
+            background: transparent;
+            border: 2px solid transparent;
+            color: rgba(255,255,255,0.6);
+            padding: 6px 15px;
+            border-radius: 40px;
+            font-family: 'Fredoka', cursive;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .toggle-btn.active {
+            background: #ffd700;
+            color: #5a3e00;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            font-weight: bold;
+        }
+
         .btn-start {
             font-family: 'Fredoka', cursive;
             background: linear-gradient(180deg, #ffd700, #ffaa00);
-            border: 3px solid #fff;
-            padding: 10px 40px;
-            font-size: clamp(1.2rem, 3vw, 2rem);
+            border: 2px solid #fff;
+            padding: 8px 30px;
+            font-size: 1.4rem;
             font-weight: 600;
             color: #5a3e00;
             border-radius: 60px;
             cursor: pointer;
-            box-shadow: 0 6px 0 #b37700;
+            box-shadow: 0 4px 0 #b37700;
             margin-top: 10px;
         }
-        .btn-start:active { transform: translateY(6px); box-shadow: 0 0 0 #b37700; }
+        .btn-start:active { transform: translateY(4px); box-shadow: 0 0 0 #b37700; }
 
         /* --- HUD --- */
         header {
-            height: 18vh; 
-            min-height: 90px;
+            height: 70px; /* Fixed small height for 540p */
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 5px 15px;
+            padding: 0 20px;
             background: rgba(0,0,0,0.3);
-            border-bottom: 2px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
             position: relative;
+            transition: all 0.3s;
+            flex-shrink: 0; /* Don't shrink */
+        }
+        
+        /* Single Player Specific HUD Styles */
+        body.single-mode header {
+            justify-content: center;
+        }
+        body.single-mode #p2-panel, 
+        body.single-mode .vs-separator {
+            display: none !important;
+        }
+        body.single-mode #p1-panel {
+            width: auto;
+            min-width: 250px;
+            border: 2px solid #ffd700;
+            background: rgba(0,0,0,0.4);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
         }
 
         .player-stats {
             display: flex;
             flex-direction: column;
-            width: 30%;
-            padding: 8px;
+            width: 35%;
+            padding: 5px 10px;
             border-radius: 12px;
             background: rgba(255,255,255,0.1);
             transition: all 0.3s ease;
@@ -155,15 +210,15 @@
 
         .turn-badge {
             position: absolute;
-            top: -12px;
+            top: -10px;
             left: 50%;
             transform: translateX(-50%);
             background: #fff;
             color: #2b1055;
-            padding: 2px 10px;
-            border-radius: 10px;
+            padding: 1px 8px;
+            border-radius: 8px;
             font-family: 'Fredoka', cursive;
-            font-size: clamp(0.7rem, 1.5vw, 0.9rem);
+            font-size: 0.7rem;
             font-weight: bold;
             box-shadow: 0 2px 4px rgba(0,0,0,0.3);
             white-space: nowrap;
@@ -175,32 +230,32 @@
 
         .player-timer {
             position: absolute;
-            top: 5px;
+            top: 2px;
             font-family: 'Fredoka', monospace;
-            font-size: clamp(0.9rem, 2vw, 1.2rem);
+            font-size: 0.9rem;
             font-weight: bold;
             color: rgba(255,255,255,0.5);
             background: rgba(0,0,0,0.3);
-            padding: 2px 8px;
-            border-radius: 8px;
+            padding: 1px 6px;
+            border-radius: 6px;
         }
-        #p1-time-display { right: 10px; }
-        #p2-time-display { left: 10px; }
+        #p1-time-display { right: 5px; }
+        #p2-time-display { left: 5px; }
 
         .player-name { 
             font-family: 'Fredoka', cursive;
-            font-size: clamp(0.9rem, 2.5vw, 1.3rem);
+            font-size: 1rem;
             color: #fff;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            margin-top: 20px;
+            margin-top: 10px; /* Adjusted for smaller header */
         }
         
-        .hearts { display: flex; gap: 4px; margin-top: 5px; }
+        .hearts { display: flex; gap: 3px; margin-top: 2px; }
         .p2-stats .hearts { justify-content: flex-end; }
         .heart { 
-            font-size: clamp(1rem, 2.5vw, 1.5rem);
+            font-size: 1rem;
             color: #ff3333; 
         }
         .heart.lost { opacity: 0.2; filter: grayscale(100%); }
@@ -216,20 +271,20 @@
         /* Winstreak Counter */
         .streak-container {
             position: absolute;
-            bottom: -10px;
+            bottom: -8px;
             background: #ffd700;
             color: #5a3e00;
             font-family: 'Fredoka', cursive;
             font-weight: bold;
             border-radius: 10px;
-            padding: 2px 8px;
-            font-size: 0.8rem;
+            padding: 1px 6px;
+            font-size: 0.7rem;
             box-shadow: 0 2px 4px rgba(0,0,0,0.4);
             opacity: 0;
             transition: opacity 0.3s;
         }
-        .p1-stats .streak-container { right: 10px; }
-        .p2-stats .streak-container { left: 10px; }
+        .p1-stats .streak-container { right: 5px; }
+        .p2-stats .streak-container { left: 5px; }
         .streak-active { opacity: 1; }
 
         /* --- GAME ARENA --- */
@@ -239,20 +294,21 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 10px;
             position: relative;
+            /* Ensure it fits in 540p minus header/footer */
         }
 
         /* Message Overlay (e.g. "Dilempar ke Lawan") */
         #message-overlay {
             position: absolute;
-            top: 10%;
+            top: 5%;
             background: rgba(255, 0, 0, 0.8);
             color: white;
-            padding: 10px 20px;
+            padding: 8px 16px;
             border-radius: 20px;
             font-family: 'Fredoka', cursive;
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             z-index: 50;
             pointer-events: none;
             opacity: 0;
@@ -263,11 +319,11 @@
 
         /* Countdown Bar for the 40s turn limit */
         .turn-timer-bar {
-            width: 80%;
-            height: 8px;
+            width: 70%;
+            height: 6px;
             background: rgba(255,255,255,0.1);
             border-radius: 4px;
-            margin-bottom: 20px;
+            margin-bottom: 25px; /* space for text above */
             overflow: hidden;
             position: relative;
         }
@@ -279,12 +335,12 @@
         }
         .turn-timer-text {
             position: absolute;
-            top: -25px;
+            top: -20px;
             width: 100%;
             text-align: center;
             font-family: 'Fredoka';
             color: #fff;
-            font-size: 1.2rem;
+            font-size: 1rem;
         }
 
         /* Puzzle Board */
@@ -293,31 +349,31 @@
             flex-wrap: wrap;
             justify-content: center;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             background: rgba(255,255,255,0.1);
-            padding: 20px;
-            border-radius: 20px;
+            padding: 15px 30px;
+            border-radius: 15px;
             border: 2px solid rgba(255,255,255,0.2);
-            margin-bottom: 40px;
+            margin-bottom: 20px;
             max-width: 95%;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
         }
 
         .num-slot {
             font-family: 'Fredoka', sans-serif;
-            font-size: clamp(1.8rem, 5vw, 3rem);
+            font-size: 2.2rem; /* Adjusted for 540p */
             color: #fff;
             font-weight: 600;
-            min-width: 40px;
+            min-width: 30px;
             text-align: center;
         }
 
         .operator-slot {
-            width: clamp(40px, 8vw, 60px);
-            height: clamp(40px, 8vw, 60px);
+            width: 50px;
+            height: 50px;
             background: rgba(0,0,0,0.3);
             border: 2px dashed rgba(255,255,255,0.4);
-            border-radius: 12px;
+            border-radius: 10px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -334,15 +390,15 @@
         .operator-bank {
             display: flex;
             gap: 20px;
-            padding: 15px;
+            padding: 10px 20px;
             background: rgba(255,255,255,0.9);
             border-radius: 50px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
 
         .draggable-op {
-            width: clamp(50px, 10vw, 70px);
-            height: clamp(50px, 10vw, 70px);
+            width: 50px;
+            height: 50px;
             background: linear-gradient(135deg, #ffd700, #ffaa00);
             border-radius: 50%;
             display: flex;
@@ -350,11 +406,11 @@
             align-items: center;
             /* Font update for LaTeX look */
             font-family: 'Times New Roman', serif; 
-            font-size: clamp(1.8rem, 4.5vw, 3rem);
+            font-size: 1.8rem;
             font-weight: normal;
             color: #5a3e00;
             cursor: grab;
-            box-shadow: 0 4px 0 #b37700;
+            box-shadow: 0 3px 0 #b37700;
             touch-action: none; 
             position: relative;
             z-index: 10;
@@ -370,7 +426,7 @@
             filter: grayscale(100%);
             pointer-events: none;
             box-shadow: none;
-            transform: translateY(4px);
+            transform: translateY(3px);
         }
 
         /* Visual clone during drag */
@@ -380,12 +436,11 @@
             z-index: 1000;
             opacity: 0.9;
             transform: scale(1.2);
-            /* Ensure clone also has serif font */
             font-family: 'Times New Roman', serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 2.5rem;
+            font-size: 2rem;
             color: #5a3e00;
             background: #ffd700;
             border-radius: 50%;
@@ -398,7 +453,7 @@
             justify-content: center;
             align-items: center;
             font-family: 'Times New Roman', serif;
-            font-size: clamp(1.8rem, 4.5vw, 2.5rem);
+            font-size: 2rem;
             color: #ffd700;
             font-weight: bold;
             cursor: pointer;
@@ -420,12 +475,13 @@
         .pop { animation: pop 0.3s ease-out; }
 
         footer {
-            height: 50px;
+            height: 30px;
             display: flex;
             justify-content: center;
             align-items: center;
             color: rgba(255,255,255,0.4);
-            font-size: 0.8rem;
+            font-size: 0.7rem;
+            flex-shrink: 0;
         }
 
     </style>
@@ -437,23 +493,33 @@
         <div class="content-wrapper">
             <h1>Substitute<br><span style="font-size:0.5em; color:#ffd700; font-family:'Nunito';">The Operator</span></h1>
             
-            <div class="input-group">
+            <div class="selector-label">Mode Permainan:</div>
+            <div class="toggle-container">
+                <button class="toggle-btn" onclick="game.setMode('single')" id="btn-mode-single">1 Player</button>
+                <button class="toggle-btn active" onclick="game.setMode('multi')" id="btn-mode-multi">2 Players</button>
+            </div>
+
+            <div class="input-group" id="input-container">
                 <input type="text" id="input-p1" class="name-input" placeholder="Player 1" maxlength="8">
-                <span style="font-family: 'Fredoka'; font-size: 1.5rem; color: #fff;">VS</span>
+                <span id="vs-text" style="font-family: 'Fredoka'; font-size: 1.2rem; color: #fff;">VS</span>
                 <input type="text" id="input-p2" class="name-input" placeholder="Player 2" maxlength="8">
             </div>
 
-            <div style="margin-bottom: 20px; font-size: clamp(0.9rem, 2vw, 1.1rem); max-width: 600px; line-height: 1.6; color: #ddd; background: rgba(0,0,0,0.5); padding: 20px; border-radius: 15px; text-align: left;">
-                <p style="text-align: center; margin-top: 0;">🧮 <strong>Aturan Main:</strong></p>
-                <ul style="margin: 10px 0 10px 20px; padding: 0;">
-                    <!-- Updated symbols to HTML entities for proper rendering -->
+            <div class="selector-label">Pilih Tingkat Kesulitan:</div>
+            <div class="toggle-container">
+                <button class="toggle-btn active" onclick="game.setDifficulty('easy')" id="btn-diff-easy">Mudah</button>
+                <button class="toggle-btn" onclick="game.setDifficulty('medium')" id="btn-diff-medium">Sedang</button>
+                <button class="toggle-btn" onclick="game.setDifficulty('hard')" id="btn-diff-hard">Sulit</button>
+            </div>
+
+            <div id="rules-text" style="margin-bottom: 10px; font-size: 0.85rem; max-width: 500px; line-height: 1.4; color: #ddd; background: rgba(0,0,0,0.5); padding: 10px 15px; border-radius: 10px; text-align: left;">
+                <p style="text-align: center; margin-top: 0; margin-bottom: 5px;">🧮 <strong>Aturan Main (2 Player):</strong></p>
+                <ul style="margin: 5px 0 5px 20px; padding: 0;">
                     <li>Isi operator (+, &minus;, &times;, &divide;) agar hasilnya benar.</li>
                     <li>Setiap operator hanya boleh dipakai <strong>sekali</strong>.</li>
-                    <li><strong>RULE BARU:</strong> Jika salah, soal <strong>dilempar ke lawan</strong>!</li>
-                    <li>Max <strong>40 detik</strong> per soal.</li>
-                    <li>Total waktu main <strong>3 menit</strong> per pemain.</li>
+                    <li>Jika salah, soal <strong>dilempar ke lawan</strong>!</li>
                 </ul>
-                <p style="color:#ffd700; font-weight:bold; text-align: center; margin-bottom: 0;">🏆 Menang = Winstreak 3x atau Bertahan Hidup!</p>
+                <p style="color:#ffd700; font-weight:bold; text-align: center; margin-bottom: 0;">🏆 Menang = Winstreak 3x atau Bertahan!</p>
             </div>
             <button class="btn-start" onclick="game.init()">MULAI</button>
         </div>
@@ -463,8 +529,8 @@
     <div id="game-over-screen" class="hidden">
         <div class="content-wrapper">
             <h1 id="end-title" style="color: #ffd700;">GAME OVER</h1>
-            <h2 id="winner-text" style="color: #fff; margin-bottom: 20px; font-family:'Fredoka'; font-size: clamp(1.2rem, 3vw, 2rem);">Player 1 Wins!</h2>
-            <div id="end-reason" style="color: #ccc; margin-bottom: 30px;">Reason</div>
+            <h2 id="winner-text" style="color: #fff; margin-bottom: 15px; font-family:'Fredoka'; font-size: 2rem;">Player 1 Wins!</h2>
+            <div id="end-reason" style="color: #ccc; margin-bottom: 25px; font-size: 1.2rem;">Reason</div>
             <button class="btn-start" onclick="location.reload()">MAIN LAGI</button>
         </div>
     </div>
@@ -483,8 +549,8 @@
         </div>
 
         <!-- Center VS / Round -->
-        <div style="text-align: center; opacity: 0.7;">
-            <div style="font-family:'Fredoka'; font-size: 1.5rem; color:#ffd700;">VS</div>
+        <div class="vs-separator" style="text-align: center; opacity: 0.7;">
+            <div style="font-family:'Fredoka'; font-size: 1.2rem; color:#ffd700;">VS</div>
         </div>
 
         <!-- Player 2 -->
@@ -515,19 +581,15 @@
         <!-- Draggable Operators -->
         <div class="operator-bank" id="operator-bank">
             <!-- Using HTML entities for LaTeX-like appearance -->
-            <!-- Plus -->
             <div class="draggable-op" data-op="+" onmousedown="dragStart(event)" ontouchstart="dragStart(event)">+</div>
-            <!-- Minus -->
             <div class="draggable-op" data-op="-" onmousedown="dragStart(event)" ontouchstart="dragStart(event)">&minus;</div>
-            <!-- Times (x) -->
             <div class="draggable-op" data-op="*" onmousedown="dragStart(event)" ontouchstart="dragStart(event)">&times;</div>
-            <!-- Divide (:) -->
             <div class="draggable-op" data-op="/" onmousedown="dragStart(event)" ontouchstart="dragStart(event)">&divide;</div>
         </div>
     </section>
 
     <footer>
-        Substitute the Operator
+        Substitute the Operator (TV Version)
     </footer>
 
     <script>
@@ -561,7 +623,7 @@
                 gain.gain.setValueAtTime(0.2, now);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
                 osc.start(now); osc.stop(now + 0.3);
-            } else if (type === 'pass') { // Tone for passing turn
+            } else if (type === 'pass') { 
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(600, now);
                 osc.frequency.linearRampToValueAtTime(400, now + 0.3);
@@ -574,20 +636,22 @@
         const GameConfig = {
             turnTime: 40,
             totalTime: 180, // 3 mins
-            lives: 3
+            lives: 3,
+            singlePlayerGoal: 5
         };
 
         const state = {
+            mode: 'multi', // 'single' or 'multi'
+            difficulty: 'easy', 
             p1: { name: 'Player 1', time: GameConfig.totalTime, lives: GameConfig.lives, streak: 0 },
             p2: { name: 'Player 2', time: GameConfig.totalTime, lives: GameConfig.lives, streak: 0 },
             activePlayer: 'p1',
-            currentSolution: [], 
             currentPuzzle: null,
-            placedOperators: { 0: null, 1: null, 2: null }, 
+            placedOperators: {},
             turnTimer: GameConfig.turnTime,
             intervals: { global: null, turn: null },
             isProcessing: false,
-            isRebound: false // New Flag: Is this turn a "throw" from opponent?
+            isRebound: false
         };
 
         const els = {
@@ -598,7 +662,10 @@
             timerText: document.getElementById('turn-timer-val'),
             p1Panel: document.getElementById('p1-panel'),
             p2Panel: document.getElementById('p2-panel'),
-            msgOverlay: document.getElementById('message-overlay')
+            msgOverlay: document.getElementById('message-overlay'),
+            inputP2: document.getElementById('input-p2'),
+            vsText: document.getElementById('vs-text'),
+            rules: document.getElementById('rules-text')
         };
 
         // Helper to convert Code Operators to LaTeX-style visual
@@ -610,6 +677,48 @@
         }
 
         const game = {
+            setMode: (mode) => {
+                state.mode = mode;
+                
+                // Update Buttons
+                document.getElementById('btn-mode-single').classList.toggle('active', mode === 'single');
+                document.getElementById('btn-mode-multi').classList.toggle('active', mode === 'multi');
+
+                // Update UI visibility
+                if(mode === 'single') {
+                    els.inputP2.style.display = 'none';
+                    els.vsText.style.display = 'none';
+                    els.rules.innerHTML = `
+                    <p style="text-align: center; margin-top: 0; margin-bottom: 5px;">🧮 <strong>Aturan Main (1 Player):</strong></p>
+                    <ul style="margin: 5px 0 5px 20px; padding: 0;">
+                        <li>Isi operator agar hasilnya benar.</li>
+                        <li>Kumpulkan <strong>Streak ${GameConfig.singlePlayerGoal}</strong> untuk menang.</li>
+                        <li>Nyawa habis = Game Over.</li>
+                        <li>Waktu tetap 40 detik per soal.</li>
+                    </ul>
+                    `;
+                } else {
+                    els.inputP2.style.display = 'block';
+                    els.vsText.style.display = 'block';
+                    els.rules.innerHTML = `
+                    <p style="text-align: center; margin-top: 0; margin-bottom: 5px;">🧮 <strong>Aturan Main (2 Player):</strong></p>
+                    <ul style="margin: 5px 0 5px 20px; padding: 0;">
+                        <li>Isi operator agar hasilnya benar.</li>
+                        <li>Setiap operator hanya boleh dipakai <strong>sekali</strong>.</li>
+                        <li>Jika salah, soal <strong>dilempar ke lawan</strong>!</li>
+                    </ul>
+                    <p style="color:#ffd700; font-weight:bold; text-align: center; margin-bottom: 0;">🏆 Menang = Winstreak 3x atau Bertahan!</p>
+                    `;
+                }
+            },
+
+            setDifficulty: (diff) => {
+                state.difficulty = diff;
+                // Update Buttons
+                document.querySelectorAll('[id^="btn-diff-"]').forEach(btn => btn.classList.remove('active'));
+                document.getElementById(`btn-diff-${diff}`).classList.add('active');
+            },
+
             init: () => {
                 const n1 = document.getElementById('input-p1').value.trim();
                 const n2 = document.getElementById('input-p2').value.trim();
@@ -619,18 +728,29 @@
                 document.getElementById('hud-name-p1').innerText = state.p1.name;
                 document.getElementById('hud-name-p2').innerText = state.p2.name;
 
+                // Configure HUD for Single Player
+                if (state.mode === 'single') {
+                    document.body.classList.add('single-mode');
+                    // Hide timer element in single player if not needed, or keep for aesthetics
+                    document.getElementById('p1-time-display').style.opacity = '0'; 
+                } else {
+                    document.body.classList.remove('single-mode');
+                    document.getElementById('p1-time-display').style.opacity = '1';
+                }
+
                 els.start.classList.add('hidden');
                 
                 // Start Timers
+                // Only global timer for multiplayer essentially, but we run it for single too
                 state.intervals.global = setInterval(game.tickGlobal, 1000);
                 game.newRound();
             },
 
             newRound: () => {
                 state.isProcessing = false;
-                state.isRebound = false; // Reset rebound flag on brand new puzzle
+                state.isRebound = false; 
                 state.turnTimer = GameConfig.turnTime;
-                state.placedOperators = { 0: null, 1: null, 2: null };
+                state.placedOperators = {}; // Reset container
                 
                 // Reset UI for round
                 game.updateTurnUI();
@@ -644,6 +764,8 @@
             },
 
             tickGlobal: () => {
+                if (state.mode === 'single') return; // Disable global timer for single player
+
                 const p = state.activePlayer;
                 state[p].time--;
                 
@@ -669,28 +791,50 @@
                 }
             },
 
-            // Modified: switchTurn now takes a param to decide if we generate new puzzle
             switchTurn: (newPuzzle = true) => {
-                state.activePlayer = state.activePlayer === 'p1' ? 'p2' : 'p1';
-                
-                if (newPuzzle) {
-                    game.newRound();
+                if (state.mode === 'single') {
+                    // Single Player Flow
+                    if (newPuzzle) {
+                        game.newRound();
+                    } else {
+                        // Retry current puzzle (resetting)
+                        state.isProcessing = false;
+                        state.turnTimer = GameConfig.turnTime;
+                        state.placedOperators = {};
+                        game.renderBoard();
+                        game.resetBank();
+                        if(state.intervals.turn) clearInterval(state.intervals.turn);
+                        state.intervals.turn = setInterval(game.tickTurn, 100);
+                        
+                        // Show "COBA LAGI" overlay
+                        els.msgOverlay.innerText = "COBA LAGI!";
+                        els.msgOverlay.classList.add('show');
+                        setTimeout(() => els.msgOverlay.classList.remove('show'), 1500);
+                    }
                 } else {
-                    // Logic for Rebound (Throw to opponent)
-                    state.isProcessing = false;
-                    state.turnTimer = GameConfig.turnTime; // Reset time for opponent
-                    state.placedOperators = { 0: null, 1: null, 2: null }; // Opponent must fill
+                    // Multi Player Flow
+                    state.activePlayer = state.activePlayer === 'p1' ? 'p2' : 'p1';
                     
-                    game.updateTurnUI();
-                    game.renderBoard(); // Re-render empty board
-                    game.resetBank(); // Reset buttons
-                    
-                    if(state.intervals.turn) clearInterval(state.intervals.turn);
-                    state.intervals.turn = setInterval(game.tickTurn, 100);
-                    
-                    // Show Overlay Message
-                    els.msgOverlay.classList.add('show');
-                    setTimeout(() => els.msgOverlay.classList.remove('show'), 2000);
+                    if (newPuzzle) {
+                        game.newRound();
+                    } else {
+                        // Logic for Rebound
+                        state.isProcessing = false;
+                        state.turnTimer = GameConfig.turnTime;
+                        state.placedOperators = {}; // Reset answers
+                        
+                        game.updateTurnUI();
+                        game.renderBoard(); 
+                        game.resetBank(); 
+                        
+                        if(state.intervals.turn) clearInterval(state.intervals.turn);
+                        state.intervals.turn = setInterval(game.tickTurn, 100);
+                        
+                        // Show Overlay Message
+                        els.msgOverlay.innerText = "LEMPAR KE LAWAN!";
+                        els.msgOverlay.classList.add('show');
+                        setTimeout(() => els.msgOverlay.classList.remove('show'), 2000);
+                    }
                 }
             },
 
@@ -699,16 +843,35 @@
                 let valid = false;
                 let payload = {};
 
-                while(!valid) {
-                    const shuffledOps = opsPool.sort(() => 0.5 - Math.random()).slice(0, 3);
-                    const nums = Array.from({length: 4}, () => Math.floor(Math.random() * 9) + 1);
-                    
-                    const expr = `${nums[0]} ${shuffledOps[0]} ${nums[1]} ${shuffledOps[1]} ${nums[2]} ${shuffledOps[2]} ${nums[3]}`;
-                    const res = eval(expr); // Safe logic eval
+                // Determine counts based on difficulty
+                let numCount = 2; // Default Easy
+                let opCount = 1;
+                
+                if(state.difficulty === 'medium') {
+                    numCount = 3; opCount = 2;
+                } else if(state.difficulty === 'hard') {
+                    numCount = 4; opCount = 3;
+                }
 
-                    if (Number.isInteger(res) && res >= 0 && res <= 50) {
+                while(!valid) {
+                    // Distinct operators: shuffle and slice
+                    const shuffledOps = opsPool.sort(() => 0.5 - Math.random()).slice(0, opCount);
+                    
+                    // Generate numbers
+                    const nums = Array.from({length: numCount}, () => Math.floor(Math.random() * 9) + 1);
+                    
+                    // Build expression string for eval
+                    let expr = `${nums[0]}`;
+                    for(let i=0; i < opCount; i++) {
+                        expr += ` ${shuffledOps[i]} ${nums[i+1]}`;
+                    }
+
+                    const res = eval(expr); 
+
+                    // Validation: Integer, Positive, Not too huge
+                    if (Number.isInteger(res) && res >= 0 && res <= 80) {
                         valid = true;
-                        payload = { nums, ops: shuffledOps, res };
+                        payload = { nums, ops: shuffledOps, res, opCount };
                     }
                 }
                 state.currentPuzzle = payload;
@@ -717,13 +880,19 @@
             renderBoard: () => {
                 const { nums, res } = state.currentPuzzle;
                 let html = '';
-                html += `<div class="num-slot">${nums[0]}</div>`;
-                html += `<div class="operator-slot" data-idx="0" onmouseup="drop(event)" ontouchend="drop(event)"></div>`;
-                html += `<div class="num-slot">${nums[1]}</div>`;
-                html += `<div class="operator-slot" data-idx="1" onmouseup="drop(event)" ontouchend="drop(event)"></div>`;
-                html += `<div class="num-slot">${nums[2]}</div>`;
-                html += `<div class="operator-slot" data-idx="2" onmouseup="drop(event)" ontouchend="drop(event)"></div>`;
-                html += `<div class="num-slot">${nums[3]}</div>`;
+                
+                // Loop to build board based on number of nums
+                for(let i = 0; i < nums.length; i++) {
+                    html += `<div class="num-slot">${nums[i]}</div>`;
+                    
+                    // Add operator slot if not the last number
+                    if(i < nums.length - 1) {
+                        html += `<div class="operator-slot" data-idx="${i}" onmouseup="drop(event)" ontouchend="drop(event)"></div>`;
+                        // Initialize placeholder in state
+                        state.placedOperators[i] = null;
+                    }
+                }
+
                 html += `<div class="num-slot">=</div>`;
                 html += `<div class="num-slot" style="color:#ffd700">${res}</div>`;
                 
@@ -739,16 +908,28 @@
             },
 
             checkSolution: () => {
-                if(Object.values(state.placedOperators).some(x => x === null)) return;
+                // Check if all slots for current puzzle are filled
+                const requiredOps = state.currentPuzzle.opCount;
+                let filledCount = 0;
+                for(let i=0; i<requiredOps; i++) {
+                    if(state.placedOperators[i]) filledCount++;
+                }
+
+                if(filledCount < requiredOps) return;
 
                 state.isProcessing = true;
                 clearInterval(state.intervals.turn); 
 
                 const p = state.activePlayer;
-                const { nums, res } = state.currentPuzzle;
-                const userOps = [state.placedOperators[0], state.placedOperators[1], state.placedOperators[2]];
+                const { nums, res, opCount } = state.currentPuzzle;
                 
-                const expr = `${nums[0]} ${userOps[0]} ${nums[1]} ${userOps[1]} ${nums[2]} ${userOps[2]} ${nums[3]}`;
+                // Build User Expression
+                let expr = `${nums[0]}`;
+                for(let i=0; i<opCount; i++) {
+                    const op = state.placedOperators[i];
+                    expr += ` ${op} ${nums[i+1]}`;
+                }
+
                 const userRes = eval(expr);
 
                 if (userRes === res) {
@@ -761,10 +942,16 @@
                     els.board.classList.add('pop');
                     setTimeout(() => els.board.classList.remove('pop'), 300);
 
-                    if(state[p].streak >= 3) {
-                        game.endGame(p, "Winstreak 3x!");
+                    // Win Condition Logic
+                    const winGoal = state.mode === 'single' ? GameConfig.singlePlayerGoal : 3;
+                    
+                    if(state[p].streak >= winGoal) {
+                        if (state.mode === 'single') {
+                            game.endGame(p, `Hebat! Streak ${winGoal} Tercapai!`);
+                        } else {
+                            game.endGame(p, "Winstreak 3x!");
+                        }
                     } else {
-                        // If correct, round always ends, even if it was a rebound
                         setTimeout(() => game.switchTurn(true), 1000);
                     }
                 } else {
@@ -777,38 +964,53 @@
                 playTone('lose');
                 const p = state.activePlayer;
                 state[p].lives--;
-                state[p].streak = 0;
+                state[p].streak = 0; // Reset streak on mistake
                 
                 const hearts = document.getElementById(`${p}-hearts`).children;
                 if(hearts[state[p].lives]) hearts[state[p].lives].classList.add('lost');
+                document.getElementById(`${p}-streak`).innerText = `Streak: 0`;
                 document.getElementById(`${p}-streak`).classList.remove('streak-active');
 
                 els.board.classList.add('shake');
                 setTimeout(() => els.board.classList.remove('shake'), 500);
 
                 if(state[p].lives <= 0) {
-                    game.endGame(p === 'p1' ? 'p2' : 'p1', "Lawan Kehabisan Nyawa!");
+                    if (state.mode === 'single') {
+                        game.endGame(p, "Yah, Nyawa Kamu Habis!");
+                    } else {
+                        game.endGame(p === 'p1' ? 'p2' : 'p1', "Lawan Kehabisan Nyawa!");
+                    }
                 } else {
-                    // RULES UPDATE: Throw to opponent logic
-                    if (!state.isRebound) {
-                        // First mistake on this puzzle -> throw to opponent
-                        state.isRebound = true; 
+                    if (state.mode === 'single') {
+                        // Single Player: Retry same puzzle
                         setTimeout(() => {
-                            playTone('pass');
-                            game.switchTurn(false); // false = keep same puzzle
+                            game.switchTurn(false); // false = retry same puzzle
                         }, 1000);
                     } else {
-                        // Second mistake (opponent also failed) -> New Round
-                        setTimeout(() => game.switchTurn(true), 1000);
+                        // Multiplayer: Throw to opponent logic
+                        if (!state.isRebound) {
+                            state.isRebound = true; 
+                            setTimeout(() => {
+                                playTone('pass');
+                                game.switchTurn(false); 
+                            }, 1000);
+                        } else {
+                            // Both failed -> New Round
+                            setTimeout(() => game.switchTurn(true), 1000);
+                        }
                     }
                 }
             },
 
             updateTurnUI: () => {
-                const isP1 = state.activePlayer === 'p1';
-                
-                els.p1Panel.className = isP1 ? 'player-stats p1-stats active-turn' : 'player-stats p1-stats inactive-turn';
-                els.p2Panel.className = !isP1 ? 'player-stats p2-stats active-turn' : 'player-stats p2-stats inactive-turn';
+                if (state.mode === 'single') {
+                    // Always active for P1
+                    els.p1Panel.className = 'player-stats p1-stats active-turn';
+                } else {
+                    const isP1 = state.activePlayer === 'p1';
+                    els.p1Panel.className = isP1 ? 'player-stats p1-stats active-turn' : 'player-stats p1-stats inactive-turn';
+                    els.p2Panel.className = !isP1 ? 'player-stats p2-stats active-turn' : 'player-stats p2-stats inactive-turn';
+                }
                 
                 els.fill.style.width = '100%';
                 els.fill.style.background = '#00ff88';
@@ -820,7 +1022,21 @@
                 
                 const winnerName = state[winnerKey].name;
                 els.over.classList.remove('hidden');
-                document.getElementById('winner-text').innerText = `${winnerName} Menang!`;
+                
+                if (state.mode === 'single') {
+                    if (state[winnerKey].lives > 0) {
+                        // Win
+                        document.getElementById('end-title').innerText = "YOU WIN!";
+                        document.getElementById('winner-text').innerText = `${winnerName} Hebat!`;
+                    } else {
+                        // Loss
+                        document.getElementById('end-title').innerText = "GAME OVER";
+                        document.getElementById('winner-text').innerText = "Coba Lagi Ya!";
+                    }
+                } else {
+                    document.getElementById('winner-text').innerText = `${winnerName} Menang!`;
+                }
+                
                 document.getElementById('end-reason').innerText = reason;
                 
                 document.getElementById('end-title').style.color = winnerKey === 'p1' ? 'var(--p1-color)' : 'var(--p2-color)';
