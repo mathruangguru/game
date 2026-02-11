@@ -72,8 +72,9 @@
     <div id="tv-viewport">
         
         <!-- Header Section (Fixed Height) -->
-        <div class="bg-indigo-600 px-6 py-4 text-white flex justify-between items-center shadow-md z-10 shrink-0 h-20">
-            <div class="flex items-center gap-3">
+        <div class="bg-indigo-600 px-6 py-4 text-white flex justify-between items-center shadow-md z-10 shrink-0 h-20 relative">
+            <!-- Left: Logo -->
+            <div class="flex items-center gap-3 w-1/3">
                 <img src="https://imgix3.ruangguru.com/assets/miscellaneous/png_zekej2_3984.png" alt="Logo Ruangguru" class="h-10 bg-white rounded p-1 shadow-sm">
                 <div>
                     <h1 class="text-xl font-bold leading-tight">Direktori Game</h1>
@@ -81,9 +82,18 @@
                 </div>
             </div>
             
-            <div class="flex items-center gap-3">
+            <!-- Center: How To Play Button -->
+            <div class="flex justify-center w-1/3">
+                <a href="https://www.youtube.com/watch?v=x21Oi3wsCqA" target="_blank" 
+                   class="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-400 text-white px-4 py-2 rounded-full font-bold text-xs border border-indigo-400 shadow-sm transition transform hover:scale-105 no-underline">
+                    <i class="fas fa-play-circle text-lg"></i> How To Play
+                </a>
+            </div>
+            
+            <!-- Right: Search & Admin -->
+            <div class="flex items-center gap-3 justify-end w-1/3">
                 <!-- Search Bar -->
-                <div class="relative w-52">
+                <div class="relative w-48">
                     <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Cari game..." 
                         class="w-full pl-8 pr-3 py-1.5 rounded-md text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 shadow-inner">
                     <i class="fas fa-search absolute left-2.5 top-2.5 text-gray-400 text-xs"></i>
@@ -100,10 +110,12 @@
         </div>
 
         <!-- Header Tabel (Fixed) -->
+        <!-- Adjusted Grid: Name(3) PIC(2) Topic(3) Device(2) Action(2) = 12 cols -->
         <div class="bg-indigo-50 border-b border-indigo-100 px-6 py-2 grid grid-cols-12 gap-2 text-xs font-bold text-indigo-800 uppercase tracking-wider shrink-0">
-            <div class="col-span-4">Nama Game</div>
+            <div class="col-span-3">Nama Game</div>
             <div class="col-span-2">PIC</div>
-            <div class="col-span-4">Topik</div>
+            <div class="col-span-3">Topik</div>
+            <div class="col-span-2">Digunakan di</div>
             <div class="col-span-2 text-center">Aksi</div>
         </div>
 
@@ -168,9 +180,17 @@
                             <input required type="text" id="newGamePic" class="w-full border rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-green-500 outline-none">
                         </div>
                         <div>
-                            <label class="text-xs font-bold text-gray-500">Topik</label>
-                            <input required type="text" id="newGameTopic" class="w-full border rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-green-500 outline-none">
+                            <label class="text-xs font-bold text-gray-500">Digunakan di</label>
+                            <select id="newGameDevice" class="w-full border rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-green-500 outline-none bg-white">
+                                <option value="TV">TV</option>
+                                <option value="Gadget">Gadget</option>
+                                <option value="TV/Gadget">TV/Gadget</option>
+                            </select>
                         </div>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500">Topik</label>
+                        <input required type="text" id="newGameTopic" class="w-full border rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-green-500 outline-none">
                     </div>
                     <div>
                         <label class="text-xs font-bold text-gray-500">Link URL</label>
@@ -208,21 +228,21 @@
 
         // --- DATA & STATE MANAGEMENT ---
         
-        // Data awal
+        // Data awal (Added 'device' field with default values)
         const defaultGames = [
-            { id: 1, name: "Algebra Rush", pic: "Dhanar", topic: "Persamaan Linear Satu Variabel", link: "https://mathruangguru.github.io/game/algebra-rush/" },
-            { id: 2, name: "Integer Zap", pic: "Dhanar", topic: "Operasi Hitung Bilangan Bulat", link: "https://mathruangguru.github.io/game/integer-zap/" },
-            { id: 3, name: "Probability Battle Cards", pic: "Rohmat", topic: "Peluang", link: "https://matrohmatmath.com/game/probability-battle-cards/" },
-            { id: 4, name: "Battle Kelipatan", pic: "Dhanar", topic: "Kelipatan Persekutuan", link: "https://mathruangguru.github.io/game/battle-kelipatan/" },
-            { id: 5, name: "Battle Faktor", pic: "Dhanar", topic: "Faktor Persekutuan", link: "https://mathruangguru.github.io/game/battle-faktor/" },
-            { id: 6, name: "Substitute the Operator", pic: "Dhanar", topic: "Operasi Bilangan", link: "https://mathruangguru.github.io/game/substitute-the-operator/" },
-            { id: 7, name: "Picto Resto", pic: "Rohmat", topic: "Piktogram", link: "https://matrohmatmath.com/game/picto-resto/" },
-            { id: 8, name: "Rocket Rounding", pic: "Mayang", topic: "Pembulatan/Taksiran", link: "https://mathruangguru.github.io/game/pembulatan/" },
-            { id: 9, name: "Math Snake", pic: "Mayang", topic: "Barisan Aritmetika dan Geometri", link: "https://mathruangguru.github.io/game/snake-math/" },
-            { id: 10, name: "Navigator Linear", pic: "Rohmat", topic: "Persamaan Garis Lurus", link: "https://matrohmatmath.com/game/navigator-linear" },
-            { id: 11, name: "Battle Akar Kuadrat", pic: "Dhanar", topic: "Persamaan Kuadrat", link: "https://mathruangguru.github.io/game/battle-akar-kuadrat/" },
-            { id: 12, name: "Sifat Fungsi Kuadrat", pic: "Dhanar", topic: "Fungsi Kuadrat", link: "https://mathruangguru.github.io/game/sifat-fungsi-kuadrat/" },
-            { id: 13, name: "Klinik Optik", pic: "Rohmat", topic: "Cahaya dan Alat Optik", link: "https://matrohmatmath.com/game/klinik-optik" }
+            { id: 1, name: "Algebra Rush", pic: "Dhanar", topic: "Persamaan Linear Satu Variabel", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/algebra-rush/" },
+            { id: 2, name: "Integer Zap", pic: "Dhanar", topic: "Operasi Hitung Bilangan Bulat", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/integer-zap/" },
+            { id: 3, name: "Probability Battle Cards", pic: "Rohmat", topic: "Peluang", device: "TV/Gadget", link: "https://matrohmatmath.com/game/probability-battle-cards/" },
+            { id: 4, name: "Battle Kelipatan", pic: "Dhanar", topic: "Kelipatan Persekutuan", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/battle-kelipatan/" },
+            { id: 5, name: "Battle Faktor", pic: "Dhanar", topic: "Faktor Persekutuan", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/battle-faktor/" },
+            { id: 6, name: "Substitute the Operator", pic: "Dhanar", topic: "Operasi Bilangan", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/substitute-the-operator/" },
+            { id: 7, name: "Picto Resto", pic: "Rohmat", topic: "Piktogram", device: "TV/Gadget", link: "https://matrohmatmath.com/game/picto-resto/" },
+            { id: 8, name: "Rocket Rounding", pic: "Mayang", topic: "Pembulatan/Taksiran", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/pembulatan/" },
+            { id: 9, name: "Math Snake", pic: "Mayang", topic: "Barisan Aritmetika dan Geometri", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/snake-math/" },
+            { id: 10, name: "Navigator Linear", pic: "Rohmat", topic: "Persamaan Garis Lurus", device: "TV/Gadget", link: "https://matrohmatmath.com/game/navigator-linear" },
+            { id: 11, name: "Battle Akar Kuadrat", pic: "Dhanar", topic: "Persamaan Kuadrat", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/battle-akar-kuadrat/" },
+            { id: 12, name: "Sifat Fungsi Kuadrat", pic: "Dhanar", topic: "Fungsi Kuadrat", device: "TV/Gadget", link: "https://mathruangguru.github.io/game/sifat-fungsi-kuadrat/" },
+            { id: 13, name: "Klinik Optik", pic: "Rohmat", topic: "Cahaya dan Alat Optik", device: "TV/Gadget", link: "https://matrohmatmath.com/game/klinik-optik" }
         ];
 
         // Cek Local Storage, jika kosong gunakan default
@@ -296,6 +316,7 @@
 
             data.forEach((game, index) => {
                 const row = document.createElement('tr');
+                // Grid Adjusted: grid-cols-12
                 row.className = "hover:bg-indigo-50 transition-colors duration-150 border-b border-gray-100 last:border-0 grid grid-cols-12 gap-2 items-center py-2 bg-white";
                 row.setAttribute('data-index', index);
 
@@ -330,8 +351,8 @@
 
                 if (isAdmin) {
                     actionButtons = `
-                        <div class="flex gap-1">
-                             <a href="${game.link}" target="_blank" class="flex-1 inline-flex items-center justify-center px-2 py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-xs font-bold no-underline shadow-sm">
+                        <div class="flex gap-1"> 
+                            <a href="${game.link}" target="_blank" class="flex-1 inline-flex items-center justify-center px-2 py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-xs font-bold no-underline shadow-sm">
                                 <i class="fas fa-play"></i>
                             </a>
                             <button onclick="deleteGame(${index})" class="w-8 flex items-center justify-center bg-red-100 text-red-600 rounded hover:bg-red-200 border border-red-200 transition">
@@ -341,8 +362,14 @@
                     `;
                 }
 
+                // Logic for Badge Color based on Device
+                let deviceBadgeColor = "bg-gray-100 text-gray-600";
+                const device = game.device || "TV/Gadget"; // Default fallback
+                if(device === 'TV') deviceBadgeColor = "bg-blue-100 text-blue-700";
+                if(device === 'Gadget') deviceBadgeColor = "bg-purple-100 text-purple-700";
+
                 row.innerHTML = `
-                    <td class="col-span-4 font-semibold text-indigo-700 pr-2 flex items-center">
+                    <td class="col-span-3 font-semibold text-indigo-700 pr-2 flex items-center">
                         ${nameHtml}
                     </td>
                     <td class="col-span-2">
@@ -350,7 +377,12 @@
                             ${game.pic}
                         </span>
                     </td>
-                    <td class="col-span-4 text-xs text-gray-600 truncate pr-2" title="${game.topic}">${game.topic}</td>
+                    <td class="col-span-3 text-xs text-gray-600 truncate pr-2" title="${game.topic}">${game.topic}</td>
+                    <td class="col-span-2 text-xs">
+                        <span class="px-2 py-0.5 text-[10px] font-bold rounded ${deviceBadgeColor} border border-opacity-20 border-gray-400">
+                             ${device}
+                        </span>
+                    </td>
                     <td class="col-span-2 text-center">
                         ${actionButtons}
                     </td>
@@ -365,7 +397,8 @@
             const filteredGames = games.filter(game => 
                 game.name.toLowerCase().includes(filter) || 
                 game.topic.toLowerCase().includes(filter) ||
-                game.pic.toLowerCase().includes(filter)
+                game.pic.toLowerCase().includes(filter) ||
+                (game.device && game.device.toLowerCase().includes(filter))
             );
             renderTable(filteredGames);
         }
@@ -435,6 +468,7 @@
             document.getElementById('newGamePic').value = '';
             document.getElementById('newGameTopic').value = '';
             document.getElementById('newGameLink').value = '';
+            document.getElementById('newGameDevice').value = 'TV/Gadget'; // Reset to default
         }
 
         function addNewGame() {
@@ -442,9 +476,10 @@
             const pic = document.getElementById('newGamePic').value;
             const topic = document.getElementById('newGameTopic').value;
             const link = document.getElementById('newGameLink').value;
+            const device = document.getElementById('newGameDevice').value;
 
-            if(name && pic && topic && link) {
-                games.push({ name, pic, topic, link });
+            if(name && pic && topic && link && device) {
+                games.push({ name, pic, topic, device, link });
                 saveData();
                 toggleAddModal();
             }
