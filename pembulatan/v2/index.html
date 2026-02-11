@@ -1,827 +1,963 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Rocket, Sparkles, Target, Zap, HelpCircle, Flame, CloudOff } from 'lucide-react';
-
-// Types
-interface Question {
-  qText: number;
-  qLabel: string;
-  answer: number;
-  options: number[];
-  roundTo: number;
-}
-
-interface PlayerState {
-  score: number;
-  currentQ: Question | null;
-  fuel: number;
-  lives: number;
-  qIndex: number;
-}
-
-interface GameState {
-  isPlaying: boolean;
-  time: number;
-  level: string;
-  questionSequence: string[];
-  p1: PlayerState;
-  p2: PlayerState;
-}
-
-type LevelType = 'puluhan' | 'desimal' | 'campuran';
-
-const randInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
-
-function App() {
-  const [state, setState] = useState<GameState>({
-    isPlaying: false,
-    time: 60,
-    level: 'puluhan',
-    questionSequence: [],
-    p1: { score: 0, currentQ: null, fuel: 0, lives: 3, qIndex: 0 },
-    p2: { score: 0, currentQ: null, fuel: 0, lives: 3, qIndex: 0 }
-  });
-
-  const [showStartScreen, setShowStartScreen] = useState(true);
-  const [showEndScreen, setShowEndScreen] = useState(false);
-  const [showHintOverlay, setShowHintOverlay] = useState(false);
-  const [hintPlayer, setHintPlayer] = useState<1 | 2>(1);
-  const [selectedLevel, setSelectedLevel] = useState<LevelType>('puluhan');
-  const [particles1, setParticles1] = useState<Array<{ id: number; isCorrect: boolean }>>([]);
-  const [particles2, setParticles2] = useState<Array<{ id: number; isCorrect: boolean }>>([]);
-
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Generate question sequence for fairness
-  const generateQuestionSequence = () => {
-    const sequence: string[] = [];
-    const count = 100;
-    
-    for (let i = 0; i < count; i++) {
-      let type = '';
-      const r = Math.random();
-
-      if (selectedLevel === 'puluhan') {
-        type = (r < 0.5) ? 'puluhan' : 'ratusan';
-      } else if (selectedLevel === 'desimal') {
-        type = (r < 0.5) ? 'desimal_tenth' : 'desimal_one';
-      } else {
-        if (r < 0.33) type = 'campuran_ribuan';
-        else if (r < 0.66) type = 'campuran_puluhan';
-        else type = 'campuran_desimal';
-      }
-      sequence.push(type);
-    }
-    return sequence;
-  };
-
-  // Generate question data
-  const generateQuestionData = (type: string): Question => {
-    let number: number, roundTo: number, label: string;
-
-    if (type === 'puluhan' || type === 'campuran_puluhan') {
-      roundTo = 10;
-      number = randInt(11, 99);
-      while (number % 10 === 0) number = randInt(11, 99);
-      label = "Ke Puluhan Terdekat";
-      
-    } else if (type === 'ratusan') {
-      roundTo = 100;
-      number = randInt(101, 999);
-      while (number % 100 === 0) number = randInt(101, 999);
-      label = "Ke Ratusan Terdekat";
-      
-    } else if (type === 'campuran_ribuan') {
-      roundTo = 1000;
-      number = randInt(1100, 9900);
-      while (number % 1000 === 0) number = randInt(1100, 9900);
-      label = "Ke Ribuan Terdekat";
-      
-    } else if (type === 'desimal_tenth' || type === 'campuran_desimal') {
-      const intPart = randInt(0, 20);
-      const tenth = randInt(0, 9);
-      const hundredth = randInt(1, 9);
-      number = intPart + (tenth/10) + (hundredth/100);
-      number = parseFloat(number.toFixed(2));
-      roundTo = 0.1;
-      label = "Ke Sepersepuluhan Terdekat";
-      
-    } else {
-      const intPart = randInt(0, 20);
-      const decimalPart = randInt(1, 99);
-      number = intPart + (decimalPart/100);
-      number = parseFloat(number.toFixed(2));
-      roundTo = 1;
-      label = "Ke Satuan Terdekat";
-    }
-
-    let answer: number;
-    if (roundTo >= 1) {
-      answer = Math.round(number / roundTo) * roundTo;
-    } else {
-      const factor = 1 / roundTo;
-      answer = Math.round(number * factor) / factor;
-      if (roundTo === 0.1) answer = parseFloat(answer.toFixed(1));
-    }
-
-    const options = new Set<number>();
-    options.add(answer);
-
-    while(options.size < 4) {
-      let fake: number;
-      if (roundTo >= 1) {
-        const offset = (Math.floor(Math.random() * 5) - 2) * roundTo;
-        fake = answer + offset;
-        if(fake < 0) fake = 0;
-      } else {
-        const factor = 1 / roundTo;
-        const offset = (Math.floor(Math.random() * 5) - 2) / factor;
-        fake = answer + offset;
-        fake = parseFloat(fake.toFixed(1));
-        if(fake < 0) fake = 0;
-      }
-      if(fake !== answer) options.add(fake);
-    }
-
-    return {
-      qText: number,
-      qLabel: label,
-      answer: answer,
-      options: Array.from(options).sort(() => Math.random() - 0.5),
-      roundTo: roundTo
-    };
-  };
-
-  // New question
-  const newQuestion = (playerNum: 1 | 2) => {
-    if (!state.isPlaying) return;
-    
-    setState(prev => {
-      const playerState = playerNum === 1 ? prev.p1 : prev.p2;
-      if (playerState.lives <= 0) return prev;
-
-      const type = prev.questionSequence[playerState.qIndex] || prev.questionSequence[0];
-      const q = generateQuestionData(type);
-
-      return {
-        ...prev,
-        [playerNum === 1 ? 'p1' : 'p2']: {
-          ...playerState,
-          currentQ: q,
-          qIndex: playerState.qIndex + 1
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Rocket Rounding: Duel Pembulatan (Fixed Layout)</title>
+    <style>
+        :root {
+            --p1-color: #3B82F6; /* Blue */
+            --p1-dark: #1E40AF;
+            --p2-color: #EF4444; /* Red */
+            --p2-dark: #991B1B;
+            --bg-color: #0F172A;
+            --text-color: #F3F4F6;
+            --accent: #F59E0B;
         }
-      };
-    });
-  };
 
-  // Show particles
-  const showParticles = (playerNum: 1 | 2, isCorrect: boolean) => {
-    const id = Date.now();
-    if (playerNum === 1) {
-      setParticles1(prev => [...prev, { id, isCorrect }]);
-      setTimeout(() => setParticles1(prev => prev.filter(p => p.id !== id)), 1000);
-    } else {
-      setParticles2(prev => [...prev, { id, isCorrect }]);
-      setTimeout(() => setParticles2(prev => prev.filter(p => p.id !== id)), 1000);
-    }
-  };
-
-  // Handle answer
-  const handleAnswer = (playerNum: 1 | 2, selectedVal: number) => {
-    setState(prev => {
-      const playerState = playerNum === 1 ? prev.p1 : prev.p2;
-      if (playerState.lives <= 0 || !playerState.currentQ) return prev;
-
-      const isCorrect = selectedVal === playerState.currentQ.answer;
-      showParticles(playerNum, isCorrect);
-
-      if (isCorrect) {
-        const newState = {
-          ...prev,
-          [playerNum === 1 ? 'p1' : 'p2']: {
-            ...playerState,
-            score: playerState.score + 100,
-            fuel: Math.min(100, playerState.fuel + 10)
-          }
-        };
-        setTimeout(() => newQuestion(playerNum), 300);
-        return newState;
-      } else {
-        const newLives = playerState.lives - 1;
-        const newState = {
-          ...prev,
-          [playerNum === 1 ? 'p1' : 'p2']: {
-            ...playerState,
-            score: Math.max(0, playerState.score - 50),
-            lives: newLives
-          }
-        };
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         
-        if (newLives > 0) {
-          setTimeout(() => newQuestion(playerNum), 500);
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #000; /* Letterbox black */
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            touch-action: manipulation;
         }
-        return newState;
-      }
-    });
-  };
 
-  // Show hint
-  const handleShowHint = (playerNum: 1 | 2) => {
-    setState(prev => {
-      const playerState = playerNum === 1 ? prev.p1 : prev.p2;
-      if (playerState.lives <= 0 || playerState.score < 25) return prev;
-
-      setHintPlayer(playerNum);
-      setShowHintOverlay(true);
-
-      return {
-        ...prev,
-        [playerNum === 1 ? 'p1' : 'p2']: {
-          ...playerState,
-          score: playerState.score - 25
+        /* --- WADAH UTAMA (FIXED 960x540) --- */
+        #game-frame {
+            width: 960px;
+            height: 540px;
+            background-color: var(--bg-color);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            overflow: hidden;
         }
-      };
-    });
-  };
 
-  // Draw number line on canvas
-  useEffect(() => {
-    if (!showHintOverlay || !canvasRef.current) return;
+        /* --- LAYOUT UTAMA --- */
+        #game-container {
+            display: flex;
+            flex: 1;
+            position: relative;
+            height: calc(100% - 60px); /* Sisa dari header */
+        }
 
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+        .player-zone {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            /* Layout Compact: Distribusi elemen merata, tidak ada yang didorong jauh */
+            justify-content: space-evenly; 
+            align-items: center;
+            padding: 10px 20px;
+            border-right: 2px solid #374151;
+            position: relative;
+            overflow: hidden; 
+            background-size: cover;
+            transition: all 0.3s; 
+        }
 
-    const playerState = hintPlayer === 1 ? state.p1 : state.p2;
-    const q = playerState.currentQ;
-    if (!q) return;
+        .player-zone:last-child { border-right: none; }
+        
+        .p1-zone { background: radial-gradient(circle at bottom, #1e293b 0%, #020617 100%); }
+        .p2-zone { background: radial-gradient(circle at bottom, #2e1010 0%, #1a0505 100%); }
 
-    ctx.clearRect(0, 0, 600, 300);
-    ctx.fillStyle = "#1F2937";
-    ctx.font = "bold 24px Arial";
+        /* --- DESTRUCTION STATE (SYSTEM FAILURE) --- */
+        .zone-destroyed {
+            position: relative;
+        }
 
-    const { qText: number, roundTo: step } = q;
-    let lower: number, upper: number;
+        /* Overlay Raksasa (Diperbaiki) */
+        .zone-destroyed::after {
+            content: "SYSTEM FAILURE"; /* Fixed Typo & Layout */
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            color: #EF4444;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 3rem; /* Pas untuk 540px */
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            animation: glitchText 0.3s infinite;
+            border: 4px solid #EF4444;
+            letter-spacing: 2px;
+            text-shadow: 4px 4px 0px #000;
+            backdrop-filter: blur(5px);
+        }
 
-    if (step >= 1) {
-      lower = Math.floor(number / step) * step;
-      upper = lower + step;
-    } else {
-      const factor = 1 / step;
-      lower = Math.floor(number * factor) / factor;
-      upper = lower + step;
-      lower = parseFloat(lower.toFixed(1));
-      upper = parseFloat(upper.toFixed(1));
+        @keyframes glitchText {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
+
+        .zone-destroyed .rocket-wrapper,
+        .zone-destroyed .question-box,
+        .zone-destroyed .options-grid,
+        .zone-destroyed .hint-btn, 
+        .zone-destroyed .feedback {
+            opacity: 0.05; 
+            pointer-events: none;
+            filter: grayscale(100%);
+        }
+
+        .zone-destroyed .launch-pad {
+            transform: rotate(10deg);
+            background: #333;
+        }
+
+
+        /* --- HUD & SCORE --- */
+        .hud-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            align-items: center;
+            margin-bottom: 5px;
+            z-index: 10;
+        }
+
+        .score-board {
+            font-size: 2rem;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .p1-score { color: var(--p1-color); }
+        .p2-score { color: var(--p2-color); }
+
+        .lives-container {
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+        }
+
+        /* --- ROCKET SYSTEM (Lebih Kecil agar Muat) --- */
+        .rocket-container {
+            position: relative;
+            width: 100%;
+            height: 100px; /* Dikurangi dari 160px agar tidak makan tempat */
+            display: flex;
+            justify-content: center;
+            align-items: flex-end; 
+            margin-bottom: 5px;
+            z-index: 5;
+            transition: all 0.5s;
+        }
+
+        .launch-pad {
+            position: absolute;
+            bottom: 0;
+            width: 60px;
+            height: 8px;
+            background: #374151;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            transition: all 0.5s;
+        }
+
+        .rocket-wrapper {
+            position: relative;
+            width: 60px; /* Sedikit diperkecil proporsinya */
+            height: 90px;
+            transform-origin: bottom center;
+            z-index: 6;
+            display: flex;
+            justify-content: center;
+        }
+
+        .rocket-svg {
+            width: 100%; 
+            height: 100%;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));
+            position: relative;
+            z-index: 2;
+        }
+
+        .flame-svg {
+            position: absolute;
+            bottom: -40px; 
+            width: 30px;
+            height: 50px;
+            opacity: 0; 
+            transform-origin: top center;
+            transition: opacity 0.1s;
+            z-index: 1;
+        }
+
+        .p1-zone .rocket-body { fill: var(--p1-color); }
+        .p1-zone .rocket-fins { fill: var(--p1-dark); }
+        .p1-zone .rocket-window { fill: #93C5FD; }
+
+        .p2-zone .rocket-body { fill: var(--p2-color); }
+        .p2-zone .rocket-fins { fill: var(--p2-dark); }
+        .p2-zone .rocket-window { fill: #FCA5A5; }
+
+        @keyframes launchToSpace {
+            0% { transform: translateY(0) scale(1); }
+            10% { transform: translateY(10px) scale(0.95); } 
+            20% { transform: translateY(-20px) scale(1.05); } 
+            100% { transform: translateY(-600px) scale(0.5); opacity: 1; } 
+        }
+
+        @keyframes flameFlicker {
+            0% { transform: scaleY(1) scaleX(1); opacity: 0.8; }
+            50% { transform: scaleY(1.3) scaleX(0.9); opacity: 1; }
+            100% { transform: scaleY(1) scaleX(1); opacity: 0.8; }
+        }
+
+        .rocket-launching {
+            animation: launchToSpace 1.5s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+        }
+
+        .rocket-launching .flame-svg {
+            opacity: 1;
+            animation: flameFlicker 0.1s infinite;
+        }
+
+        /* --- EXPLOSION --- */
+        .explosion-effect {
+            position: absolute;
+            bottom: 20px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #FEF08A 0%, #F59E0B 40%, #EF4444 70%, transparent 100%);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        @keyframes shakeRocket {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(-3px, 3px) rotate(-3deg); }
+            50% { transform: translate(3px, -3px) rotate(3deg); }
+            75% { transform: translate(-3px, -3px) rotate(-3deg); }
+        }
+
+        @keyframes boomEffect {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(15); opacity: 0.8; }
+            100% { transform: scale(20); opacity: 0; }
+        }
+
+        .rocket-shaking { animation: shakeRocket 0.3s; }
+        .rocket-exploded { opacity: 0; transition: opacity 0.1s; }
+        .explosion-active { animation: boomEffect 0.6s ease-out forwards; }
+
+        /* --- PERTANYAAN (Compact) --- */
+        .question-box {
+            background: white;
+            color: #111827;
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 0; /* Hapus margin besar */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            width: 100%;
+            min-height: 80px; /* Lebih pendek */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 10;
+        }
+        
+        .question-label {
+            font-size: 0.8rem;
+            color: #6B7280;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* --- TOMBOL JAWABAN (Compact) --- */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px; /* Jarak antar tombol diperkecil */
+            width: 100%;
+            z-index: 10;
+            /* HAPUS MARGIN TOP AUTO AGAR TIDAK JAUH */
+            margin-top: 5px; 
+            margin-bottom: 5px;
+        }
+
+        .btn-option {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 15px 5px; /* Padding diperkecil */
+            font-size: 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.1s;
+            font-weight: bold;
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-option:active { transform: scale(0.95); background: rgba(255,255,255,0.2); }
+        .btn-option:disabled { opacity: 0.5; cursor: not-allowed; background: #333; }
+
+        .p1-zone .btn-option:hover:not(:disabled) { background: var(--p1-color); border-color: white; }
+        .p2-zone .btn-option:hover:not(:disabled) { background: var(--p2-color); border-color: white; }
+
+        /* --- VISUAL HINT --- */
+        .hint-btn {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #6B7280;
+            color: #9CA3AF;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 10;
+            margin-top: 5px;
+        }
+        .hint-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .hint-btn:not(:disabled):hover { border-color: white; color: white; background: rgba(0,0,0,0.6); }
+
+        .hint-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .number-line-canvas {
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* --- HEADER & TIMER --- */
+        header {
+            height: 60px; /* Header lebih tipis */
+            background: #0f172a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 2px solid #374151;
+            position: relative;
+            z-index: 20;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .timer {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent);
+            font-family: monospace;
+            background: #111827;
+            padding: 2px 15px;
+            border-radius: 8px;
+            border: 2px solid var(--accent);
+        }
+        .mute-btn {
+            position: absolute;
+            right: 20px;
+            background: none;
+            border: 1px solid #4B5563;
+            color: #9CA3AF;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        /* --- START & END SCREENS --- */
+        .overlay-screen {
+            position: absolute; /* Relative to game-frame */
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.98);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            text-align: center;
+        }
+        .title { font-size: 3rem; margin-bottom: 5px; color: var(--accent); text-shadow: 0 0 20px rgba(245, 158, 11, 0.5); }
+        .subtitle { font-size: 1rem; margin-bottom: 20px; color: #9CA3AF; }
+        .btn-start {
+            background: var(--accent);
+            color: #111827;
+            font-size: 1.5rem;
+            padding: 10px 40px;
+            border: none;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(245, 158, 11, 0.4);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* --- FEEDBACK ANIMATION --- */
+        .feedback {
+            position: absolute;
+            font-size: 6rem;
+            font-weight: bold;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 50;
+            transition: opacity 0.5s;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .correct { color: #10B981; text-shadow: 0 0 20px black; }
+        .wrong { color: #EF4444; text-shadow: 0 0 20px black; }
+
+        /* Level Select */
+        .level-select { display: flex; gap: 10px; margin-bottom: 20px; }
+        .btn-level {
+            padding: 8px 15px;
+            background: #374151;
+            border: 2px solid #4B5563;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .btn-level.active { border-color: var(--accent); background: #4B5563; color: var(--accent); }
+
+    </style>
+</head>
+<body>
+
+<div id="game-frame">
+    <!-- START SCREEN -->
+    <div id="startScreen" class="overlay-screen">
+        <h1 class="title">ROCKET ROUNDING</h1>
+        <p class="subtitle">Misi Penyelamatan Angka: Duel Kelas 4 SD</p>
+        
+        <div class="level-select">
+            <button class="btn-level active" onclick="setLevel('puluhan')">Puluhan & Ratusan</button>
+            <button class="btn-level" onclick="setLevel('desimal')">Desimal (Koma)</button>
+            <button class="btn-level" onclick="setLevel('campuran')">Campuran (Hard)</button>
+        </div>
+
+        <button class="btn-start" onclick="startGame()">MULAI MISI</button>
+        <p style="margin-top: 15px; color: #6B7280; font-size: 0.8rem;">⚠️ Nyalakan volume untuk efek roket</p>
+    </div>
+
+    <!-- END SCREEN -->
+    <div id="endScreen" class="overlay-screen" style="display: none;">
+        <h1 class="title">MISI SELESAI!</h1>
+        <h2 id="winnerText" style="font-size: 2rem; margin: 15px 0;">Pemenang: Tim Biru</h2>
+        <div style="display: flex; gap: 40px; font-size: 1.5rem;">
+            <div style="color: var(--p1-color)">Biru: <span id="finalScoreP1">0</span></div>
+            <div style="color: var(--p2-color)">Merah: <span id="finalScoreP2">0</span></div>
+        </div>
+        <button class="btn-start" style="margin-top: 30px; font-size: 1.2rem; padding: 10px 30px;" onclick="location.reload()">MAIN LAGI</button>
+    </div>
+
+    <!-- GAME UI -->
+    <header>
+        <div id="timerDisplay" class="timer">60</div>
+        <button class="mute-btn" onclick="toggleMute()" id="muteBtn">🔊 Suara ON</button>
+    </header>
+
+    <div id="game-container">
+        
+        <!-- PLAYER 1 ZONE (LEFT) -->
+        <div class="player-zone p1-zone" id="p1Zone">
+            <div class="hud-container">
+                <div class="score-board p1-score" id="scoreP1">0</div>
+                <div class="lives-container" id="livesP1">❤️❤️❤️</div>
+            </div>
+
+            <!-- ROCKET STATION -->
+            <div class="rocket-container" id="rocketStageP1">
+                <div class="launch-pad"></div>
+                <div class="rocket-wrapper" id="rocketWrapperP1">
+                    <svg class="rocket-svg" viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg">
+                        <path class="rocket-fins" d="M10 160 L30 140 L30 170 Z" />
+                        <path class="rocket-fins" d="M90 160 L70 140 L70 170 Z" />
+                        <path class="rocket-fins" d="M50 140 L50 170 L50 170 Z" stroke-width="4" stroke="rgba(0,0,0,0.2)"/>
+                        <path class="rocket-body" d="M30 160 L30 60 Q50 10 70 60 L70 160 Z" />
+                        <circle class="rocket-window" cx="50" cy="80" r="10" stroke="#FFF" stroke-width="3" />
+                        <rect x="35" y="160" width="30" height="5" fill="#333" />
+                    </svg>
+                    <svg class="flame-svg" viewBox="0 0 40 60">
+                         <path d="M10 0 Q20 60 30 0 Q20 20 10 0" fill="#F59E0B" />
+                         <path d="M15 0 Q20 40 25 0" fill="#EF4444" />
+                    </svg>
+                </div>
+                <div class="explosion-effect" id="explosionP1"></div>
+            </div>
+            
+            <div class="feedback" id="p1Feedback">✓</div>
+
+            <div class="question-box">
+                <div class="question-label" id="qLabelP1">Bulatkan ke Puluhan</div>
+                <div id="qTextP1">45</div>
+            </div>
+
+            <div class="options-grid" id="optionsP1"></div>
+
+            <button class="hint-btn" id="hintBtnP1" onclick="showHint(1)">Bantuan Visual (-25 Poin)</button>
+        </div>
+
+        <!-- PLAYER 2 ZONE (RIGHT) -->
+        <div class="player-zone p2-zone" id="p2Zone">
+            <div class="hud-container">
+                <div class="score-board p2-score" id="scoreP2">0</div>
+                <div class="lives-container" id="livesP2">❤️❤️❤️</div>
+            </div>
+
+            <!-- ROCKET STATION -->
+            <div class="rocket-container" id="rocketStageP2">
+                <div class="launch-pad"></div>
+                <div class="rocket-wrapper" id="rocketWrapperP2">
+                    <svg class="rocket-svg" viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg">
+                        <path class="rocket-fins" d="M10 160 L30 140 L30 170 Z" />
+                        <path class="rocket-fins" d="M90 160 L70 140 L70 170 Z" />
+                        <path class="rocket-body" d="M30 160 L30 60 Q50 10 70 60 L70 160 Z" />
+                        <circle class="rocket-window" cx="50" cy="80" r="10" stroke="#FFF" stroke-width="3" />
+                        <rect x="35" y="160" width="30" height="5" fill="#333" />
+                    </svg>
+                    <svg class="flame-svg" viewBox="0 0 40 60">
+                         <path d="M10 0 Q20 60 30 0 Q20 20 10 0" fill="#F59E0B" />
+                         <path d="M15 0 Q20 40 25 0" fill="#EF4444" />
+                    </svg>
+                </div>
+                <div class="explosion-effect" id="explosionP2"></div>
+            </div>
+
+            <div class="feedback" id="p2Feedback">✓</div>
+
+            <div class="question-box">
+                <div class="question-label" id="qLabelP2">Bulatkan ke Puluhan</div>
+                <div id="qTextP2">45</div>
+            </div>
+
+            <div class="options-grid" id="optionsP2"></div>
+
+            <button class="hint-btn" id="hintBtnP2" onclick="showHint(2)">Bantuan Visual (-25 Poin)</button>
+        </div>
+
+    </div>
+
+    <!-- HINT OVERLAY -->
+    <div id="hintOverlay" class="hint-overlay" onclick="closeHint()">
+        <h2 style="color: white; margin-bottom: 10px;">Visualisasi Garis Bilangan</h2>
+        <canvas id="hintCanvas" width="600" height="300" class="number-line-canvas"></canvas>
+        <p style="color: #9CA3AF;">Ketuk layar untuk kembali</p>
+    </div>
+</div>
+
+<script>
+    // --- FIT TO SCREEN SCALING ---
+    function scaleGame() {
+        const gameFrame = document.getElementById('game-frame');
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        const targetW = 960;
+        const targetH = 540;
+        
+        const scale = Math.min(width / targetW, height / targetH);
+        gameFrame.style.transform = `scale(${scale})`;
     }
-    
-    const mid = (lower + upper) / 2;
+    window.addEventListener('resize', scaleGame);
+    window.addEventListener('load', scaleGame);
 
-    ctx.beginPath();
-    ctx.moveTo(50, 150);
-    ctx.lineTo(550, 150);
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = "#374151";
-    ctx.stroke();
+    // --- AUDIO SYSTEM PRO (Web Audio API) ---
+    const AudioSys = {
+        ctx: null,
+        isMuted: false,
+        bgmOsc: null,
+        bgmLfo: null,
+        noiseBuffer: null,
 
-    const drawTick = (x: number, val: number, isMain: boolean) => {
-      ctx.beginPath();
-      ctx.moveTo(x, 140);
-      ctx.lineTo(x, 160);
-      ctx.lineWidth = isMain ? 4 : 2;
-      ctx.stroke();
-      ctx.fillText(val.toString(), x - 20, 190);
+        init: function() {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!this.ctx) {
+                this.ctx = new AudioContext();
+                this.createNoiseBuffer();
+            }
+            if (this.ctx.state === 'suspended') {
+                this.ctx.resume();
+            }
+        },
+
+        createNoiseBuffer: function() {
+            const bufferSize = this.ctx.sampleRate * 2.0; 
+            const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            let lastOut = 0;
+            for (let i = 0; i < bufferSize; i++) {
+                const white = Math.random() * 2 - 1;
+                data[i] = (lastOut + (0.02 * white)) / 1.02;
+                lastOut = data[i];
+                data[i] *= 3.5; 
+            }
+            this.noiseBuffer = buffer;
+        },
+
+        playTone: function(freq, type, duration, vol=0.1) {
+            if (this.isMuted || !this.ctx) return;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+            gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start();
+            osc.stop(this.ctx.currentTime + duration);
+        },
+
+        rocketLaunch: function() {
+            if (this.isMuted || !this.ctx || !this.noiseBuffer) return;
+            if (this.ctx.state === 'suspended') this.ctx.resume();
+
+            const noise = this.ctx.createBufferSource();
+            noise.buffer = this.noiseBuffer;
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(100, this.ctx.currentTime);
+            filter.frequency.exponentialRampToValueAtTime(3000, this.ctx.currentTime + 0.3);
+            filter.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 1.0);
+            const gain = this.ctx.createGain();
+            gain.gain.setValueAtTime(0, this.ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.5, this.ctx.currentTime + 0.1); 
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.8); 
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(this.ctx.destination);
+            noise.start();
+        },
+
+        explosion: function() {
+            if (this.isMuted || !this.ctx || !this.noiseBuffer) return;
+            if (this.ctx.state === 'suspended') this.ctx.resume();
+
+            const noise = this.ctx.createBufferSource();
+            noise.buffer = this.noiseBuffer;
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(1000, this.ctx.currentTime);
+            filter.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + 0.5); 
+            const gain = this.ctx.createGain();
+            gain.gain.setValueAtTime(1.0, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(this.ctx.destination);
+            noise.start();
+        },
+
+        wrong: function() {
+            this.playTone(150, 'sawtooth', 0.3, 0.2);
+            this.playTone(100, 'sawtooth', 0.4, 0.2);
+        },
+
+        click: function() {
+            this.playTone(600, 'triangle', 0.05, 0.05);
+        },
+
+        hint: function() {
+            this.playTone(300, 'sine', 0.5, 0.1);
+        },
+
+        gameOver: function() {
+            this.playTone(400, 'triangle', 0.3, 0.2);
+            setTimeout(() => this.playTone(300, 'triangle', 0.3, 0.2), 300);
+            setTimeout(() => this.playTone(200, 'triangle', 1.0, 0.2), 600);
+            this.stopBGM();
+        },
+
+        startBGM: function() {
+            if (this.isMuted || !this.ctx || this.bgmOsc) return;
+            if (this.ctx.state === 'suspended') this.ctx.resume();
+            
+            this.bgmOsc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            this.bgmOsc.type = 'sawtooth';
+            this.bgmOsc.frequency.value = 80; 
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 300; 
+            this.bgmLfo = this.ctx.createOscillator();
+            this.bgmLfo.type = 'sine';
+            this.bgmLfo.frequency.value = 4;
+            const lfoGain = this.ctx.createGain();
+            lfoGain.gain.value = 10;
+            this.bgmLfo.connect(lfoGain);
+            lfoGain.connect(this.bgmOsc.frequency);
+            this.bgmLfo.start();
+            this.bgmOsc.connect(filter);
+            filter.connect(gain);
+            gain.connect(this.ctx.destination);
+            gain.gain.value = 0.1; 
+            this.bgmOsc.start();
+        },
+
+        stopBGM: function() {
+            if (this.bgmOsc) { this.bgmOsc.stop(); this.bgmOsc = null; }
+            if (this.bgmLfo) { this.bgmLfo.stop(); this.bgmLfo = null; }
+        },
+
+        toggleMute: function() {
+            this.isMuted = !this.isMuted;
+            if (this.isMuted) this.stopBGM();
+            else this.startBGM();
+            return this.isMuted;
+        }
     };
 
-    drawTick(50, lower, true);
-    drawTick(300, mid, false);
-    drawTick(550, upper, true);
+    function toggleMute() {
+        const isMuted = AudioSys.toggleMute();
+        const btn = document.getElementById('muteBtn');
+        btn.innerText = isMuted ? "🔇 Suara OFF" : "🔊 Suara ON";
+    }
 
-    const percent = (number - lower) / step;
-    const xPos = 50 + (percent * 500);
+    // --- GAME LOGIC ---
+    function triggerRocket(playerNum) {
+        const wrapper = document.getElementById(`rocketWrapperP${playerNum}`);
+        wrapper.classList.remove('rocket-launching');
+        void wrapper.offsetWidth; 
+        wrapper.classList.add('rocket-launching');
+        AudioSys.rocketLaunch();
+        setTimeout(() => wrapper.classList.remove('rocket-launching'), 1500);
+    }
 
-    ctx.beginPath();
-    ctx.arc(xPos, 150, 15, 0, 2 * Math.PI);
-    ctx.fillStyle = "#EF4444";
-    ctx.fill();
-    ctx.fillStyle = "#EF4444";
-    ctx.fillText(number.toString(), xPos - 15, 120);
-  }, [showHintOverlay, hintPlayer, state.p1.currentQ, state.p2.currentQ]);
+    function triggerExplosion(playerNum, isFatal = false) {
+        const stage = document.getElementById(`rocketStageP${playerNum}`);
+        const wrapper = document.getElementById(`rocketWrapperP${playerNum}`);
+        const explosion = document.getElementById(`explosionP${playerNum}`);
+        const zone = document.getElementById(`p${playerNum}Zone`);
 
-  // Start game
-  const startGame = () => {
-    const sequence = generateQuestionSequence();
-    
-    // Generate pertanyaan awal untuk kedua player dari tipe yang SAMA (fairness)
-    const q1 = generateQuestionData(sequence[0]);
-    const q2 = generateQuestionData(sequence[0]); // Sama dengan P1, tipe soal yang sama
-    
-    setState({
-      isPlaying: true,
-      time: 60,
-      level: selectedLevel,
-      questionSequence: sequence,
-      p1: { score: 0, currentQ: q1, fuel: 0, lives: 3, qIndex: 1 },
-      p2: { score: 0, currentQ: q2, fuel: 0, lives: 3, qIndex: 1 }
-    });
-    setShowStartScreen(false);
-    setShowEndScreen(false);
-  };
+        wrapper.classList.remove('rocket-shaking', 'rocket-exploded');
+        explosion.classList.remove('explosion-active');
+        void wrapper.offsetWidth; 
 
-  // Timer effect
-  useEffect(() => {
-    if (state.isPlaying) {
-      timerIntervalRef.current = setInterval(() => {
-        setState(prev => {
-          const newTime = prev.time - 1;
-          if (newTime <= 0) {
-            if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-            setTimeout(() => setShowEndScreen(true), 100);
-            return { ...prev, isPlaying: false, time: 0 };
-          }
-          return { ...prev, time: newTime };
+        AudioSys.wrong();
+        setTimeout(() => AudioSys.explosion(), 400);
+
+        wrapper.classList.add('rocket-shaking');
+
+        setTimeout(() => {
+            wrapper.classList.remove('rocket-shaking');
+            wrapper.classList.add('rocket-exploded');
+            explosion.classList.add('explosion-active');
+            
+            if (isFatal) {
+                setTimeout(() => {
+                    zone.classList.add('zone-destroyed');
+                }, 100);
+            }
+        }, 400);
+
+        if (!isFatal) {
+            setTimeout(() => {
+                wrapper.classList.remove('rocket-exploded');
+                explosion.classList.remove('explosion-active');
+            }, 1500);
+        }
+    }
+
+    let state = {
+        isPlaying: false,
+        time: 60,
+        level: 'puluhan',
+        questionSequence: [], 
+        p1: { score: 0, currentQ: null, lives: 3, qIndex: 0 },
+        p2: { score: 0, currentQ: null, lives: 3, qIndex: 0 }
+    };
+
+    function setLevel(lvl) {
+        AudioSys.click();
+        state.level = lvl;
+        document.querySelectorAll('.btn-level').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+
+    const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+    function generateQuestionSequence() {
+        state.questionSequence = [];
+        const count = 100; 
+        for (let i = 0; i < count; i++) {
+            let type = '';
+            let r = Math.random();
+            if (state.level === 'puluhan') {
+                type = (r < 0.5) ? 'puluhan' : 'ratusan';
+            } else if (state.level === 'desimal') {
+                type = (r < 0.5) ? 'desimal_tenth' : 'desimal_one';
+            } else { 
+                if (r < 0.33) type = 'campuran_ribuan';
+                else if (r < 0.66) type = 'campuran_puluhan';
+                else type = 'campuran_desimal';
+            }
+            state.questionSequence.push(type);
+        }
+    }
+
+    function generateQuestionData(type) {
+        let number, roundTo, label;
+        if (type === 'puluhan' || type === 'campuran_puluhan') {
+            roundTo = 10; number = randInt(11, 99); while (number % 10 === 0) number = randInt(11, 99); label = "Ke Puluhan Terdekat";
+        } else if (type === 'ratusan') {
+            roundTo = 100; number = randInt(101, 999); while (number % 100 === 0) number = randInt(101, 999); label = "Ke Ratusan Terdekat";
+        } else if (type === 'campuran_ribuan') {
+            roundTo = 1000; number = randInt(1100, 9900); while (number % 1000 === 0) number = randInt(1100, 9900); label = "Ke Ribuan Terdekat";
+        } else if (type === 'desimal_tenth' || type === 'campuran_desimal') {
+            let intPart = randInt(0, 20); let tenth = randInt(0, 9); let hundredth = randInt(1, 9); 
+            number = intPart + (tenth/10) + (hundredth/100); number = parseFloat(number.toFixed(2)); roundTo = 0.1; label = "Ke Sepersepuluhan Terdekat";
+        } else if (type === 'desimal_one') {
+            let intPart = randInt(0, 20); let decimalPart = randInt(1, 99); number = intPart + (decimalPart/100); number = parseFloat(number.toFixed(2)); roundTo = 1; label = "Ke Satuan Terdekat";
+        }
+        let answer;
+        if (roundTo >= 1) answer = Math.round(number / roundTo) * roundTo;
+        else { let factor = 1 / roundTo; answer = Math.round(number * factor) / factor; if (roundTo === 0.1) answer = parseFloat(answer.toFixed(1)); }
+
+        let options = new Set();
+        options.add(answer);
+        while(options.size < 4) {
+            let fake;
+            if (roundTo >= 1) {
+                let offset = (Math.floor(Math.random() * 5) - 2) * roundTo; fake = answer + offset; if(fake < 0) fake = 0;
+            } else {
+                let factor = 1 / roundTo; let offset = (Math.floor(Math.random() * 5) - 2) / factor; fake = answer + offset; fake = parseFloat(fake.toFixed(1)); if(fake < 0) fake = 0;
+            }
+            if(fake !== answer) options.add(fake);
+        }
+        return { qText: number, qLabel: label, answer: answer, options: Array.from(options).sort(() => Math.random() - 0.5), roundTo: roundTo };
+    }
+
+    function startGame() {
+        AudioSys.init(); AudioSys.click(); AudioSys.startBGM();
+        document.getElementById('startScreen').style.display = 'none';
+        state.isPlaying = true; state.p1 = { score: 0, currentQ: null, lives: 3, qIndex: 0 }; state.p2 = { score: 0, currentQ: null, lives: 3, qIndex: 0 };
+        document.getElementById('p1Zone').classList.remove('zone-destroyed');
+        document.getElementById('p2Zone').classList.remove('zone-destroyed');
+        document.getElementById('rocketWrapperP1').style.display = 'flex';
+        document.getElementById('rocketWrapperP2').style.display = 'flex';
+        generateQuestionSequence();
+        document.getElementById('p1Zone').style.opacity = '1'; document.getElementById('p2Zone').style.opacity = '1';
+        document.getElementById('hintBtnP1').disabled = true; document.getElementById('hintBtnP2').disabled = true;
+        updateUI(); newQuestion(1); newQuestion(2);
+        let timerInterval = setInterval(() => {
+            if (!state.isPlaying) { clearInterval(timerInterval); return; }
+            state.time--; document.getElementById('timerDisplay').innerText = state.time;
+            if (state.time <= 0) { clearInterval(timerInterval); endGame(); }
+        }, 1000);
+    }
+
+    function newQuestion(playerNum) {
+        if (!state.isPlaying) return;
+        const playerState = playerNum === 1 ? state.p1 : state.p2;
+        if (playerState.lives <= 0) return;
+        let type = state.questionSequence[playerState.qIndex];
+        playerState.qIndex++; if (!type) type = state.questionSequence[0]; 
+        const q = generateQuestionData(type); playerState.currentQ = q;
+        document.getElementById(`qLabelP${playerNum}`).innerText = q.qLabel;
+        document.getElementById(`qTextP${playerNum}`).innerText = q.qText;
+        const optsEl = document.getElementById(`optionsP${playerNum}`);
+        optsEl.innerHTML = '';
+        q.options.forEach(opt => {
+            const btn = document.createElement('button'); btn.className = 'btn-option'; btn.innerText = opt; btn.onclick = () => handleAnswer(playerNum, opt); optsEl.appendChild(btn);
         });
-      }, 1000);
     }
 
-    return () => {
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-    };
-  }, [state.isPlaying]);
+    function handleAnswer(playerNum, selectedVal) {
+        const playerState = playerNum === 1 ? state.p1 : state.p2;
+        if (playerState.lives <= 0) return; 
+        const q = playerState.currentQ; const isCorrect = selectedVal === q.answer;
+        showFeedback(playerNum, isCorrect);
+        if (isCorrect) {
+            triggerRocket(playerNum); playerState.score += 100; updateUI(); newQuestion(playerNum);
+        } else {
+            playerState.score = Math.max(0, playerState.score - 50); playerState.lives--; updateUI();
+            if (playerState.lives <= 0) {
+                triggerExplosion(playerNum, true); handlePlayerOut(playerNum);
+            } else {
+                triggerExplosion(playerNum, false); setTimeout(() => newQuestion(playerNum), 1500); 
+            }
+        }
+    }
 
-  const winner = state.p1.score > state.p2.score 
-    ? "PEMENANG: TIM BIRU!" 
-    : state.p2.score > state.p1.score 
-    ? "PEMENANG: TIM MERAH!" 
-    : "SERI!";
+    function handlePlayerOut(playerNum) {
+        const opts = document.getElementById(`optionsP${playerNum}`);
+        const hintBtn = document.getElementById(`hintBtnP${playerNum}`);
+        opts.innerHTML = '<h2 style="color:#EF4444; font-size:1.2rem;">ROKET RUSAK!</h2><p>Nyawa Habis</p>';
+        hintBtn.disabled = true;
+        if (state.p1.lives <= 0 && state.p2.lives <= 0) setTimeout(endGame, 1000);
+    }
 
-  return (
-    <div className="relative w-screen h-screen overflow-hidden bg-slate-950 flex items-center justify-center">
-      {/* Main Container with Fixed Resolution */}
-      <div className="relative w-[960px] h-[540px] overflow-hidden bg-slate-950">
-      {/* Animated Stars Background */}
-      <div className="absolute inset-0">
-        {[...Array(100)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 bg-white rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              opacity: [0.2, 1, 0.2],
-              scale: [1, 1.5, 1]
-            }}
-            transition={{
-              duration: Math.random() * 3 + 2,
-              repeat: Infinity,
-              delay: Math.random() * 2
-            }}
-          />
-        ))}
-      </div>
+    function showFeedback(playerNum, isCorrect) {
+        const targetEl = playerNum === 1 ? document.getElementById('p1Feedback') : document.getElementById('p2Feedback');
+        targetEl.innerText = isCorrect ? "✓" : "X";
+        targetEl.className = `feedback ${isCorrect ? 'correct' : 'wrong'}`;
+        targetEl.style.opacity = '1';
+        targetEl.style.transform = 'translate(-50%, -50%) scale(1.5)';
+        setTimeout(() => { targetEl.style.opacity = '0'; targetEl.style.transform = 'translate(-50%, -50%) scale(1)'; }, 500);
+    }
 
-      {/* Planets Decoration */}
-      <motion.div 
-        className="absolute top-10 right-20 w-32 h-32 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 opacity-30 blur-sm"
-        animate={{ y: [0, 20, 0] }}
-        transition={{ duration: 6, repeat: Infinity }}
-      />
-      <motion.div 
-        className="absolute bottom-20 left-10 w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-cyan-400 opacity-20 blur-sm"
-        animate={{ y: [0, -15, 0] }}
-        transition={{ duration: 5, repeat: Infinity }}
-      />
+    function updateUI() {
+        document.getElementById('scoreP1').innerText = state.p1.score; document.getElementById('scoreP2').innerText = state.p2.score;
+        document.getElementById('livesP1').innerText = "❤️".repeat(state.p1.lives); document.getElementById('livesP2').innerText = "❤️".repeat(state.p2.lives);
+        const btnP1 = document.getElementById('hintBtnP1'); const btnP2 = document.getElementById('hintBtnP2');
+        if (state.p1.score < 25 || state.p1.lives <= 0) { btnP1.disabled = true; btnP1.innerText = "Bantuan (25 Poin)"; } else { btnP1.disabled = false; btnP1.innerText = "Bantuan Visual (-25)"; }
+        if (state.p2.score < 25 || state.p2.lives <= 0) { btnP2.disabled = true; btnP2.innerText = "Bantuan (25 Poin)"; } else { btnP2.disabled = false; btnP2.innerText = "Bantuan Visual (-25)"; }
+    }
 
-      {/* Start Screen */}
-      <AnimatePresence>
-        {showStartScreen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/95"
-          >
-            <motion.div
-              initial={{ scale: 0.5, y: -50 }}
-              animate={{ scale: 1, y: 0 }}
-              transition={{ type: "spring", duration: 0.8 }}
-            >
-              <div className="flex items-center gap-4 mb-4">
-                <Rocket className="w-20 h-20 text-amber-500" />
-                <h1 className="text-7xl font-black text-amber-500">ROCKET ROUNDING</h1>
-                <Rocket className="w-20 h-20 text-amber-500 rotate-180" />
-              </div>
-            </motion.div>
-            
-            <motion.p 
-              className="text-2xl text-gray-300 mb-12"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-            >
-              Misi Penyelamatan Angka: Duel Kelas 4 SD
-            </motion.p>
+    function endGame() {
+        AudioSys.gameOver(); state.isPlaying = false;
+        document.getElementById('endScreen').style.display = 'flex';
+        document.getElementById('finalScoreP1').innerText = state.p1.score; document.getElementById('finalScoreP2').innerText = state.p2.score;
+        let winner = "SERI!"; if (state.p1.score > state.p2.score) winner = "PEMENANG: TIM BIRU!"; if (state.p2.score > state.p1.score) winner = "PEMENANG: TIM MERAH!";
+        document.getElementById('winnerText').innerText = winner;
+    }
 
-            <div className="flex gap-5 mb-12">
-              {(['puluhan', 'desimal', 'campuran'] as LevelType[]).map((level) => (
-                <motion.button
-                  key={level}
-                  onClick={() => setSelectedLevel(level)}
-                  className={`px-8 py-4 rounded-xl text-xl font-bold border-2 transition-all ${
-                    selectedLevel === level
-                      ? 'bg-amber-500 border-amber-300 text-slate-900 scale-105'
-                      : 'bg-slate-800 border-slate-600 text-white hover:border-amber-500'
-                  }`}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  {level === 'puluhan' ? 'Puluhan & Ratusan' : level === 'desimal' ? 'Desimal (Koma)' : 'Campuran (Hard)'}
-                </motion.button>
-              ))}
-            </div>
-
-            <motion.button
-              onClick={startGame}
-              className="px-16 py-6 bg-amber-500 text-slate-900 text-3xl font-black rounded-full shadow-lg shadow-amber-500/40"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              animate={{ 
-                boxShadow: [
-                  '0 0 20px rgba(245, 158, 11, 0.4)',
-                  '0 0 40px rgba(245, 158, 11, 0.8)',
-                  '0 0 20px rgba(245, 158, 11, 0.4)'
-                ]
-              }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              🚀 MULAI MISI
-            </motion.button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* End Screen */}
-      <AnimatePresence>
-        {showEndScreen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/95"
-          >
-            <motion.h1 
-              className="text-6xl font-black text-amber-500 mb-6"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", bounce: 0.5 }}
-            >
-              MISI SELESAI!
-            </motion.h1>
-            
-            <motion.h2 
-              className="text-5xl font-bold mb-12"
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              style={{ 
-                color: winner.includes('BIRU') ? '#3B82F6' : winner.includes('MERAH') ? '#EF4444' : '#F59E0B' 
-              }}
-            >
-              {winner}
-            </motion.h2>
-
-            <div className="flex gap-16 text-3xl font-bold mb-12">
-              <motion.div 
-                className="text-blue-500"
-                initial={{ x: -50, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.4 }}
-              >
-                Biru: {state.p1.score}
-              </motion.div>
-              <motion.div 
-                className="text-red-500"
-                initial={{ x: 50, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.4 }}
-              >
-                Merah: {state.p2.score}
-              </motion.div>
-            </div>
-
-            <motion.button
-              onClick={() => window.location.reload()}
-              className="px-12 py-4 bg-amber-500 text-slate-900 text-2xl font-bold rounded-full"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.6 }}
-            >
-              MAIN LAGI
-            </motion.button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Hint Overlay */}
-      <AnimatePresence>
-        {showHintOverlay && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowHintOverlay(false)}
-            className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/90 cursor-pointer"
-          >
-            <h2 className="text-3xl font-bold text-white mb-6">Visualisasi Garis Bilangan</h2>
-            <canvas ref={canvasRef} width="600" height="300" className="bg-white rounded-xl mb-6" />
-            <p className="text-gray-400 text-lg">Ketuk layar untuk kembali</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Main Game */}
-      {!showStartScreen && !showEndScreen && (
-        <>
-          {/* Header with Timer */}
-          <header className="h-20 bg-slate-900/80 backdrop-blur-sm border-b-2 border-slate-700 flex items-center justify-center relative z-10">
-            <motion.div 
-              className="px-8 py-3 bg-slate-950 border-2 border-amber-500 rounded-xl"
-              animate={{ 
-                scale: state.time <= 10 ? [1, 1.1, 1] : 1,
-                borderColor: state.time <= 10 ? ['#F59E0B', '#EF4444', '#F59E0B'] : '#F59E0B'
-              }}
-              transition={{ duration: 0.5, repeat: state.time <= 10 ? Infinity : 0 }}
-            >
-              <div className="text-5xl font-black font-mono text-amber-500">{state.time}</div>
-            </motion.div>
-          </header>
-
-          <div className="flex h-[calc(540px-5rem)]">
-            {/* Player 1 Zone */}
-            <PlayerZone
-              playerNum={1}
-              playerState={state.p1}
-              onAnswer={handleAnswer}
-              onShowHint={handleShowHint}
-              particles={particles1}
-            />
-
-            {/* Player 2 Zone */}
-            <PlayerZone
-              playerNum={2}
-              playerState={state.p2}
-              onAnswer={handleAnswer}
-              onShowHint={handleShowHint}
-              particles={particles2}
-            />
-          </div>
-        </>
-      )}
-      </div>
-    </div>
-  );
-}
-
-// Player Zone Component
-function PlayerZone({
-  playerNum,
-  playerState,
-  onAnswer,
-  onShowHint,
-  particles
-}: {
-  playerNum: 1 | 2;
-  playerState: PlayerState;
-  onAnswer: (playerNum: 1 | 2, val: number) => void;
-  onShowHint: (playerNum: 1 | 2) => void;
-  particles: Array<{ id: number; isCorrect: boolean }>;
-}) {
-  const isP1 = playerNum === 1;
-  const color = isP1 ? 'blue' : 'red';
-  const bgGradient = isP1 
-    ? 'from-slate-900 via-blue-950/30 to-slate-900' 
-    : 'from-slate-900 via-red-950/30 to-slate-900';
-
-  const rocketRotation = -90; // Hadap ke atas
-  const fuelPercent = Math.min(100, (playerState.score / 2000) * 100);
-
-  return (
-    <div className={`flex-1 relative bg-gradient-to-b ${bgGradient} border-r-2 border-slate-700 last:border-r-0`}>
-      {/* Particles */}
-      <AnimatePresence>
-        {particles.map(particle => (
-          <motion.div
-            key={particle.id}
-            initial={{ opacity: 1, scale: 0, y: 0 }}
-            animate={{ opacity: 0, scale: 2, y: -200 }}
-            exit={{ opacity: 0 }}
-            className="absolute top-1/2 left-1/2 pointer-events-none z-50"
-          >
-            {particle.isCorrect ? (
-              <Sparkles className="w-24 h-24 text-green-400" />
-            ) : (
-              <Zap className="w-24 h-24 text-red-500" />
-            )}
-          </motion.div>
-        ))}
-      </AnimatePresence>
-
-      <div className="flex flex-col items-center justify-center h-full px-8 py-6 relative z-10">
-        {/* HUD */}
-        <div className="w-full max-w-2xl flex justify-between items-center mb-4">
-          <motion.div 
-            className={`text-6xl font-black ${isP1 ? 'text-blue-500' : 'text-red-500'}`}
-            key={playerState.score}
-            initial={{ scale: 1.2 }}
-            animate={{ scale: 1 }}
-          >
-            {playerState.score}
-          </motion.div>
-          <div className="text-4xl tracking-wider">
-            {[...Array(playerState.lives)].map((_, i) => (
-              <motion.span
-                key={i}
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: i * 0.1 }}
-              >
-                ❤️
-              </motion.span>
-            ))}
-          </div>
-        </div>
-
-        {/* Vertical Rocket Trail (Fuel Gauge) */}
-        <div className="w-full max-w-2xl mb-6 relative">
-          <div className="h-6 bg-slate-800 rounded-full overflow-hidden relative border-2 border-slate-600">
-            <motion.div 
-              className={`h-full ${isP1 ? 'bg-blue-500' : 'bg-red-500'}`}
-              style={{ width: `${fuelPercent}%` }}
-              initial={{ width: 0 }}
-              animate={{ width: `${fuelPercent}%` }}
-              transition={{ duration: 0.5 }}
-            />
-            <motion.div
-              className="absolute right-2 top-1/2 -translate-y-1/2"
-              animate={{ x: [0, 5, 0] }}
-              transition={{ duration: 1, repeat: Infinity }}
-            >
-              <Rocket 
-                className={`w-5 h-5 ${isP1 ? 'text-blue-300' : 'text-red-300'}`} 
-                style={{ transform: `rotate(${rocketRotation}deg)` }}
-              />
-            </motion.div>
-          </div>
-        </div>
-
-        {/* Rocket Visual */}
-        <motion.div
-          className="mb-6 relative"
-          animate={{ 
-            y: playerState.lives > 0 ? [0, -10, 0] : [0, 100, 80],
-            rotate: playerState.lives <= 0 ? [0, -15, 15, -10, 0] : 0
-          }}
-          transition={{ 
-            duration: playerState.lives > 0 ? 2 : 1.5,
-            repeat: playerState.lives > 0 ? Infinity : 0 
-          }}
-        >
-          {/* Roket Normal atau Rusak */}
-          {playerState.lives > 0 ? (
-            <Rocket 
-              className={`w-24 h-24 ${isP1 ? 'text-blue-400' : 'text-red-400'}`}
-              style={{ transform: `rotate(${rocketRotation}deg)` }}
-            />
-          ) : (
-            <div className="relative">
-              {/* Roket Rusak dengan opacity rendah */}
-              <motion.div
-                animate={{ opacity: [0.3, 0.5, 0.3] }}
-                transition={{ duration: 0.5, repeat: Infinity }}
-              >
-                <Rocket 
-                  className={`w-24 h-24 text-gray-600`}
-                  style={{ transform: `rotate(${rocketRotation + 45}deg)` }}
-                />
-              </motion.div>
-              
-              {/* Efek Api/Ledakan */}
-              <motion.div
-                className="absolute -top-4 -right-4"
-                animate={{ 
-                  scale: [1, 1.3, 1],
-                  rotate: [0, 10, -10, 0]
-                }}
-                transition={{ duration: 0.3, repeat: Infinity }}
-              >
-                <Flame className="w-12 h-12 text-orange-500" />
-              </motion.div>
-              
-              {/* Asap */}
-              <motion.div
-                className="absolute -bottom-2 left-1/2 -translate-x-1/2"
-                animate={{ 
-                  opacity: [0.5, 0.8, 0.3],
-                  scale: [0.8, 1.2, 1]
-                }}
-                transition={{ duration: 0.8, repeat: Infinity }}
-              >
-                <CloudOff className="w-16 h-16 text-gray-500" />
-              </motion.div>
-              
-              {/* Percikan */}
-              {[...Array(5)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute w-2 h-2 bg-amber-500 rounded-full"
-                  style={{
-                    left: `${Math.random() * 80}%`,
-                    top: `${Math.random() * 80}%`,
-                  }}
-                  animate={{
-                    opacity: [1, 0],
-                    y: [0, Math.random() * 30 - 15],
-                    x: [0, Math.random() * 40 - 20],
-                  }}
-                  transition={{
-                    duration: 0.8,
-                    repeat: Infinity,
-                    delay: i * 0.15
-                  }}
-                />
-              ))}
-            </div>
-          )}
-        </motion.div>
-
-        {/* Question Box */}
-        {playerState.currentQ && playerState.lives > 0 ? (
-          <motion.div
-            key={playerState.currentQ.qText}
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="w-full max-w-2xl bg-white rounded-2xl p-8 mb-6 shadow-2xl"
-          >
-            <div className="text-sm text-gray-500 uppercase tracking-wider mb-2 text-center">
-              {playerState.currentQ.qLabel}
-            </div>
-            <div className="text-5xl font-black text-slate-900 text-center">
-              {playerState.currentQ.qText}
-            </div>
-          </motion.div>
-        ) : playerState.lives <= 0 ? (
-          <div className="w-full max-w-2xl bg-slate-800 rounded-2xl p-8 mb-6">
-            <h2 className={`text-4xl font-black ${isP1 ? 'text-blue-500' : 'text-red-500'} text-center mb-2`}>
-              ROKET RUSAK!
-            </h2>
-            <p className="text-gray-400 text-center text-xl">Nyawa Habis</p>
-          </div>
-        ) : null}
-
-        {/* Answer Options */}
-        {playerState.currentQ && playerState.lives > 0 && (
-          <div className="w-full max-w-2xl grid grid-cols-2 gap-5 mb-6">
-            {playerState.currentQ.options.map((opt, i) => (
-              <motion.button
-                key={i}
-                onClick={() => onAnswer(playerNum, opt)}
-                className={`py-6 px-4 bg-slate-800/50 border-2 ${
-                  isP1 ? 'border-blue-500/30 hover:bg-blue-600 hover:border-blue-400' : 'border-red-500/30 hover:bg-red-600 hover:border-red-400'
-                } rounded-xl text-3xl font-bold text-white transition-all backdrop-blur-sm`}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-              >
-                {opt}
-              </motion.button>
-            ))}
-          </div>
-        )}
-
-        {/* Hint Button */}
-        <motion.button
-          onClick={() => onShowHint(playerNum)}
-          disabled={playerState.score < 25 || playerState.lives <= 0}
-          className={`flex items-center gap-2 px-6 py-3 rounded-full border-2 transition-all ${
-            playerState.score >= 25 && playerState.lives > 0
-              ? 'border-gray-400 text-gray-300 hover:border-white hover:text-white'
-              : 'border-gray-700 text-gray-700 cursor-not-allowed opacity-50'
-          }`}
-          whileHover={playerState.score >= 25 && playerState.lives > 0 ? { scale: 1.05 } : {}}
-          whileTap={playerState.score >= 25 && playerState.lives > 0 ? { scale: 0.95 } : {}}
-        >
-          <HelpCircle className="w-5 h-5" />
-          {playerState.score >= 25 ? 'Bantuan Visual (-25 Poin)' : 'Bantuan (Butuh 25 Poin)'}
-        </motion.button>
-      </div>
-    </div>
-  );
-}
-
-export default App;
+    function showHint(playerNum) {
+        AudioSys.hint(); const pState = playerNum === 1 ? state.p1 : state.p2;
+        if (pState.lives <= 0 || pState.score < 25) return; 
+        const q = pState.currentQ; pState.score -= 25; updateUI();
+        const canvas = document.getElementById('hintCanvas'); const ctx = canvas.getContext('2d');
+        const overlay = document.getElementById('hintOverlay'); overlay.style.display = 'flex';
+        drawNumberLine(ctx, q.qText, q.roundTo);
+    }
+    function closeHint() { AudioSys.click(); document.getElementById('hintOverlay').style.display = 'none'; }
+    function drawNumberLine(ctx, number, step) {
+        ctx.clearRect(0, 0, 600, 300); ctx.fillStyle = "#1F2937"; ctx.font = "bold 24px Arial";
+        let lower, upper;
+        if (step >= 1) { lower = Math.floor(number / step) * step; upper = lower + step; } else { let factor = 1 / step; lower = Math.floor(number * factor) / factor; upper = lower + step; lower = parseFloat(lower.toFixed(1)); upper = parseFloat(upper.toFixed(1)); }
+        const mid = (lower + upper) / 2;
+        ctx.beginPath(); ctx.moveTo(50, 150); ctx.lineTo(550, 150); ctx.lineWidth = 4; ctx.strokeStyle = "#374151"; ctx.stroke();
+        function drawTick(x, val, isMain) { ctx.beginPath(); ctx.moveTo(x, 140); ctx.lineTo(x, 160); ctx.lineWidth = isMain ? 4 : 2; ctx.stroke(); ctx.fillText(val, x - 20, 190); }
+        drawTick(50, lower, true); drawTick(300, mid, false); drawTick(550, upper, true);
+        let percent = (number - lower) / step; let xPos = 50 + (percent * 500);
+        ctx.beginPath(); ctx.arc(xPos, 150, 15, 0, 2 * Math.PI); ctx.fillStyle = "#EF4444"; ctx.fill(); ctx.fillText(number, xPos - 15, 120);
+    }
+</script>
+</body>
+</html>
