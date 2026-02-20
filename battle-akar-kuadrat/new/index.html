@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Battle Akar Kuadrat (160 Soal Edition)</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;600&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <!-- MathJax -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #2b1055; 
+            --bg-gradient: radial-gradient(circle at center top, #4b1d85 0%, #2b1055 100%);
+            --p1-color: #00d2ff; 
+            --p1-dark: #009ac2;
+            --p1-bg: rgba(0, 210, 255, 0.2);
+            --p2-color: #ff47bc; 
+            --p2-dark: #c2007e;
+            --p2-bg: rgba(255, 71, 188, 0.2);
+            --gold: #ffd700;
+            --text-color: #ffffff;
+            --danger: #ff3333;
+        }
+
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        html, body { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: var(--bg-color); background-image: var(--bg-gradient); color: var(--text-color); font-family: 'Nunito', sans-serif; }
+
+        body.single-mode .p2-only { display: none !important; }
+        body.single-mode header { justify-content: center; gap: 20px; }
+        body.single-mode .player-panel { width: 40%; max-width: 300px; }
+        body.single-mode .target-box { max-width: 50%; flex: 1; }
+
+        .main-wrapper { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
+        .hidden { display: none !important; }
+        .flex-center { display: flex; justify: center; align-items: center; }
+        .font-fredoka { font-family: 'Fredoka', cursive; }
+
+        #setup-screen, #gameover-screen, #summary-screen, #turn-alert {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(43, 16, 85, 0.98); z-index: 100;
+            flex-direction: column; text-align: center; padding: 10px; overflow-y: auto;
+        }
+
+        #turn-alert { background: rgba(0,0,0,0.8); z-index: 200; display: none; pointer-events: none; }
+        .alert-box { background: white; color: #2b1055; padding: 20px 40px; border-radius: 20px; border: 4px solid var(--gold); font-family: 'Fredoka'; font-size: 5vmin; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+        @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        h1 { font-family: 'Fredoka', cursive; font-size: 7vmin; text-transform: uppercase; margin-bottom: 1vh; color: #fff; text-shadow: 3px 3px 0px #000; line-height: 1.1; margin-top: 2vh; }
+
+        .mode-selector { display: flex; gap: 2vw; margin-bottom: 2vh; background: rgba(0,0,0,0.3); padding: 0.5vh; border-radius: 50px; }
+        .btn-mode { background: transparent; border: 2px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.7); padding: 1vh 4vw; border-radius: 30px; font-family: 'Fredoka'; font-size: 3vmin; cursor: pointer; }
+        .btn-mode.active { background: var(--p1-color); color: #fff; border-color: var(--p1-color); }
+
+        .input-group { display: flex; gap: 15px; margin-bottom: 2vh; align-items: center; justify-content: center; }
+        .name-input { font-family: 'Fredoka'; font-size: 3vmin; padding: 1vh 2vw; border-radius: 30px; border: 3px solid #fff; background: rgba(255,255,255,0.1); color: #fff; text-align: center; width: 25vw; outline: none; }
+
+        .diff-container { margin-bottom: 2vh; display: flex; flex-direction: column; gap: 1vh; align-items: center; width: 90%; max-width: 800px; }
+        .diff-label { font-family: 'Fredoka'; font-size: 2.5vmin; color: var(--gold); margin-bottom: 1vh; }
+        .diff-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5vh 2vw; background: rgba(0,0,0,0.3); padding: 2vh; border-radius: 20px; width: 100%; }
+        .btn-diff { background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); padding: 1.5vh 1vw; border-radius: 15px; font-family: 'Fredoka'; font-size: 2.2vmin; cursor: pointer; transition: all 0.2s; text-align: left; padding-left: 20px; }
+        .btn-diff.active { background: var(--gold); color: #5a3e00; border-color: #fff; transform: scale(1.02); box-shadow: 0 0 15px rgba(255,215,0,0.3); }
+        .btn-diff span { font-size: 0.7em; display: block; opacity: 0.8; margin-bottom: 2px; }
+
+        .btn-primary { font-family: 'Fredoka'; background: linear-gradient(180deg, #ffd700, #ffaa00); border: 3px solid #fff; padding: 1.5vh 6vw; font-size: 4vmin; font-weight: 600; color: #5a3e00; border-radius: 40px; cursor: pointer; box-shadow: 0 0.6vh 0 #b37700; transition: transform 0.1s; margin-top: 2vh; }
+        .btn-primary:active { transform: translateY(0.6vh); box-shadow: 0 0 0 #b37700; }
+
+        header { flex: 0 0 auto; height: 25vh; display: flex; justify-content: space-between; align-items: stretch; padding: 1vh 1.5vw; background: rgba(43, 16, 85, 0.95); border-bottom: 3px solid rgba(255,255,255,0.2); }
+        .player-panel { width: 26%; border-radius: 15px; padding: 0.5vh 1vw; position: relative; border: 3px solid transparent; display: flex; flex-direction: column; justify-content: center; }
+        .p1-panel { border-color: var(--p1-color); background: rgba(255,255,255,0.05); }
+        .p2-panel { border-color: var(--p2-color); background: rgba(255,255,255,0.05); text-align: right; }
+        .active-p1 { background: var(--p1-bg); box-shadow: 0 0 20px var(--p1-color); }
+        .active-p2 { background: var(--p2-bg); box-shadow: 0 0 20px var(--p2-color); }
+        .inactive { opacity: 0.4; }
+
+        .turn-badge { position: absolute; top: -1.2vh; left: 50%; transform: translateX(-50%); background: white; color: #2b1055; font-size: 2vmin; font-weight: bold; padding: 0.3vh 1.5vw; border-radius: 15px; white-space: nowrap; }
+        .rebound-badge { background: #ff3333 !important; color: white !important; }
+        .timer-badge { position: absolute; top: 0.5vh; font-family: 'Fredoka', monospace; font-size: 3vmin; font-weight: bold; padding: 0.3vh 1vw; border-radius: 8px; background: rgba(0,0,0,0.4); color: rgba(255,255,255,0.7); }
+        .p1-panel .timer-badge { right: 5px; }
+        .p2-panel .timer-badge { left: 5px; }
+        .active-timer { background: #ff3333 !important; color: white !important; }
+
+        .player-name { font-family: 'Fredoka'; font-size: 3.5vmin; margin-top: 1vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .hearts { display: flex; gap: 0.3vw; margin-top: 0.5vh; height: 3vh; }
+        .p2-panel .hearts { justify-content: flex-end; }
+        .icon-heart { width: 3vmin; height: 3vmin; fill: #444; }
+        .icon-heart.filled { fill: #ff3333; }
+
+        .streak-container { display: flex; align-items: center; gap: 0.3vw; margin-top: 0.5vh; font-weight: bold; font-size: 2.5vmin; color: var(--gold); }
+        .p2-panel .streak-container { justify-content: flex-end; }
+        .streak-dot { width: 2vmin; height: 2vmin; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); display: block; }
+        .streak-active { background: var(--gold); box-shadow: 0 0 8px var(--gold); border-color: #fff; }
+
+        .target-box { flex: 1; background: white; border: 4px solid var(--gold); border-radius: 15px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 0 1.5vw; padding: 0.5vh; position: relative; max-width: 45%; }
+        .target-label { color: #888; font-size: 2.2vmin; font-weight: bold; letter-spacing: 1px; }
+        .target-level { position: absolute; top: 0; left: 0; width: 100%; background: var(--gold); color: #5a3e00; font-size: 2vmin; font-weight: bold; text-align: center; padding: 0.2vh; text-transform: uppercase; }
+        .target-math { color: #2b1055; font-size: 5.5vmin; font-weight: bold; margin: 0.5vh 0; text-align: center; }
+
+        #game-area { flex: 1; width: 100%; overflow: hidden; display: flex; justify-content: center; align-items: center; padding: 1vh 2vw; }
+        .grid-container { width: 100%; max-width: 95vw; height: 100%; display: grid; grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(5, 1fr); gap: 0.6vmin; }
+        .grid-cell { background: white; color: #2b1055; border-radius: 8px; border: none; font-family: 'Fredoka'; font-weight: bold; font-size: 3vmin; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 0.4vh 0 #b0b0b0; height: 100%; }
+        .grid-cell:active { transform: translateY(0.2vh); box-shadow: 0 0.2vh 0 #b0b0b0; }
+        .cell-correct { background: #88ff00 !important; transform: scale(1.05); z-index: 2; }
+        .cell-wrong { background: #ff3333 !important; color: white !important; opacity: 0.5; }
+
+        footer { flex: 0 0 auto; padding: 0.8vh; font-size: 2vmin; color: rgba(255,255,255,0.6); text-align: center; background: rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body>
+    <div class="main-wrapper">
+        <div id="turn-alert" class="flex-center">
+            <div class="alert-box">
+                <div id="alert-icon" style="font-size: 8vmin; margin-bottom: 1vh;">⚠️</div>
+                <div id="alert-msg">SALAH!</div>
+                <div id="alert-sub" style="font-size: 3.5vmin; color:#666; margin-top:0.5vh;"></div>
+            </div>
+        </div>
+
+        <!-- SETUP SCREEN -->
+        <div id="setup-screen" class="flex-center">
+            <h1>BATTLE<br><span style="color:var(--gold); font-size:0.6em;">AKAR KUADRAT</span></h1>
+            
+            <div class="mode-selector">
+                <button id="btn-mode-1p" class="btn-mode" onclick="Game.setMode('single')">1 PLAYER</button>
+                <button id="btn-mode-2p" class="btn-mode active" onclick="Game.setMode('multi')">2 PLAYERS</button>
+            </div>
+
+            <div class="input-group">
+                <input type="text" id="p1-name" class="name-input" placeholder="P1 Name" value="Player 1">
+                <span id="vs-label" style="font-size:4vmin; font-weight:bold; color:var(--gold)">VS</span>
+                <input type="text" id="p2-name" class="name-input p2-only" placeholder="P2 Name" value="Player 2">
+            </div>
+
+            <div class="diff-container">
+                <div class="diff-label">SELECT LEVEL:</div>
+                <div class="diff-options">
+                    <button id="btn-diff-1" class="btn-diff active" onclick="Game.setDifficulty(1)"><span>LEVEL 1</span>Basic Positive</button>
+                    <button id="btn-diff-2" class="btn-diff" onclick="Game.setDifficulty(2)"><span>LEVEL 2</span>The Zero Trap</button>
+                    <button id="btn-diff-3" class="btn-diff" onclick="Game.setDifficulty(3)"><span>LEVEL 3</span>Sign Switcher</button>
+                    <button id="btn-diff-4" class="btn-diff" onclick="Game.setDifficulty(4)"><span>LEVEL 4</span>Special Pattern</button>
+                    <button id="btn-diff-5" class="btn-diff" onclick="Game.setDifficulty(5)"><span>LEVEL 5</span>The Distractor</button>
+                    <button id="btn-diff-6" class="btn-diff" onclick="Game.setDifficulty(6)"><span>LEVEL 6</span>Integer Fraction</button>
+                    <button id="btn-diff-7" class="btn-diff" onclick="Game.setDifficulty(7)"><span>LEVEL 7</span>The Boss</button>
+                    <button id="btn-diff-8" class="btn-diff" onclick="Game.setDifficulty(8)"><span>LEVEL 8</span>The Titan</button>
+                </div>
+            </div>
+
+            <button class="btn-primary" onclick="Game.start()">START BATTLE</button>
+        </div>
+
+        <div id="gameover-screen" class="flex-center hidden">
+            <h1>SELESAI!</h1>
+            <h2 id="winner-text" style="color:var(--p1-color); font-size: 8vmin;">Winner</h2>
+            <p id="win-reason" style="background:rgba(255,255,255,0.1); padding:1.5vh 3vw; border-radius:15px; font-size:3vmin;">Reason</p>
+            <button class="btn-primary" onclick="Game.setup()">MAIN LAGI</button>
+        </div>
+
+        <div id="summary-screen" class="flex-center hidden">
+            <div style="background:white; color:#2b1055; padding:4vh 4vw; border-radius:30px; border:5px solid var(--gold);">
+                <h2 class="font-fredoka" style="margin-top:0; font-size: 5vmin;">BERHASIL!</h2>
+                <p id="summary-msg" style="font-size:3.5vmin; font-weight:bold;">Message</p>
+                <button class="btn-primary" style="font-size:3vmin; padding:1vh 4vw;" onclick="Game.nextRound(true)">SOAL BERIKUTNYA</button>
+            </div>
+        </div>
+
+        <!-- HUD -->
+        <header id="game-hud" class="hidden">
+            <div id="p1-panel" class="player-panel p1-panel">
+                <div id="p1-turn-badge" class="turn-badge hidden">GILIRANMU</div>
+                <div id="p1-timer" class="timer-badge">03:00</div>
+                <div id="hud-p1-name" class="player-name">P1</div>
+                <div class="hearts" id="p1-hearts"></div>
+                <div class="streak-container" id="p1-streak-container"></div>
+            </div>
+
+            <div class="target-box">
+                <div id="level-indicator" class="target-level">LEVEL 1 - BASIC POSITIVE</div>
+                <span class="target-label">CARI AKAR (X1, X2)</span>
+                <div id="target-math" class="target-math">\[ x^2 = 0 \]</div>
+            </div>
+
+            <div id="p2-panel" class="player-panel p2-panel p2-only">
+                <div id="p2-turn-badge" class="turn-badge hidden">GILIRANMU</div>
+                <div id="p2-timer" class="timer-badge">03:00</div>
+                <div id="hud-p2-name" class="player-name">P2</div>
+                <div class="hearts" id="p2-hearts"></div>
+                <div class="streak-container" id="p2-streak-container"></div>
+            </div>
+        </header>
+
+        <section id="game-area" class="hidden">
+            <div class="grid-container" id="grid"></div>
+        </section>
+
+        <footer id="game-footer" class="hidden">
+            Cari dan klik dua angka akar yang benar (-24 s.d 25).
+        </footer>
+    </div>
+
+    <script>
+        const LEVEL_NAMES = {
+            1: "Basic Positive",
+            2: "The Zero Trap",
+            3: "Sign Switcher",
+            4: "Special Pattern",
+            5: "The Distractor",
+            6: "Integer Fraction",
+            7: "The Boss",
+            8: "The Titan"
+        };
+
+        const QUESTION_BANK = {
+            1: [
+                { q: "(x - 3)(x - 7) = 0", a: [3, 7] }, { q: "(x - 1)(x - 15) = 0", a: [1, 15] },
+                { q: "(x - 4)(x - 10) = 0", a: [4, 10] }, { q: "(x - 2)(x - 18) = 0", a: [2, 18] },
+                { q: "(x - 12)(x - 5) = 0", a: [12, 5] }, { q: "(x - 6)(x - 20) = 0", a: [6, 20] },
+                { q: "(x - 9)(x - 2) = 0", a: [9, 2] }, { q: "(x - 11)(x - 4) = 0", a: [11, 4] },
+                { q: "(x - 8)(x - 13) = 0", a: [8, 13] }, { q: "(x - 14)(x - 3) = 0", a: [14, 3] },
+                { q: "(x - 15)(x - 4) = 0", a: [15, 4] }, { q: "(x - 7)(x - 14) = 0", a: [7, 14] },
+                { q: "(x - 2)(x - 11) = 0", a: [2, 11] }, { q: "(x - 6)(x - 1) = 0", a: [6, 1] },
+                { q: "(x - 9)(x - 9) = 0", a: [9] }, { q: "(x - 10)(x - 16) = 0", a: [10, 16] },
+                { q: "(x - 13)(x - 3) = 0", a: [13, 3] }, { q: "(x - 5)(x - 24) = 0", a: [5, 24] },
+                { q: "(x - 8)(x - 8) = 0", a: [8] }, { q: "(x - 22)(x - 7) = 0", a: [22, 7] }
+            ],
+            2: [
+                { q: "x(x - 5) = 0", a: [0, 5] }, { q: "x(x + 12) = 0", a: [0, -12] },
+                { q: "x(x - 24) = 0", a: [0, 24] }, { q: "x(x + 9) = 0", a: [0, -9] },
+                { q: "x(x - 18) = 0", a: [0, 18] }, { q: "x(x + 1) = 0", a: [0, -1] },
+                { q: "x(x - 10) = 0", a: [0, 10] }, { q: "x(x + 21) = 0", a: [0, -21] },
+                { q: "x(x - 7) = 0", a: [0, 7] }, { q: "x(x + 15) = 0", a: [0, -15] },
+                { q: "x(x + 2) = 0", a: [0, -2] }, { q: "x(x - 2) = 0", a: [0, 2] },
+                { q: "x(x + 25) = 0", a: [0, -25] }, { q: "x(x - 11) = 0", a: [0, 11] },
+                { q: "x(x + 14) = 0", a: [0, -14] }, { q: "x(x - 13) = 0", a: [0, 13] },
+                { q: "x(x + 19) = 0", a: [0, -19] }, { q: "x(x - 4) = 0", a: [0, 4] },
+                { q: "x(x + 6) = 0", a: [0, -6] }, { q: "x(x - 22) = 0", a: [0, 22] }
+            ],
+            3: [
+                { q: "(x + 3)(x + 8) = 0", a: [-3, -8] }, { q: "(x + 5)(x + 15) = 0", a: [-5, -15] },
+                { q: "(x + 1)(x + 24) = 0", a: [-1, -24] }, { q: "(x + 10)(x + 14) = 0", a: [-10, -14] },
+                { q: "(x + 2)(x + 18) = 0", a: [-2, -18] }, { q: "(x + 7)(x + 4) = 0", a: [-7, -4] },
+                { q: "(x + 12)(x + 6) = 0", a: [-12, -6] }, { q: "(x + 9)(x + 20) = 0", a: [-9, -20] },
+                { q: "(x + 11)(x + 3) = 0", a: [-11, -3] }, { q: "(x + 22)(x + 5) = 0", a: [-22, -5] },
+                { q: "(x + 13)(x + 2) = 0", a: [-13, -2] }, { q: "(x + 4)(x + 4) = 0", a: [-4] },
+                { q: "(x + 24)(x + 1) = 0", a: [-24, -1] }, { q: "(x + 10)(x + 5) = 0", a: [-10, -5] },
+                { q: "(x + 17)(x + 8) = 0", a: [-17, -8] }, { q: "(x + 15)(x + 15) = 0", a: [-15] },
+                { q: "(x + 6)(x + 20) = 0", a: [-6, -20] }, { q: "(x + 21)(x + 3) = 0", a: [-21, -3] },
+                { q: "(x + 11)(x + 11) = 0", a: [-11] }, { q: "(x + 9)(x + 14) = 0", a: [-9, -14] }
+            ],
+            4: [
+                { q: "x^2 - 4 = 0", a: [-2, 2] }, { q: "x^2 - 25 = 0", a: [-5, 5] },
+                { q: "x^2 - 81 = 0", a: [-9, 9] }, { q: "x^2 - 144 = 0", a: [-12, 12] },
+                { q: "x^2 - 400 = 0", a: [-20, 20] }, { q: "x^2 - 49 = 0", a: [-7, 7] },
+                { q: "x^2 - 100 = 0", a: [-10, 10] }, { q: "x^2 - 256 = 0", a: [-16, 16] },
+                { q: "x^2 - 1 = 0", a: [-1, 1] }, { q: "x^2 - 576 = 0", a: [-24, 24] },
+                { q: "x^2 - 169 = 0", a: [-13, 13] }, { q: "x^2 - 196 = 0", a: [-14, 14] },
+                { q: "x^2 - 225 = 0", a: [-15, 15] }, { q: "x^2 - 289 = 0", a: [-17, 17] },
+                { q: "x^2 - 324 = 0", a: [-18, 18] }, { q: "x^2 - 361 = 0", a: [-19, 19] },
+                { q: "x^2 - 441 = 0", a: [-21, 21] }, { q: "x^2 - 484 = 0", a: [-22, 22] },
+                { q: "x^2 - 529 = 0", a: [-23, 23] }, { q: "x^2 - 625 = 0", a: [-25, 25] }
+            ],
+            5: [
+                { q: "2(x - 3)(x + 5) = 0", a: [3, -5] }, { q: "5x(x - 12) = 0", a: [0, 12] },
+                { q: "7(x + 8)(x + 4) = 0", a: [-8, -4] }, { q: "4(x - 20)(x - 10) = 0", a: [20, 10] },
+                { q: "6(x + 9)(x - 9) = 0", a: [-9, 9] }, { q: "3(x - 1)(x - 2) = 0", a: [1, 2] },
+                { q: "8(x + 14)(x - 4) = 0", a: [-14, 4] }, { q: "10(x - 11)(x + 2) = 0", a: [11, -2] },
+                { q: "12x(x + 21) = 0", a: [0, -21] }, { q: "9(x + 6)(x + 15) = 0", a: [-6, -15] },
+                { q: "2(x - 4)(x - 8) = 0", a: [4, 8] }, { q: "3x(x + 5) = 0", a: [0, -5] },
+                { q: "5(x + 1)(x + 1) = 0", a: [-1] }, { q: "8(x - 12)(x + 3) = 0", a: [12, -3] },
+                { q: "11(x + 2)(x + 2) = 0", a: [-2] }, { q: "7(x - 14)(x + 1) = 0", a: [14, -1] },
+                { q: "2(x + 24)(x - 10) = 0", a: [-24, 10] }, { q: "9(x - 6)(x - 1) = 0", a: [6, 1] },
+                { q: "4(x + 11)(x + 11) = 0", a: [-11] }, { q: "6(x - 20)(x + 20) = 0", a: [20, -20] }
+            ],
+            6: [
+                { q: "(2x - 10)(x + 3) = 0", a: [5, -3] }, { q: "(3x + 9)(x - 12) = 0", a: [-3, 12] },
+                { q: "(4x - 20)(x + 5) = 0", a: [5, -5] }, { q: "(5x + 15)(x - 1) = 0", a: [-3, 1] },
+                { q: "(2x - 40)(x + 10) = 0", a: [20, -10] }, { q: "(3x - 45)(x + 6) = 0", a: [15, -6] },
+                { q: "(6x - 24)(x + 14) = 0", a: [4, -14] }, { q: "(10x + 100)(x - 7) = 0", a: [-10, 7] },
+                { q: "(2x + 48)(x - 3) = 0", a: [-24, 3] }, { q: "(5x - 25)(x + 2) = 0", a: [5, -2] },
+                { q: "(2x - 8)(x + 24) = 0", a: [4, -24] }, { q: "(3x + 15)(x - 15) = 0", a: [-5, 15] },
+                { q: "(5x - 50)(x + 9) = 0", a: [10, -9] }, { q: "(2x + 30)(x - 2) = 0", a: [-15, 2] },
+                { q: "(3x - 33)(x + 1) = 0", a: [11, -1] }, { q: "(4x + 40)(x - 8) = 0", a: [-10, 8] },
+                { q: "(2x - 22)(x + 21) = 0", a: [11, -21] }, { q: "(7x - 49)(x + 4) = 0", a: [7, -4] },
+                { q: "(3x + 60)(x - 11) = 0", a: [-20, 11] }, { q: "(2x - 36)(x + 17) = 0", a: [18, -17] }
+            ],
+            7: [
+                { q: "x^2 - 5x + 6 = 0", a: [2, 3] }, { q: "x^2 + x - 12 = 0", a: [-4, 3] },
+                { q: "x^2 + 7x + 10 = 0", a: [-5, -2] }, { q: "x^2 - x - 20 = 0", a: [5, -4] },
+                { q: "x^2 - 10x + 25 = 0", a: [5] }, { q: "x^2 + 2x - 24 = 0", a: [-6, 4] },
+                { q: "x^2 - 13x + 42 = 0", a: [6, 7] }, { q: "x^2 + 8x + 12 = 0", a: [-6, -2] },
+                { q: "x^2 - 21x + 20 = 0", a: [20, 1] }, { q: "x^2 + 4x - 21 = 0", a: [-7, 3] },
+                { q: "x^2 + 10x + 16 = 0", a: [-2, -8] }, { q: "x^2 - 10x + 21 = 0", a: [7, 3] },
+                { q: "x^2 + 2x - 15 = 0", a: [-5, 3] }, { q: "x^2 - 7x - 18 = 0", a: [9, -2] },
+                { q: "x^2 + 14x + 45 = 0", a: [-5, -9] }, { q: "x^2 - 14x + 48 = 0", a: [6, 8] },
+                { q: "x^2 + 3x - 10 = 0", a: [2, -5] }, { q: "x^2 - 2x - 8 = 0", a: [4, -2] },
+                { q: "x^2 + 12x + 32 = 0", a: [-4, -8] }, { q: "x^2 - 15x + 56 = 0", a: [7, 8] }
+            ],
+            8: [
+                { q: "2x^2 - 10x + 12 = 0", a: [2, 3] }, { q: "3x^2 + 15x + 18 = 0", a: [-2, -3] },
+                { q: "2x^2 - 2x - 24 = 0", a: [4, -3] }, { q: "2x^2 + 10x - 48 = 0", a: [-8, 3] },
+                { q: "3x^2 - 18x - 21 = 0", a: [7, -1] }, { q: "2x^2 - 20x + 42 = 0", a: [7, 3] },
+                { q: "5x^2 + 5x - 30 = 0", a: [-3, 2] }, { q: "4x^2 - 8x - 12 = 0", a: [3, -1] },
+                { q: "2x^2 + 12x + 10 = 0", a: [-5, -1] }, { q: "3x^2 - 9x - 12 = 0", a: [4, -1] },
+                { q: "2x^2 + 4x - 16 = 0", a: [-4, 2] }, { q: "3x^2 - 21x + 30 = 0", a: [5, 2] },
+                { q: "2x^2 + 20x + 42 = 0", a: [-7, -3] }, { q: "5x^2 - 25x - 70 = 0", a: [7, -2] },
+                { q: "2x^2 - 4x - 70 = 0", a: [7, -5] }, { q: "3x^2 + 30x + 63 = 0", a: [-7, -3] },
+                { q: "2x^2 + 14x + 20 = 0", a: [-5, -2] }, { q: "4x^2 - 16x - 48 = 0", a: [6, -2] },
+                { q: "2x^2 - 28x + 80 = 0", a: [10, 4] }, { q: "3x^2 + 9x - 30 = 0", a: [-5, 2] }
+            ]
+        };
+
+        const AudioEngine = {
+            ctx: null,
+            init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+            play(type) {
+                if (!this.ctx) this.init();
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                const now = this.ctx.currentTime;
+                if (type === 'correct') { osc.frequency.setValueAtTime(523, now); osc.frequency.setValueAtTime(659, now + 0.1); gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3); osc.start(now); osc.stop(now + 0.3); }
+                else if (type === 'wrong') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.linearRampToValueAtTime(80, now + 0.3); gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3); osc.start(now); osc.stop(now + 0.3); }
+                else if (type === 'win') { osc.type = 'triangle'; osc.frequency.setValueAtTime(523, now); gain.gain.setValueAtTime(0.3, now); gain.gain.linearRampToValueAtTime(0, now + 1.5); osc.start(now); osc.stop(now + 1.5); }
+                else if (type === 'pass') { osc.type = 'square'; osc.frequency.setValueAtTime(300, now); gain.gain.setValueAtTime(0.1, now); osc.start(now); osc.stop(now + 0.3); }
+            }
+        };
+
+        const Game = {
+            state: { mode: 'multi', players: [], activePlayer: 0, roots: [], foundRoots: [], gridStatus: {}, isRebound: false, intervalId: null, difficulty: 1 },
+            GRID_MIN: -24, GRID_MAX: 25,
+            get TARGET_STREAK() { return this.state.mode === 'single' ? 8 : 5; },
+
+            setMode(mode) {
+                this.state.mode = mode;
+                document.getElementById('btn-mode-1p').classList.toggle('active', mode === 'single');
+                document.getElementById('btn-mode-2p').classList.toggle('active', mode === 'multi');
+                document.querySelectorAll('.p2-only').forEach(el => el.classList.toggle('hidden', mode === 'single'));
+                document.getElementById('vs-label').classList.toggle('hidden', mode === 'single');
+            },
+
+            setDifficulty(lv) {
+                this.state.difficulty = lv;
+                for(let i=1; i<=8; i++) document.getElementById(`btn-diff-${i}`).classList.toggle('active', i === lv);
+            },
+
+            generateQuestion() {
+                const bank = QUESTION_BANK[this.state.difficulty];
+                const item = bank[Math.floor(Math.random() * bank.length)];
+                this.state.roots = item.a;
+                this.state.foundRoots = [];
+                
+                const levelName = LEVEL_NAMES[this.state.difficulty];
+                document.getElementById('level-indicator').innerText = `LEVEL ${this.state.difficulty} - ${levelName}`;
+                
+                const mathBox = document.getElementById('target-math');
+                mathBox.innerHTML = `\\[ ${item.q} \\]`;
+                if (window.MathJax) MathJax.typesetPromise([mathBox]);
+            },
+
+            setup() {
+                document.getElementById('setup-screen').classList.remove('hidden');
+                document.getElementById('gameover-screen').classList.add('hidden');
+                document.getElementById('game-hud').classList.add('hidden');
+                document.getElementById('game-area').classList.add('hidden');
+                this.stopTimer();
+            },
+
+            start() {
+                const p1 = document.getElementById('p1-name').value || 'P1';
+                const p2 = document.getElementById('p2-name').value || 'P2';
+                this.state.players = [{ name: p1, lives: 5, time: 180, streak: 0 }, { name: p2, lives: 5, time: 180, streak: 0 }];
+                this.state.activePlayer = 0;
+                document.body.classList.toggle('single-mode', this.state.mode === 'single');
+                document.getElementById('hud-p1-name').textContent = p1;
+                document.getElementById('hud-p2-name').textContent = p2;
+                this.setupStreakDotsUI();
+                document.getElementById('setup-screen').classList.add('hidden');
+                document.getElementById('game-hud').classList.remove('hidden');
+                document.getElementById('game-area').classList.remove('hidden');
+                this.nextRound(true);
+                this.startTimer();
+            },
+
+            setupStreakDotsUI() {
+                const max = this.TARGET_STREAK;
+                ['p1', 'p2'].forEach(p => {
+                    const cont = document.getElementById(`${p}-streak-container`);
+                    cont.innerHTML = p === 'p1' ? '<span>Streak:</span>' : '';
+                    for(let i=1; i<=max; i++) {
+                        const d = document.createElement('div');
+                        d.id = `${p}-s${i}`; d.className = 'streak-dot';
+                        cont.appendChild(d);
+                    }
+                    if(p === 'p2') { const s = document.createElement('span'); s.textContent = ':Streak'; cont.appendChild(s); }
+                });
+            },
+
+            nextRound(isNewQuestion = true) {
+                this.state.gridStatus = {};
+                this.state.isRebound = false;
+                this.state.foundRoots = [];
+                if (isNewQuestion) this.generateQuestion();
+                this.renderGrid();
+                this.updateHUD();
+                document.getElementById('summary-screen').classList.add('hidden');
+                document.getElementById('grid').style.pointerEvents = 'auto';
+            },
+
+            startTimer() {
+                this.stopTimer();
+                this.state.intervalId = setInterval(() => {
+                    const p = this.state.players[this.state.activePlayer];
+                    p.time--;
+                    if (p.time <= 0) this.endGame(this.state.activePlayer === 0 ? 1 : 0, "Waktu Habis!");
+                    this.updateTimers();
+                }, 1000);
+            },
+
+            stopTimer() { if (this.state.intervalId) clearInterval(this.state.intervalId); },
+
+            showAlert(icon, msg, sub, callback) {
+                const box = document.getElementById('turn-alert');
+                document.getElementById('alert-icon').textContent = icon;
+                document.getElementById('alert-msg').textContent = msg;
+                document.getElementById('alert-sub').textContent = sub;
+                box.style.display = 'flex';
+                setTimeout(() => { box.style.display = 'none'; if (callback) callback(); }, 1500);
+            },
+
+            handleGridClick(num) {
+                if (this.state.gridStatus[num]) return;
+                const roots = this.state.roots;
+                const isCorrect = roots.includes(num);
+                const player = this.state.players[this.state.activePlayer];
+                const btn = document.getElementById(`cell-${num}`);
+
+                if (isCorrect) {
+                    AudioEngine.play('correct');
+                    this.state.gridStatus[num] = 'correct';
+                    if (!this.state.foundRoots.includes(num)) this.state.foundRoots.push(num);
+                    btn.className = "grid-cell cell-correct";
+                    if (this.state.foundRoots.length === roots.length) this.roundWin();
+                } else {
+                    AudioEngine.play('wrong');
+                    this.state.gridStatus[num] = 'wrong';
+                    player.lives--; player.streak = 0;
+                    btn.className = "grid-cell cell-wrong";
+                    if (player.lives <= 0) {
+                        this.endGame(this.state.mode === 'single' ? 1 : (this.state.activePlayer === 0 ? 1 : 0), player.lives <= 0 ? "Nyawa Habis!" : "Lawan Menang!");
+                        return;
+                    }
+                    if (this.state.mode === 'single') {
+                        this.showAlert("❌", "SALAH!", "Streak Reset.", () => this.updateHUD());
+                    } else {
+                        if (this.state.isRebound) {
+                            this.showAlert("☠️", "SEMUA SALAH!", "Soal Hangus.", () => {
+                                this.state.activePlayer = this.state.activePlayer === 0 ? 1 : 0;
+                                this.nextRound(true);
+                            });
+                        } else {
+                            this.state.isRebound = true;
+                            const nxt = this.state.players[this.state.activePlayer === 0 ? 1 : 0].name;
+                            this.showAlert("🔄", "SALAH!", `Giliran dilempar ke ${nxt}`, () => {
+                                this.state.activePlayer = this.state.activePlayer === 0 ? 1 : 0;
+                                AudioEngine.play('pass');
+                                this.updateHUD();
+                            });
+                        }
+                    }
+                }
+                this.updateHUD();
+            },
+
+            roundWin() {
+                AudioEngine.play('round_complete');
+                const p = this.state.players[this.state.activePlayer];
+                p.streak++;
+                if (p.streak >= this.TARGET_STREAK) {
+                    this.endGame(this.state.activePlayer, "Target Streak Tercapai!");
+                    return;
+                }
+                document.getElementById('summary-msg').textContent = `BENAR! Streak: ${p.streak} / ${this.TARGET_STREAK}`;
+                document.getElementById('summary-screen').classList.remove('hidden');
+                document.getElementById('grid').style.pointerEvents = 'none';
+                if (this.state.mode === 'multi') this.state.activePlayer = this.state.activePlayer === 0 ? 1 : 0;
+            },
+
+            endGame(winnerIdx, reason) {
+                this.stopTimer();
+                const win = this.state.players[winnerIdx];
+                document.getElementById('gameover-screen').classList.remove('hidden');
+                document.getElementById('game-hud').classList.add('hidden');
+                document.getElementById('game-area').classList.add('hidden');
+                document.getElementById('summary-screen').classList.add('hidden');
+                
+                if (this.state.mode === 'single' && winnerIdx !== 0) {
+                    document.getElementById('winner-text').textContent = "COBA LAGI";
+                    document.getElementById('winner-text').style.color = "var(--danger)";
+                } else {
+                    AudioEngine.play('win');
+                    document.getElementById('winner-text').textContent = `${win.name} Menang!`;
+                    document.getElementById('winner-text').style.color = winnerIdx === 0 ? 'var(--p1-color)' : 'var(--p2-color)';
+                }
+                document.getElementById('win-reason').textContent = reason;
+            },
+
+            renderGrid() {
+                const grid = document.getElementById('grid');
+                grid.innerHTML = '';
+                for (let i = this.GRID_MIN; i <= this.GRID_MAX; i++) {
+                    const btn = document.createElement('button');
+                    btn.id = `cell-${i}`; btn.className = 'grid-cell'; btn.textContent = i;
+                    btn.onclick = () => this.handleGridClick(i);
+                    grid.appendChild(btn);
+                }
+            },
+
+            updateHUD() {
+                const act = this.state.activePlayer;
+                ['p1', 'p2'].forEach((p, idx) => {
+                    const pan = document.getElementById(`${p}-panel`);
+                    const bdg = document.getElementById(`${p}-turn-badge`);
+                    const isActive = act === idx || this.state.mode === 'single';
+                    pan.classList.toggle(`active-${p}`, isActive);
+                    pan.classList.toggle('inactive', !isActive);
+                    if (this.state.mode === 'multi') {
+                        bdg.classList.toggle('hidden', act !== idx);
+                        if (act === idx && this.state.isRebound) { bdg.textContent = "REBOUND!"; bdg.classList.add('rebound-badge'); }
+                        else { bdg.textContent = "GILIRANMU"; bdg.classList.remove('rebound-badge'); }
+                    }
+                    this.renderHearts(`${p}-hearts`, this.state.players[idx].lives);
+                    this.renderStreakDots(p, this.state.players[idx].streak);
+                });
+                this.updateTimers();
+            },
+
+            renderHearts(id, count) {
+                const cont = document.getElementById(id);
+                if (!cont) return;
+                cont.innerHTML = '';
+                const svg = `<svg class="icon-heart" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+                for (let i = 0; i < 5; i++) {
+                    const s = document.createElement('span'); s.innerHTML = svg;
+                    if (i < count) s.querySelector('svg').classList.add('filled');
+                    cont.appendChild(s);
+                }
+            },
+
+            renderStreakDots(p, count) {
+                for(let i=1; i<=this.TARGET_STREAK; i++) {
+                    const d = document.getElementById(`${p}-s${i}`);
+                    if (d) d.classList.toggle('streak-active', i <= count);
+                }
+            },
+
+            updateTimers() {
+                const fmt = (s) => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+                document.getElementById('p1-timer').textContent = fmt(this.state.players[0].time);
+                if (this.state.mode === 'multi') document.getElementById('p2-timer').textContent = fmt(this.state.players[1].time);
+            }
+        };
+
+        window.onload = () => Game.setup();
+    </script>
+</body>
+</html>
