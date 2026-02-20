@@ -1,0 +1,247 @@
+
+<!DOCTYPE html><html lang="id"><head>    <meta charset="UTF-8">    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">    <title>Algebra Rush: TV Edition</title>        <!-- Google Fonts -->    <link rel="preconnect" href="https://fonts.googleapis.com">    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;600&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- MathJax -->    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>        :root {            --bg-color: #2b1055;             --bg-gradient: radial-gradient(circle at center, #4b1d85 0%, #2b1055 100%);                        /* Player 1 Colors (Cyan) */            --p1-color: #00d2ff;             --p1-bg: rgba(0, 210, 255, 0.15);                        /* Player 2 Colors (Magenta) */            --p2-color: #ff47bc;             --p2-bg: rgba(255, 71, 188, 0.15);
+            --card-bg: #ffffff;            --card-text: #2b1055;            --text-color: #ffffff;            --gold: #ffd700;        }
+        * {            box-sizing: border-box;            user-select: none;            -webkit-tap-highlight-color: transparent;        }
+        body {            margin: 0;            padding: 0;            background-color: #000; /* Letterbox background for TV */            font-family: 'Nunito', sans-serif;            height: 100vh;            width: 100vw;            display: flex;            justify-content: center;            align-items: center;            overflow: hidden;        }
+        /* --- CONTAINER 960x540 (Base Resolution) --- */        #game-container {            width: 960px;            height: 540px;            background-color: var(--bg-color);            background-image: var(--bg-gradient);            position: relative;            display: flex;            flex-direction: column;            overflow: hidden;            box-shadow: 0 0 50px rgba(0,0,0,0.5);            /* Important for scaling */            transform-origin: center center;        }
+        /* --- UTILS --- */        .hidden { display: none !important; }        .flex-center { display: flex; justify-content: center; align-items: center; }        .invisible { visibility: hidden; opacity: 0; }                /* Single Player Specific Styles */        .single-mode .p2-only { display: none !important; }        .single-mode .player-panel.p1 { margin: 0 auto; width: 60%; }                /* --- SCREENS --- */        #start-screen, #game-over-screen {            position: absolute;            top: 0; left: 0; width: 100%; height: 100%;            background: rgba(20, 5, 40, 1);            z-index: 100;            flex-direction: column;            text-align: center;            padding: 10px;        }
+        h1 {            font-family: 'Fredoka', cursive;            font-size: 3rem;             margin: 10px 0 5px 0;            color: #fff;            text-shadow: 3px 3px 0px #000;        }
+        h2 {            font-size: 1.5rem;            margin: 5px 0 10px 0;        }
+        /* --- MODE SELECTOR --- */        .mode-selector {            display: flex;            gap: 15px;            margin-bottom: 10px;        }        .btn-mode {            background: transparent;            border: 2px solid rgba(255,255,255,0.3);            color: rgba(255,255,255,0.6);            padding: 8px 20px;            border-radius: 20px;            font-family: 'Fredoka';            font-weight: bold;            font-size: 0.9rem;            cursor: pointer;            transition: all 0.2s;        }        .btn-mode.active {            background: var(--p1-color);            color: #fff;            border-color: var(--p1-color);            box-shadow: 0 0 10px var(--p1-bg);            transform: scale(1.05);        }
+        .input-group {            display: flex;            gap: 15px;            margin: 5px 0 10px 0;            justify-content: center;            align-items: center;            height: 40px;        }
+        .name-input {            padding: 8px 15px;            border-radius: 20px;            border: 2px solid #fff;            background: rgba(255,255,255,0.1);            color: white;            font-family: 'Fredoka';            font-size: 1rem;            text-align: center;            width: 140px;        }        .name-input::placeholder { color: rgba(255,255,255,0.5); }        .name-input:focus { outline: none; background: rgba(255,255,255,0.2); }
+        /* --- DIFFICULTY SELECTOR --- */        .diff-container {            margin: 5px 0 10px 0;            display: flex;            flex-direction: column;            gap: 5px;            align-items: center;        }        .diff-label { font-family: 'Fredoka'; font-size: 0.9rem; color: var(--gold); letter-spacing: 1px; }        .diff-options {             display: grid;             grid-template-columns: repeat(4, 1fr);            gap: 10px;             background: rgba(0,0,0,0.3);             padding: 10px 15px;             border-radius: 25px;         }        .btn-diff {            background: transparent;            border: 2px solid rgba(255,255,255,0.3);            color: rgba(255,255,255,0.6);            padding: 5px 10px;            border-radius: 20px;            font-family: 'Fredoka';            font-weight: bold;            font-size: 0.75rem;            cursor: pointer;            transition: all 0.2s;            width: 135px;            text-transform: uppercase;        }        .btn-diff.active {            background: var(--gold); color: #5a3e00; border-color: var(--gold);            box-shadow: 0 0 10px rgba(255, 215, 0, 0.4); transform: scale(1.05);        }        .btn-diff:hover:not(.active) { background: rgba(255,255,255,0.1); }
+        .btn-start {            font-family: 'Fredoka', cursive;            background: linear-gradient(180deg, #ffd700, #ffaa00);            border: 3px solid #fff;            padding: 10px 40px;            font-size: 1.2rem;            font-weight: 600;            color: #5a3e00;            border-radius: 50px;            cursor: pointer;            box-shadow: 0 4px 0 #b37700;            transition: transform 0.1s;            margin-top: 5px;        }        .btn-start:active { transform: translateY(4px); box-shadow: 0 0 0 #b37700; }
+        /* Rules Box adjusted */        .rules-box {            background: rgba(255,255,255,0.1);             padding: 10px 20px;             border-radius: 15px;             max-width: 600px;             margin-bottom: 5px;            font-size: 0.9rem;            color: #ffffff;             border: 1px solid rgba(255,255,255,0.2);        }        .rules-box p { margin: 3px 0; }        .rules-box ul { margin: 3px 0 3px 20px; padding: 0; }
+        /* --- HUD --- */        header {            height: 90px;            min-height: 90px;            display: flex;            justify-content: space-between;            align-items: center;            padding: 5px 20px;            background: rgba(0,0,0,0.3);            border-bottom: 2px solid rgba(255,255,255,0.1);            transition: opacity 0.5s ease;        }
+        .player-panel {            width: 300px;            height: 100%;            background: rgba(255,255,255,0.05);            border-radius: 10px;            padding: 5px 10px;            display: flex;            flex-direction: column;            align-items: center;            justify-content: center;            border: 2px solid transparent;            transition: all 0.3s ease;            position: relative;        }
+        .player-panel.active-turn {            transform: scale(1.02);            box-shadow: 0 0 15px rgba(255,255,255,0.2);            background: rgba(255,255,255,0.15);        }
+        .player-panel.p1 { border-color: var(--p1-color); }        .player-panel.p1.active-turn { box-shadow: 0 0 15px var(--p1-color); }                .player-panel.p2 { border-color: var(--p2-color); }        .player-panel.p2.active-turn { box-shadow: 0 0 15px var(--p2-color); }
+        .player-name {            font-family: 'Fredoka', cursive;            font-size: 0.9rem;            color: #ddd;            margin-bottom: 2px;        }
+        .timer-wrapper {            display: flex;            flex-direction: column;            align-items: center;            width: 100%;            position: relative;        }
+
+        .global-timer {            font-family: 'Fredoka', monospace;            font-size: 1.4rem;            font-weight: bold;            color: #fff;            background: rgba(0,0,0,0.4);            padding: 0 12px;            border-radius: 8px;            line-height: 1.2;        }
+
+        .turn-countdown {            position: absolute;            right: 0;            top: 50%;            transform: translateY(-50%);            font-family: 'Fredoka', sans-serif;            font-weight: 900;            font-size: 1.2rem;            color: var(--gold);            display: none;        }
+        .active-turn .turn-countdown { display: block; }
+
+        .turn-timer-bar {            width: 100%;            height: 6px;            background: rgba(255,255,255,0.2);            border-radius: 3px;            margin-top: 5px;            overflow: hidden;            display: none;         }        .active-turn .turn-timer-bar { display: block; }
+        .turn-progress {            height: 100%;            width: 100%;            background: #ffd700;            transition: width 1s linear;        }
+        .score-display {            font-family: 'Fredoka', cursive;            font-size: 1.1rem;            font-weight: bold;        }        .p1 .score-display { color: var(--p1-color); }        .p2 .score-display { color: var(--p2-color); }
+        /* --- ARENA --- */        #level-info {            text-align: center;            font-family: 'Fredoka', cursive;            color: var(--gold);            margin-top: 5px;            font-size: 1rem;            text-shadow: 0 2px 4px rgba(0,0,0,0.5);            height: 25px;        }
+        #arena {            flex: 1;            padding: 10px 40px;            display: grid;            grid-template-columns: repeat(5, 1fr);             grid-template-rows: repeat(2, 1fr);               gap: 12px;            width: 100%;            align-content: center;        }
+        .card {            background: var(--card-bg);            border-radius: 10px;            display: flex;            justify-content: center;            align-items: center;            font-size: 0.9rem;             font-weight: bold;            color: var(--card-text);            cursor: pointer;            box-shadow: 0 4px 0 #b0b0b0;            border: none;            position: relative;            transition: transform 0.1s;            overflow: hidden;            height: 100%;             text-align: center;            padding: 0 4px;        }                .card:active { transform: translateY(4px); box-shadow: 0 2px 0 #b0b0b0; }                .card mjx-container {            margin: 0 !important;            pointer-events: none;             font-size: 100% !important;         }
+        .card.popped {            visibility: hidden;            pointer-events: none;        }
+        .floating-points {            position: fixed;             font-family: 'Fredoka', cursive;            font-weight: bold;            font-size: 2rem;            pointer-events: none;            animation: floatUp 0.8s forwards;            z-index: 200;            text-shadow: 2px 2px 0 #000;        }
+        @keyframes floatUp {            0% { transform: translateY(0) scale(1); opacity: 1; }            100% { transform: translateY(-50px) scale(1.5); opacity: 0; }        }
+        @keyframes pulse {            0% { transform: scale(1); }            50% { transform: scale(1.05); }            100% { transform: scale(1); }        }
+    </style></head><body>
+    <!-- WRAPPER FOR 960x540 (AUTO SCALED) -->    <div id="game-container">                <!-- Start Screen -->        <div id="start-screen" class="flex-center">            <h1>Algebra Rush</h1>                        <!-- MODE SELECTOR -->            <div class="mode-selector">                <button id="btn-mode-1p" class="btn-mode" onclick="game.selectMode('single')">1 PLAYER</button>                <button id="btn-mode-2p" class="btn-mode active" onclick="game.selectMode('multi')">2 PLAYERS</button>            </div>
+            <div class="input-group">                <input id="input-p1" class="name-input" type="text" value="Player 1" placeholder="P1 Name" style="border-color: var(--p1-color);">                <div class="p2-only" style="display:flex; align-items:center; font-weight:bold; font-size:1.2rem; color: #fff;">VS</div>                <input id="input-p2" class="name-input p2-only" type="text" value="Player 2" placeholder="P2 Name" style="border-color: var(--p2-color);">            </div>
+            <!-- DIFFICULTY SELECTION (8 Levels) -->            <div class="diff-container">                <div class="diff-label">PILIH TINGKAT KESULITAN:</div>                <div class="diff-options">                    <button id="btn-lvl-1" class="btn-diff active" onclick="game.selectLevel(1)">1. QUICK START</button>                    <button id="btn-lvl-2" class="btn-diff" onclick="game.selectLevel(2)">2. SCALE UP</button>                    <button id="btn-lvl-3" class="btn-diff" onclick="game.selectLevel(3)">3. DOUBLE STRIKE</button>                    <button id="btn-lvl-4" class="btn-diff" onclick="game.selectLevel(4)">4. THE UNFOLD</button>                    <button id="btn-lvl-5" class="btn-diff" onclick="game.selectLevel(5)">5. MIRROR MATCH</button>                    <button id="btn-lvl-6" class="btn-diff" onclick="game.selectLevel(6)">6. SIMPLE SPLIT</button>                    <button id="btn-lvl-7" class="btn-diff" onclick="game.selectLevel(7)">7. FRACTURED MAZE</button>                    <button id="btn-lvl-8" class="btn-diff" onclick="game.selectLevel(8)">8. MASTER LOGIC</button>                </div>            </div>
+            <div class="rules-box">                <p style="margin:3px 0; color:var(--gold);"><strong>💰 Modal Awal:</strong> 30 Poin</p>                <p style="margin:3px 0;">🎯 <strong>Jawab Benar:</strong> Skor +x | 📉 <strong>Jawab Salah:</strong> Skor -x</p>                                <p id="rule-target" style="margin:3px 0; color: #aaffaa; font-weight: bold; border: 1px solid #aaffaa; border-radius: 5px; padding: 2px; background: rgba(0,255,0,0.1);">                    🚀 RACE TO 60: Siapa cepat dapat Skor 60 Menang!                </p>                                <p style="margin:3px 0; color: #ff9999;"><strong>💀 GAME OVER JIKA:</strong> Kehabisan Waktu (3 Menit) atau Skor < 0</p>            </div>
+            <button class="btn-start" onclick="game.start()">MULAI MAIN</button>        </div>
+        <!-- Game Over Screen -->        <div id="game-over-screen" class="hidden flex-center">            <h1 id="winner-text" style="color: #ffd700; margin-bottom: 0;">MENANG!</h1>            <p id="win-reason" style="color: #ddd; margin-top:0; margin-bottom: 15px; font-family:'Fredoka'; font-size: 1.2rem;">Alasan</p>                        <div style="display: flex; gap: 40px; margin-bottom: 20px;">                <div style="text-align: center;">                    <p id="end-name-p1" style="color:var(--p1-color); font-weight:bold; font-size: 1.2rem;">P1</p>                    <p id="end-score-p1" style="font-size:2.5rem; font-family:'Fredoka'; margin:0;">0</p>                </div>                <div id="end-p2-container" style="text-align: center;">                    <p id="end-name-p2" style="color:var(--p2-color); font-weight:bold; font-size: 1.2rem;">P2</p>                    <p id="end-score-p2" style="font-size:2.5rem; font-family:'Fredoka'; margin:0;">0</p>                </div>            </div>                        <button class="btn-start" onclick="game.start()">MAIN LAGI</button>        </div>
+        <!-- Main HUD -->        <header id="game-hud" class="invisible">            <div id="p1-panel" class="player-panel p1">                <div class="player-name" id="hud-name-p1">Player 1</div>                <div class="timer-wrapper">                    <div class="global-timer" id="timer-p1">03:00</div>                    <div class="turn-countdown" id="turn-countdown-p1">45s</div>                    <div class="turn-timer-bar p2-only"><div id="turn-bar-p1" class="turn-progress"></div></div>                </div>                <div class="score-display">Skor: <span id="score-p1">30</span></div>            </div>
+            <div class="p2-only" style="text-align: center; opacity: 0.8; width: 100px;">                <div style="font-family:'Fredoka'; font-size: 1.5rem; font-weight:bold; color: #fff;">VS</div>            </div>
+            <div id="p2-panel" class="player-panel p2 p2-only">                <div class="player-name" id="hud-name-p2">Player 2</div>                <div class="timer-wrapper">                    <div class="global-timer" id="timer-p2">03:00</div>                    <div class="turn-countdown" id="turn-countdown-p2">45s</div>                    <div class="turn-timer-bar"><div id="turn-bar-p2" class="turn-progress"></div></div>                </div>                <div class="score-display">Skor: <span id="score-p2">30</span></div>            </div>        </header>
+        <div id="level-info" class="invisible">1. QUICK START</div>
+        <section id="arena"></section>
+    </div>
+
+    <script>
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+
+            if (type === 'correct') {
+                // SINTETIS HAPPY JINGLE + APPLAUSE (Tepuk Tangan Buatan)
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, i) => {
+                    const osc = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + (i * 0.08));
+                    g.gain.setValueAtTime(0, now + (i * 0.08));
+                    g.gain.linearRampToValueAtTime(0.2, now + (i * 0.08) + 0.02);
+                    g.gain.exponentialRampToValueAtTime(0.01, now + (i * 0.08) + 0.3);
+                    osc.connect(g); g.connect(audioCtx.destination);
+                    osc.start(now + (i * 0.08)); osc.stop(now + (i * 0.08) + 0.3);
+                });
+                for (let i = 0; i < 15; i++) {
+                    const t = now + (i * 0.04);
+                    const bufferSize = audioCtx.sampleRate * 0.05;
+                    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                    const output = buffer.getChannelData(0);
+                    for (let j = 0; j < bufferSize; j++) output[j] = Math.random() * 2 - 1;
+                    const noise = audioCtx.createBufferSource();
+                    noise.buffer = buffer;
+                    const filter = audioCtx.createBiquadFilter();
+                    filter.type = 'highpass';
+                    filter.frequency.value = 1200 + (Math.random() * 1000);
+                    const g = audioCtx.createGain();
+                    g.gain.setValueAtTime(0.15, t);
+                    g.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
+                    noise.connect(filter); filter.connect(g); g.connect(audioCtx.destination);
+                    noise.start(t); noise.stop(t + 0.05);
+                }
+            } else if (type === 'zero') {
+                // SFX SEDIH
+                const osc = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.6);
+                g.gain.setValueAtTime(0.2, now);
+                g.gain.linearRampToValueAtTime(0, now + 0.6);
+                osc.connect(g); g.connect(audioCtx.destination);
+                osc.start(now); osc.stop(now + 0.6);
+            } else if (type === 'wrong') {
+                // SFX NANGIS
+                const osc = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(400, now);
+                for(let i=0; i<10; i++) {
+                    osc.frequency.linearRampToValueAtTime(400 + (i%2?50:-50), now + (i*0.08));
+                }
+                g.gain.setValueAtTime(0.15, now);
+                g.gain.linearRampToValueAtTime(0, now + 0.8);
+                osc.connect(g); g.connect(audioCtx.destination);
+                osc.start(now); osc.stop(now + 0.8);
+            } else if (type === 'switch') {
+                const osc = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                osc.frequency.setValueAtTime(300, now); g.gain.setValueAtTime(0.1, now);
+                osc.connect(g); g.connect(audioCtx.destination);
+                osc.start(now); osc.stop(now + 0.1);
+            }
+        }
+
+        const qBank = {
+            1: { name: "1. QUICK START", pos: [{l:"x+5=12",v:7},{l:"x-8=1",v:9},{l:"x+3=10",v:7},{l:"x-7=2",v:9},{l:"x+4=6",v:2},{l:"x-2=8",v:10},{l:"x+9=15",v:6},{l:"x-1=4",v:5},{l:"x+6=11",v:5}], neg: [{l:"x+10=2",v:-8},{l:"x+7=-1",v:-8},{l:"x-4=-12",v:-8},{l:"x+15=6",v:-9},{l:"x+8=-2",v:-10},{l:"x-3=-7",v:-4},{l:"x+12=3",v:-9},{l:"x+5=-4",v:-9},{l:"x-6=-15",v:-9}], zero: [{l:"x+9=9",v:0},{l:"x-25=-25",v:0}] },
+            2: { name: "2. SCALE UP", pos: [{l:"3x=15",v:5},{l:"5x=40",v:8},{l:"-2x=-14",v:7},{l:"4x=36",v:9},{l:"-x=-9",v:9},{l:"7x=21",v:3},{l:"2x=18",v:9},{l:"-5x=-25",v:5},{l:"6x=24",v:4}], neg: [{l:"4x=-16",v:-4},{l:"-3x=15",v:-5},{l:"2x=-20",v:-10},{l:"8x=-24",v:-3},{l:"-5x=45",v:-9},{l:"6x=-12",v:-2},{l:"-9x=18",v:-2},{l:"7x=-49",v:-7},{l:"-2x=16",v:-8}], zero: [{l:"12x=0",v:0},{l:"-7x=0",v:0}] },
+            3: { name: "3. DOUBLE STRIKE", pos: [{l:"2x+4=14",v:5},{l:"3x-5=10",v:5},{l:"5x+2=37",v:7},{l:"4x-8=12",v:5},{l:"-2x+20=4",v:8},{l:"6x+1=25",v:4},{l:"7x-3=46",v:7},{l:"-3x+15=3",v:4},{l:"8x+4=28",v:3}], neg: [{l:"2x+10=2",v:-4},{l:"3x+15=0",v:-5},{l:"5x+20=-10",v:-6},{l:"4x+30=6",v:-6},{l:"-2x-5=7",v:-6},{l:"6x+40=-20",v:-10},{l:"7x+50=1",v:-7},{l:"-3x-10=11",v:-7},{l:"4x+12=-16",v:-7}], zero: [{l:"4x+7=7",v:0},{l:"2x-9=-9",v:0}] },
+            4: { name: "4. THE UNFOLD", pos: [{l:"2(x+3)=14",v:4},{l:"3(x-1)=12",v:5},{l:"5(x+2)=50",v:8},{l:"4(x-5)=20",v:10},{l:"-2(x-10)=4",v:8},{l:"6(x+1)=42",v:6},{l:"2(2x+1)=18",v:4},{l:"3(x+4)=30",v:6},{l:"5(x-2)=15",v:5}], neg: [{l:"2(x+8)=6",v:-5},{l:"3(x+10)=15",v:-5},{l:"4(x+5)=-12",v:-8},{l:"-2(x+3)=10",v:-8},{l:"5(x+7)=5",v:-6},{l:"6(x+4)=-18",v:-7},{l:"3(x+9)=3",v:-8},{l:"-4(x+1)=20",v:-6},{l:"2(x+6)=-4",v:-8}], zero: [{l:"5(x-4)=-20",v:0},{l:"8(x+12)=96",v:0}] },
+            5: { name: "5. MIRROR MATCH", pos: [{l:"5x+2=3x+12",v:5},{l:"7x-4=2x+21",v:5},{l:"10x+5=5x+30",v:5},{l:"4x-1=x+20",v:7},{l:"8x+3=4x+35",v:8},{l:"6x-10=2x+14",v:6},{l:"9x+2=3x+32",v:5},{l:"2x+15=-x+24",v:3},{l:"11x-5=6x+40",v:9}], neg: [{l:"3x+10=5x+18",v:-4},{l:"4x+20=7x+35",v:-5},{l:"2x-5=6x+15",v:-5},{l:"8x+12=10x+24",v:-6},{l:"x+5=4x+20",v:-5},{l:"5x-2=9x+18",v:-5},{l:"2x+4=5x+19",v:-5},{l:"6x+30=2x+10",v:-5},{l:"7x+8=9x+22",v:-7}], zero: [{l:"4x+5=2x+5",v:0},{l:"7x-3=3x-3",v:0}] },
+            6: { name: "6. SIMPLE SPLIT", pos: [{l:"\\frac{x}{2}=5",v:10},{l:"\\frac{x+4}{3}=4",v:8},{l:"\\frac{2x-2}{4}=2",v:5},{l:"\\frac{3x+1}{2}=8",v:5},{l:"\\frac{x}{5}+2=4",v:10},{l:"\\frac{4x}{3}=8",v:6},{l:"\\frac{x-1}{2}=4",v:9},{l:"\\frac{2x+10}{5}=4",v:5},{l:"\\frac{x+5}{5}=3",v:10}], neg: [{l:"\\frac{x}{3}=-2",v:-6},{l:"\\frac{x+10}{2}=1",v:-8},{l:"\\frac{2x+4}{3}=-4",v:-8},{l:"\\frac{x-5}{5}=-3",v:-10},{l:"\\frac{3x+15}{2}=0",v:-5},{l:"\\frac{x}{4}+5=3",v:-8},{l:"\\frac{5x}{2}=-10",v:-4},{l:"\\frac{x+8}{4}=1",v:-4},{l:"\\frac{x-2}{2}=-6",v:-10}], zero: [{l:"\\frac{x}{7}=0",v:0},{l:"\\frac{3x-6}{2}=-3",v:0}] },
+            7: { name: "7. FRACTURED MAZE", pos: [{l:"\\frac{2x-1}{3}+\\frac{x+1}{4}=\\frac{x+3}{2}",v:7},{l:"\\frac{3x}{2}-\\frac{x-2}{3}=\\frac{x+14}{3}",v:4},{l:"\\frac{x+1}{2}+\\frac{x+2}{3}=\\frac{x+8}{2}",v:8},{l:"\\frac{x-1}{4}-\\frac{x-4}{2}=\\frac{x}{8}",v:4},{l:"\\frac{2x+1}{3}+\\frac{x}{4}=2",v:2},{l:"\\frac{3x-2}{5}-\\frac{x+1}{2}=-\\frac{1}{2}",v:3},{l:"\\frac{x}{2}+\\frac{x}{3}+\\frac{x}{6}=5",v:5},{l:"\\frac{x-2}{2}-\\frac{x-4}{4}=1",v:4},{l:"\\frac{4x-1}{3}-\\frac{x+1}{2}=\\frac{x+2}{6}",v:1}], neg: [{l:"\\frac{x+1}{2}+\\frac{x+3}{4}=-1",v:-3},{l:"\\frac{2x+5}{3}-\\frac{x-1}{2}=2",v:-1},{l:"\\frac{3x-1}{4}+\\frac{x}{2}=-4",v:-3},{l:"\\frac{x+4}{5}-\\frac{x+1}{2}=1",v:-7},{l:"\\frac{x}{2}+\\frac{x}{4}=-6",v:-8},{l:"\\frac{2x+10}{3}-x=5",v:-5},{l:"\\frac{x-1}{4}-\\frac{x+1}{3}=-\\frac{1}{2}",v:-1},{l:"\\frac{3x+2}{2}-\\frac{x-1}{4}=-5",v:-4},{l:"\\frac{x+1}{2}+\\frac{x+2}{3}=-2",v:-4}], zero: [{l:"\\frac{2x-1}{3}+\\frac{x+1}{4}=\\frac{1}{12}",v:0},{l:"\\frac{3x+4}{2}-\\frac{x-2}{5}=2.4",v:0}] },
+            8: { name: "8. MASTER LOGIC", pos: [{l:"2(x-3)-\\frac{x+1}{2}=\\frac{x-3}{2}",v:5},{l:"\\frac{3}{4}(x+2)-\\frac{1}{2}(x-4)=5",v:6},{l:"3[2x-(x+1)]=2x+1",v:4},{l:"\\frac{2(x-4)}{3}+\\frac{x}{2}=\\frac{3x-4}{6}",v:3},{l:"4(x-2)-3(x-5)=12",v:5},{l:"\\frac{1}{2}[4x-(x-2)]=13",v:8},{l:"2x-[3x-(4x-5)]=7",v:4},{l:"\\frac{3x+1}{2}-2(x-3)=5",v:3},{l:"5(x+2)-3(x+1)=x+12",v:5}], neg: [{l:"3(x+5)-2(x+8)=-5",v:-4},{l:"\\frac{x+2}{3}-\\frac{2x+4}{2}=1",v:-3},{l:"2[x-3(x+1)]=2",v:-2},{l:"\\frac{3x-1}{2}+\\frac{x+4}{3}=-2",v:-2},{l:"4(x+2)=6(x+3)",v:-5},{l:"\\frac{x}{2}-\\frac{x-1}{3}=0",v:-2},{l:"5-(x+3)=2x+11",v:-3},{l:"\\frac{2x}{3}+5=\\frac{x}{2}+4",v:-6},{l:"2(x+4)-3(x+2)=5",v:-3}], zero: [{l:"3(x+2)-2(x+3)=0",v:0},{l:"\\frac{4x+6}{2}-3=0",v:0}] }
+        };
+
+        class Game {
+            constructor() {
+                this.timerInterval = null; 
+                this.turnDuration = 45; 
+                this.startLevel = 1; this.gameMode = 'multi';
+                this.state = { level: 1, turn: 'p1', turnTimer: 45, p1: { name: 'P1', score: 30, time: 180 }, p2: { name: 'P2', score: 30, time: 180 } };
+                this.els = {
+                    startScreen: document.getElementById('start-screen'), gameOverScreen: document.getElementById('game-over-screen'),
+                    arena: document.getElementById('arena'), levelInfo: document.getElementById('level-info'), gameHud: document.getElementById('game-hud'),
+                    p1Panel: document.getElementById('p1-panel'), p2Panel: document.getElementById('p2-panel'),
+                    scoreP1: document.getElementById('score-p1'), scoreP2: document.getElementById('score-p2'),
+                    timerP1: document.getElementById('timer-p1'), timerP2: document.getElementById('timer-p2'),
+                    turnCountdownP1: document.getElementById('turn-countdown-p1'),
+                    turnCountdownP2: document.getElementById('turn-countdown-p2'),
+                    turnBarP1: document.getElementById('turn-bar-p1'), turnBarP2: document.getElementById('turn-bar-p2'),
+                    ruleTarget: document.getElementById('rule-target')
+                };
+            }
+            selectLevel(lvl) {
+                this.startLevel = lvl;
+                for(let i=1; i<=8; i++) {
+                    const btn = document.getElementById(`btn-lvl-${i}`);
+                    if(btn) btn.classList.toggle('active', i === lvl);
+                }
+            }
+            selectMode(mode) {
+                this.gameMode = mode;
+                document.getElementById('btn-mode-1p').classList.toggle('active', mode === 'single');
+                document.getElementById('btn-mode-2p').classList.toggle('active', mode === 'multi');
+                document.querySelectorAll('.p2-only').forEach(el => el.style.display = mode === 'single' ? 'none' : '');
+                this.els.ruleTarget.textContent = mode === 'single' ? "🚀 TARGET: Skor 80 Menang!" : "🚀 RACE TO 60: Siapa cepat dapat Skor 60 Menang!";
+            }
+            start() {
+                const n1 = document.getElementById('input-p1').value || "P1"; const n2 = document.getElementById('input-p2').value || "P2";
+                this.state = { level: this.startLevel, turn: 'p1', turnTimer: this.turnDuration, p1: { name: n1, score: 30, time: 180 }, p2: { name: n2, score: 30, time: 180 } };
+                document.body.classList.toggle('single-mode', this.gameMode === 'single');
+                document.getElementById('hud-name-p1').textContent = n1; document.getElementById('hud-name-p2').textContent = n2;
+                this.els.startScreen.classList.add('hidden'); this.els.gameOverScreen.classList.add('hidden');
+                this.els.gameHud.classList.remove('invisible'); this.els.levelInfo.classList.remove('invisible');
+                this.updateUI(); this.generateLevel();
+                if (this.timerInterval) clearInterval(this.timerInterval);
+                this.timerInterval = setInterval(() => this.tick(), 1000);
+            }
+            generateLevel() {
+                this.els.arena.innerHTML = ''; const data = qBank[this.state.level]; this.els.levelInfo.textContent = data.name;
+                const pick = (arr, n) => [...arr].sort(() => 0.5 - Math.random()).slice(0, n);
+                const cards = [...pick(data.pos, 4), ...pick(data.neg, 4), ...pick(data.zero, 2)].sort(() => 0.5 - Math.random());
+                cards.forEach(q => {
+                    const card = document.createElement('div'); card.className = 'card'; card.innerHTML = `\\( ${q.l} \\)`;
+                    card.onclick = (e) => this.handleCardClick(card, q.v, e);
+                    this.els.arena.appendChild(card);
+                });
+                if (window.MathJax) MathJax.typesetPromise([this.els.arena]);
+            }
+            handleCardClick(card, value, event) {
+                if (card.classList.contains('popped')) return;
+                const p = this.state.turn; this.state[p].score += value; this.updateUI();
+                if (this.gameMode === 'single' && this.state.p1.score >= 80) return this.endGame(this.state.p1.name, "TARGET 80 TERCAPAI!");
+                if (this.gameMode === 'multi' && this.state[p].score >= 60) return this.endGame(this.state[p].name, "Mencapai Skor 60!");
+                if (this.state[p].score < 0) return this.endGame(this.gameMode === 'single' ? "GAME OVER" : (p === 'p1' ? this.state.p2.name : this.state.p1.name), "Bangkrut (Skor Negatif)!");
+                card.classList.add('popped'); 
+                if (value > 0) playSound('correct'); else if (value === 0) playSound('zero'); else playSound('wrong');
+                this.spawnFloat(event.clientX, event.clientY, value >= 0 ? `+${value}` : value, value > 0 ? '#00d2ff' : (value === 0 ? '#ffd700' : '#ff47bc'));
+                if (Array.from(this.els.arena.children).every(c => c.classList.contains('popped'))) {
+                    this.state.level = Math.min(this.state.level + 1, 8); setTimeout(() => this.generateLevel(), 500);
+                }
+                if (this.gameMode === 'multi') this.switchTurn();
+            }
+            switchTurn() { this.state.turn = this.state.turn === 'p1' ? 'p2' : 'p1'; this.state.turnTimer = this.turnDuration; this.updateUI(); playSound('switch'); }
+            tick() {
+                const p = this.state.turn;
+                if (this.gameMode === 'single') this.state.p1.time--; else { this.state[p].time--; this.state.turnTimer--; if (this.state.turnTimer <= 0) this.switchTurn(); }
+                if (this.state[p].time <= 0) this.endGame(this.gameMode === 'single' ? "GAME OVER" : (p === 'p1' ? this.state.p2.name : this.state.p1.name), "Waktu Habis!");
+                this.updateUI();
+            }
+            updateUI() {
+                const fmt = (s) => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+                this.els.scoreP1.textContent = this.state.p1.score; this.els.scoreP2.textContent = this.state.p2.score;
+                this.els.timerP1.textContent = fmt(this.state.p1.time); this.els.timerP2.textContent = fmt(this.state.p2.time);
+                this.els.p1Panel.classList.toggle('active-turn', this.state.turn === 'p1'); this.els.p2Panel.classList.toggle('active-turn', this.state.turn === 'p2');
+                const pct = (this.state.turnTimer / this.turnDuration) * 100;
+                const bar = this.state.turn === 'p1' ? this.els.turnBarP1 : this.els.turnBarP2; if(bar) bar.style.width = `${pct}%`;
+                this.els.turnCountdownP1.textContent = `${this.state.turnTimer}s`;
+                this.els.turnCountdownP2.textContent = `${this.state.turnTimer}s`;
+            }
+            spawnFloat(x, y, text, color) {
+                const el = document.createElement('div'); el.className = 'floating-points'; el.textContent = text;
+                el.style.left = `${x}px`; el.style.top = `${y}px`; el.style.color = color;
+                document.body.appendChild(el); setTimeout(() => el.remove(), 800);
+            }
+            endGame(winner, reason) {
+                clearInterval(this.timerInterval);
+                document.getElementById('winner-text').textContent = winner === "GAME OVER" ? winner : `${winner} MENANG!`;
+                document.getElementById('win-reason').textContent = reason;
+                document.getElementById('end-name-p1').textContent = this.state.p1.name; document.getElementById('end-score-p1').textContent = this.state.p1.score;
+                if(this.gameMode === 'multi') {
+                    document.getElementById('end-name-p2').textContent = this.state.p2.name; document.getElementById('end-score-p2').textContent = this.state.p2.score;
+                    document.getElementById('end-p2-container').style.display = 'block';
+                } else document.getElementById('end-p2-container').style.display = 'none';
+                this.els.gameOverScreen.classList.remove('hidden'); this.els.gameHud.classList.add('invisible'); this.els.levelInfo.classList.add('invisible');
+            }
+        }
+        const game = new Game();
+        function resize() {
+            const container = document.getElementById('game-container');
+            const scale = Math.min(window.innerWidth / 960, window.innerHeight / 540);
+            container.style.transform = `scale(${scale})`;
+        }
+        window.onresize = resize;
+        window.onload = () => { resize(); game.selectMode('multi'); };
+    </script></body></html>
