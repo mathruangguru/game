@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Memori & Logika Angka</title>
+    <style>
+        /* Desain Ramah Anak & Vanilla CSS */
+        :root {
+            --primary: #4CAF50;
+            --primary-hover: #45a049;
+            --secondary: #FF9800;
+            --secondary-hover: #e68a00;
+            --background: #E0F7FA;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --accent: #FF4081;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 700px;
+            padding: 30px;
+            box-sizing: border-box;
+            text-align: center;
+            border: 4px solid #B2EBF2;
+        }
+
+        h1 {
+            color: var(--secondary);
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 0px #ffe0b2;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Info Box Pedagogis */
+        .info-box {
+            background-color: #FFF3E0;
+            border-left: 5px solid var(--secondary);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: left;
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .info-box h3 {
+            margin-top: 0;
+            color: var(--secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Form Pengaturan */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-group label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+            font-size: 0.85rem;
+        }
+
+        .input-group input, .input-group select {
+            padding: 10px;
+            font-size: 1.1rem;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            border-color: var(--primary);
+        }
+
+        /* Tombol */
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.3s;
+            box-shadow: 0 4px 0 #388E3C;
+            margin-top: 10px;
+        }
+
+        button:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary);
+            box-shadow: 0 4px 0 #F57C00;
+        }
+        
+        .btn-secondary:hover {
+            background-color: var(--secondary-hover);
+        }
+
+        /* Tampilan Menghafal */
+        #timer-display {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--accent);
+            margin: 10px 0;
+        }
+
+        .number-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            80% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .number-card {
+            background-color: #29B6F6;
+            color: white;
+            font-size: 2.5rem;
+            font-weight: bold;
+            padding: 20px;
+            border-radius: 15px;
+            min-width: 80px;
+            box-shadow: 0 5px 0 #0288D1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: popIn 0.4s ease-out forwards;
+        }
+
+        /* Tampilan Recall */
+        .recall-instruction {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            background: #E8F5E9;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        
+        #recall-timer-display {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #D32F2F;
+            margin-bottom: 15px;
+            background-color: #FFEBEE;
+            display: inline-block;
+            padding: 5px 20px;
+            border-radius: 20px;
+            border: 2px solid #EF9A9A;
+        }
+
+        .recall-inputs {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .recall-input {
+            width: 80px;
+            height: 60px;
+            font-size: 1.5rem;
+            text-align: center;
+            font-weight: bold;
+            border: 3px solid #29B6F6;
+            border-radius: 10px;
+            color: #333;
+        }
+
+        .recall-input:focus {
+            outline: none;
+            border-color: var(--secondary);
+            background-color: #FFFDE7;
+        }
+
+        .sum-container {
+            background-color: #FCE4EC;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 2px dashed #F06292;
+        }
+
+        .sum-container label {
+            display: block;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #C2185B;
+        }
+
+        .sum-input {
+            width: 150px;
+            font-size: 1.8rem;
+            text-align: center;
+            padding: 10px;
+            border-radius: 10px;
+            border: 3px solid #F06292;
+            font-weight: bold;
+        }
+
+        /* Tampilan Hasil */
+        .result-box {
+            text-align: left;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 10px;
+            background: #f5f5f5;
+            font-size: 1.1rem;
+        }
+        .correct-text { color: #2E7D32; font-weight: bold; }
+        .wrong-text { color: #C62828; font-weight: bold; }
+        .score-title { font-size: 2rem; margin-bottom: 10px; }
+
+        @media (max-width: 500px) {
+            .number-card { font-size: 1.8rem; padding: 15px; min-width: 60px; }
+            .recall-input { width: 60px; height: 50px; font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <!-- LAYAR PENGATURAN (SETUP) -->
+    <div id="screen-setup">
+        <h1>🧠 Game Memori & Logika</h1>
+        
+        <div class="info-box">
+            <h3>Informasi Pembelajaran</h3>
+            <p><strong>1. Tujuan:</strong> Melatih <em>working memory</em>, pemahaman nilai tempat (pengurutan), dan strategi berhitung mental.</p>
+            <p><strong>2. Konsep:</strong> <em>Number Sense</em>, Ascending Order, dan Penjumlahan.</p>
+            <p><strong>3. Jenjang:</strong> SD Kelas 3 - 6.</p>
+            <p><strong>4. Cara Bermain:</strong> 3 angka awal akan muncul, lalu bertambah satu per satu tiap 3 detik. Waktu menghafal akan terus berjalan! Setelah semuanya hilang, masukkan angka <strong>dari yang terkecil ke terbesar</strong> dan hitung <strong>jumlah totalnya</strong>.</p>
+        </div>
+
+        <div class="settings-grid">
+            <div class="input-group" style="grid-column: 1 / -1;">
+                <label for="set-mode">Mode Permainan:</label>
+                <select id="set-mode">
+                    <option value="normal">Acak (Normal)</option>
+                    <option value="easy">Mudah Dihafal (Berpola: Palindrom, Loncatan, Berurutan)</option>
+                    <option value="sum100">Jumlah Kelipatan 100 (atau 10)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="set-count">Banyak Angka:</label>
+                <input type="number" id="set-count" min="3" max="12" value="8">
+            </div>
+            <div class="input-group">
+                <label for="set-digits">Digit per Angka:</label>
+                <input type="number" id="set-digits" min="1" max="5" value="3">
+            </div>
+            <div class="input-group">
+                <label for="set-time">Total Waktu Menghafal (Dtk):</label>
+                <input type="number" id="set-time" min="5" max="60" value="20">
+            </div>
+            <div class="input-group">
+                <label for="set-recall-time">Waktu Menjawab (Dtk):</label>
+                <input type="number" id="set-recall-time" min="10" max="300" value="45">
+            </div>
+        </div>
+
+        <button onclick="startGame()">▶ Mulai Bermain</button>
+    </div>
+
+    <!-- LAYAR MENGHAFAL -->
+    <div id="screen-memorize" class="hidden">
+        <h2>Hafalkan Angka Berikut!</h2>
+        <div id="timer-display">15</div>
+        <div class="number-grid" id="memory-grid">
+            <!-- Angka akan di-generate di sini oleh JS -->
+        </div>
+    </div>
+
+    <!-- LAYAR RECALL (JAWAB) -->
+    <div id="screen-recall" class="hidden">
+        <div id="recall-timer-display">Waktu: 45s</div>
+        <div class="recall-instruction">
+            1. Urutkan angka yang kamu ingat dari yang <strong>Terkecil</strong> ke <strong>Terbesar</strong>!<br>
+            2. Berapa hasil <strong>Penjumlahan</strong> dari semua angka tersebut?
+        </div>
+        
+        <div class="recall-inputs" id="recall-inputs-container">
+            <!-- Input urutan akan di-generate di sini -->
+        </div>
+
+        <div class="sum-container">
+            <label for="answer-sum">Hasil Penjumlahan Semua Angka:</label>
+            <input type="number" id="answer-sum" class="sum-input" placeholder="Total...">
+        </div>
+
+        <button onclick="checkAnswers()" class="btn-secondary">✔ Kirim Jawaban</button>
+    </div>
+
+    <!-- LAYAR HASIL -->
+    <div id="screen-result" class="hidden">
+        <h1 id="result-title" class="score-title">Hasil Kamu</h1>
+        <div class="result-box" id="result-details">
+            <!-- Detail hasil akan di-generate di sini -->
+        </div>
+        <button onclick="resetGame()">🔄 Main Lagi</button>
+    </div>
+
+</div>
+
+<script>
+    // State Permainan
+    let currentNumbers = [];
+    let timerInterval;
+    let recallTimerInterval;
+    let revealInterval;
+    let timeLeft = 0;
+    let recallTimeLeft = 0;
+
+    // Elemen DOM
+    const screenSetup = document.getElementById('screen-setup');
+    const screenMemorize = document.getElementById('screen-memorize');
+    const screenRecall = document.getElementById('screen-recall');
+    const screenResult = document.getElementById('screen-result');
+
+    // Fungsi utilitas untuk angka acak berdasarkan jumlah digit
+    function getRandomNumber(digits) {
+        const min = Math.pow(10, digits - 1);
+        const max = Math.pow(10, digits) - 1;
+        // Jika 1 digit, min 1, max 9. (Agar tidak ada angka 0 di depan)
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    // Fungsi mendapatkan kumpulan angka yang mudah dihafal
+    function getAvailableEasyNumbers(digits) {
+        let easy = [];
+        const min = Math.pow(10, digits - 1);
+        const max = Math.pow(10, digits) - 1;
+        
+        if (digits === 1) {
+            for (let i = 1; i <= 9; i++) easy.push(i);
+            return easy;
+        }
+
+        for (let i = min; i <= max; i++) {
+            let str = i.toString();
+            let isPattern = false;
+
+            // 1. Angka Kembar (contoh: 111, 2222)
+            if (str.split('').every(char => char === str[0])) {
+                isPattern = true;
+            }
+            // 2. Berurutan Naik atau Turun (contoh: 123, 321)
+            else {
+                let isAsc = true;
+                let isDesc = true;
+                for(let j = 1; j < str.length; j++){
+                    if(parseInt(str[j]) !== parseInt(str[j-1]) + 1) isAsc = false;
+                    if(parseInt(str[j]) !== parseInt(str[j-1]) - 1) isDesc = false;
+                }
+                if (isAsc || isDesc) isPattern = true;
+            }
+
+            // 3. Palindrom / Maju Mundur Sama (contoh: 121, 454)
+            if (!isPattern && digits >= 3) {
+                let reversed = str.split('').reverse().join('');
+                if (str === reversed) isPattern = true;
+            }
+
+            // 4. Loncatan Angka Tetap / Aritmetika (contoh: 135, 246, 975)
+            if (!isPattern && digits >= 3) {
+                let diff = parseInt(str[1]) - parseInt(str[0]);
+                let isProgression = true;
+                for(let j = 2; j < str.length; j++){
+                    if (parseInt(str[j]) - parseInt(str[j-1]) !== diff) {
+                        isProgression = false;
+                        break;
+                    }
+                }
+                // Pastikan selisihnya minimal 2 (kalau 1 sudah masuk kategori Berurutan)
+                if (isProgression && Math.abs(diff) >= 2) isPattern = true;
+            }
+
+            // 5. Pola Chunking / Pengulangan Kelompok untuk >= 4 digit (contoh: 1212, 1122)
+            if (!isPattern && digits >= 4) {
+                let half1 = str.substring(0, Math.floor(digits/2));
+                let half2 = str.substring(Math.ceil(digits/2));
+                // Pola ABAB (misal 1212)
+                if (digits % 2 === 0 && half1 === half2) isPattern = true;
+                
+                // Pola AABB (khusus 4 digit, misal 1122, 3344)
+                if (digits === 4 && str[0] === str[1] && str[2] === str[3]) isPattern = true;
+            }
+
+            if (isPattern) {
+                easy.push(i);
+            }
+        }
+        return easy;
+    }
+
+    // Memulai Permainan
+    function startGame() {
+        // Ambil nilai dari pengaturan
+        const mode = document.getElementById('set-mode').value;
+        const count = parseInt(document.getElementById('set-count').value);
+        const digits = parseInt(document.getElementById('set-digits').value);
+        timeLeft = parseInt(document.getElementById('set-time').value);
+        recallTimeLeft = parseInt(document.getElementById('set-recall-time').value);
+
+        // Validasi input
+        if (count < 1 || digits < 1 || timeLeft < 1 || recallTimeLeft < 1) {
+            alert("Pengaturan tidak valid! Pastikan semua nilai lebih dari 0.");
+            return;
+        }
+
+        // Validasi Waktu vs Jumlah Angka (Memastikan waktu cukup untuk memunculkan semua angka)
+        const minTimeNeeded = count > 3 ? (count - 3) * 3 + 2 : 3;
+        if (timeLeft < minTimeNeeded) {
+            alert(`Peringatan: Untuk memunculkan ${count} angka secara bertahap (tiap 3 detik), butuh minimal ${minTimeNeeded} detik. Waktu otomatis disesuaikan agar tidak terpotong.`);
+            timeLeft = minTimeNeeded;
+            document.getElementById('set-time').value = timeLeft;
+        }
+
+        // Validasi agar jumlah angka tidak melebihi kemungkinan angka unik
+        const maxUniqueNumbers = Math.pow(10, digits) - Math.pow(10, digits - 1);
+        if (count > maxUniqueNumbers) {
+            alert(`Peringatan: Tidak bisa membuat ${count} angka unik dengan ${digits} digit. Maksimal hanya ada ${maxUniqueNumbers} angka unik. Silakan kurangi banyak angka atau tambah digitnya.`);
+            return;
+        }
+
+        // Generate Angka Berdasarkan Mode
+        currentNumbers = [];
+        let validSetFound = false;
+        let attempts = 0;
+
+        while (!validSetFound && attempts < 1000) {
+            attempts++;
+            let numberSet = new Set();
+            
+            if (mode === 'easy') {
+                const easyPool = getAvailableEasyNumbers(digits);
+                if (easyPool.length < count) {
+                    alert(`Mode Mudah: Tidak cukup angka mudah unik untuk ${digits} digit. Dialihkan ke mode Normal.`);
+                    document.getElementById('set-mode').value = 'normal';
+                    return startGame(); // Rekursi dengan mode normal
+                }
+                // Ambil angka mudah secara acak
+                let shuffled = easyPool.sort(() => 0.5 - Math.random());
+                currentNumbers = shuffled.slice(0, count);
+                validSetFound = true;
+            } 
+            else if (mode === 'sum100') {
+                // Generate (count - 1) angka acak
+                while (numberSet.size < count - 1) {
+                    numberSet.add(getRandomNumber(digits));
+                }
+                
+                let arr = Array.from(numberSet);
+                let sum = arr.reduce((a, b) => a + b, 0);
+                
+                // Target kelipatan 10 jika 1 digit, kelipatan 100 jika >= 2 digit
+                let multipleTarget = digits === 1 ? 10 : 100;
+                let neededRemainder = (multipleTarget - (sum % multipleTarget)) % multipleTarget;
+                
+                // Cari angka terakhir yang melengkapi kelipatan tersebut
+                let validLastNumbers = [];
+                const min = Math.pow(10, digits - 1);
+                const max = Math.pow(10, digits) - 1;
+                
+                for (let i = min; i <= max; i++) {
+                    if (i % multipleTarget === neededRemainder && !numberSet.has(i)) {
+                        validLastNumbers.push(i);
+                    }
+                }
+                
+                if (validLastNumbers.length > 0) {
+                    let lastNum = validLastNumbers[Math.floor(Math.random() * validLastNumbers.length)];
+                    arr.push(lastNum);
+                    
+                    // Acak kembali urutannya agar angka "penggenap" tidak ketahuan selalu di akhir
+                    currentNumbers = arr.sort(() => 0.5 - Math.random());
+                    validSetFound = true;
+                }
+            } 
+            else { // mode === 'normal'
+                while (numberSet.size < count) {
+                    numberSet.add(getRandomNumber(digits));
+                }
+                currentNumbers = Array.from(numberSet);
+                validSetFound = true;
+            }
+        }
+
+        if (!validSetFound) {
+            alert("Kesulitan membuat susunan angka untuk mode ini. Silakan coba kombinasi digit dan jumlah angka yang lain.");
+            return;
+        }
+
+        // Pindah layar terlebih dahulu
+        screenSetup.classList.add('hidden');
+        screenMemorize.classList.remove('hidden');
+
+        // Render Angka ke layar secara bertahap
+        const memoryGrid = document.getElementById('memory-grid');
+        memoryGrid.innerHTML = '';
+        
+        const timerDisplay = document.getElementById('timer-display');
+        let revealIndex = 0;
+
+        // Fungsi untuk menambah kartu angka dengan animasi
+        function appendNumberCard(num) {
+            const card = document.createElement('div');
+            card.className = 'number-card';
+            card.textContent = num;
+            memoryGrid.appendChild(card);
+        }
+
+        // Mulai Timer Menghafal langsung dari awal
+        timerDisplay.style.fontSize = "3rem";
+        timerDisplay.textContent = timeLeft;
+
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            timerDisplay.textContent = timeLeft;
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                clearInterval(revealInterval); // Pastikan interval kemunculan angka berhenti
+                startRecallScreen(count);
+            }
+        }, 1000);
+
+        // Munculkan 3 bilangan awal (atau kurang jika total angka < 3)
+        const initialCount = Math.min(3, count);
+        for (let i = 0; i < initialCount; i++) {
+            appendNumberCard(currentNumbers[revealIndex]);
+            revealIndex++;
+        }
+
+        if (revealIndex < count) {
+            // Interval kemunculan angka selanjutnya (tiap 3 detik)
+            revealInterval = setInterval(() => {
+                appendNumberCard(currentNumbers[revealIndex]);
+                revealIndex++;
+
+                if (revealIndex >= count) {
+                    clearInterval(revealInterval);
+                }
+            }, 3000);
+        }
+    }
+
+    // Memulai fase pengingatan ulang (Recall)
+    function startRecallScreen(count) {
+        screenMemorize.classList.add('hidden');
+        screenRecall.classList.remove('hidden');
+
+        // Siapkan input kotak urutan
+        const recallContainer = document.getElementById('recall-inputs-container');
+        recallContainer.innerHTML = '';
+
+        for (let i = 0; i < count; i++) {
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.className = 'recall-input';
+            input.placeholder = '?';
+            recallContainer.appendChild(input);
+        }
+
+        // Kosongkan input penjumlahan
+        document.getElementById('answer-sum').value = '';
+
+        // Mulai Timer Menjawab
+        const recallTimerDisplay = document.getElementById('recall-timer-display');
+        recallTimerDisplay.textContent = `Waktu: ${recallTimeLeft}s`;
+
+        recallTimerInterval = setInterval(() => {
+            recallTimeLeft--;
+            recallTimerDisplay.textContent = `Waktu: ${recallTimeLeft}s`;
+
+            if (recallTimeLeft <= 0) {
+                clearInterval(recallTimerInterval);
+                checkAnswers(); // Auto submit jika waktu habis
+            }
+        }, 1000);
+    }
+
+    // Mengecek Jawaban
+    function checkAnswers() {
+        // Hentikan timer menjawab jika user submit manual
+        clearInterval(recallTimerInterval);
+
+        // Ambil input urutan dari user
+        const recallInputs = document.querySelectorAll('.recall-input');
+        let userArray = [];
+        recallInputs.forEach(input => {
+            const val = parseInt(input.value);
+            userArray.push(isNaN(val) ? 0 : val); // Jika kosong, anggap 0
+        });
+
+        // Ambil input penjumlahan dari user
+        const userSumInput = parseInt(document.getElementById('answer-sum').value);
+        const userSum = isNaN(userSumInput) ? 0 : userSumInput;
+
+        // Hitung Kunci Jawaban
+        const correctSortedArray = [...currentNumbers].sort((a, b) => a - b);
+        const correctSum = currentNumbers.reduce((total, num) => total + num, 0);
+
+        // Evaluasi
+        let isArrayCorrect = true;
+        let arrayFeedbackHTML = '';
+        
+        for (let i = 0; i < correctSortedArray.length; i++) {
+            if (userArray[i] === correctSortedArray[i]) {
+                arrayFeedbackHTML += `<span class="correct-text">${userArray[i]}</span> `;
+            } else {
+                isArrayCorrect = false;
+                arrayFeedbackHTML += `<span class="wrong-text"><del>${userArray[i]}</del> (${correctSortedArray[i]})</span> `;
+            }
+        }
+
+        const isSumCorrect = (userSum === correctSum);
+
+        // Tampilkan Hasil
+        screenRecall.classList.add('hidden');
+        screenResult.classList.remove('hidden');
+
+        const resultTitle = document.getElementById('result-title');
+        if (isArrayCorrect && isSumCorrect) {
+            resultTitle.textContent = "🎉 Luar Biasa! Sempurna!";
+            resultTitle.style.color = "#4CAF50";
+        } else if (isArrayCorrect || isSumCorrect) {
+            resultTitle.textContent = "👍 Bagus! Hampir Sempurna!";
+            resultTitle.style.color = "#FF9800";
+        } else {
+            resultTitle.textContent = "💪 Terus Berlatih!";
+            resultTitle.style.color = "#FF4081";
+        }
+
+        const resultDetails = document.getElementById('result-details');
+        resultDetails.innerHTML = `
+            <p><strong>Angka Asli (Acak):</strong> <br>${currentNumbers.join(' - ')}</p>
+            <p><strong>Urutan Terkecil ke Terbesar:</strong> <br>${arrayFeedbackHTML}</p>
+            <p><strong>Penjumlahan Total:</strong> <br>
+                Jawabanmu: <span class="${isSumCorrect ? 'correct-text' : 'wrong-text'}">${userSum}</span> <br>
+                Kunci Jawaban: <span class="correct-text">${correctSum}</span>
+            </p>
+        `;
+    }
+
+    // Mengulang Permainan kembali ke Pengaturan
+    function resetGame() {
+        clearInterval(timerInterval);
+        clearInterval(recallTimerInterval);
+        clearInterval(revealInterval);
+
+        screenResult.classList.add('hidden');
+        screenSetup.classList.remove('hidden');
+    }
+</script>
+
+</body>
+</html>
