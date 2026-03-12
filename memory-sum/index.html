@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Memori Sequence & Math</title>
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #f1c40f;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light);
+            color: var(--dark);
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: var(--primary);
+            margin-top: 0;
+        }
+
+        /* Bagian Penjelasan Pedagogis */
+        .info-box {
+            background-color: #e8f4f8;
+            border-left: 5px solid var(--primary);
+            padding: 15px;
+            text-align: left;
+            margin-bottom: 25px;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+
+        .info-box h3 { margin-top: 0; color: var(--dark); }
+        .info-box ul { padding-left: 20px; margin-bottom: 0;}
+
+        /* Grid Game */
+        #grid-container {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-gap: 15px;
+            justify-content: center;
+            margin: 30px auto;
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            background-color: var(--primary);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px; /* Diperkecil sedikit agar teks notasi operasi, pangkat & akar muat */
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #2980b9;
+            transition: all 0.1s ease;
+            user-select: none;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .cell:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        .cell.active { 
+            background-color: var(--secondary); 
+            color: var(--dark);
+            box-shadow: 0 4px 0 #f39c12;
+        }
+        
+        .cell.correct { background-color: var(--success); box-shadow: 0 4px 0 #27ae60;}
+        .cell.wrong { background-color: var(--danger); box-shadow: 0 4px 0 #c0392b;}
+
+        /* Kontrol Game */
+        .btn {
+            background-color: var(--success);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            box-shadow: 0 4px 0 #27ae60;
+            transition: all 0.1s ease;
+        }
+        
+        .btn:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        .btn-warning { background-color: var(--secondary); color: var(--dark); box-shadow: 0 4px 0 #f39c12; }
+        .btn-primary { background-color: var(--primary); box-shadow: 0 4px 0 #2980b9; }
+
+        .hidden { display: none !important; }
+
+        #status-text {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            min-height: 28px;
+        }
+
+        #level-selection-area, #math-area {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 2px dashed #ccc;
+        }
+
+        select, input[type="number"] {
+            font-size: 18px;
+            padding: 10px;
+            border-radius: 6px;
+            border: 2px solid #bdc3c7;
+            margin-right: 10px;
+            width: 150px;
+        }
+        
+        #math-input {
+            width: 100px;
+            text-align: center;
+        }
+
+        /* Responsivitas untuk layar kecil */
+        @media (max-width: 400px) {
+            #grid-container {
+                grid-template-columns: repeat(3, 80px);
+                grid-gap: 10px;
+            }
+            .cell { width: 80px; height: 80px; font-size: 35px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Game Memori Sequence & Penjumlahan</h1>
+    
+    <div id="intro" class="info-box">
+        <h3>Halo Pejuang Matematika! 🧮</h3>
+        <p><strong>Tujuan:</strong> Melatih Memori Kerja (<em>Working Memory</em>) yang vital untuk menampung informasi visual sekaligus memanipulasi perhitungan bilangan secara bersamaan.</p>
+        
+        <div style="background-color: #fff; padding: 15px; border-radius: 8px; margin: 15px 0; border: 2px solid var(--secondary);">
+            <h4 style="margin-top: 0; color: var(--dark);">Pilih Mode Kesulitan:</h4>
+            <select id="game-mode" style="width: 100%; margin-bottom: 10px; font-weight: bold;">
+                <option value="1">Mode 1: Angka 1 Digit (Mudah)</option>
+                <option value="2">Mode 2: Angka 2 Digit (Sedang)</option>
+                <option value="3">Mode 3: Pangkat & Akar (Sulit)</option>
+                <option value="4">Mode 4: Operasi Hitung Beruntun (Ekstrem)</option>
+            </select>
+            <p id="mode-desc" style="font-size: 0.9em; margin: 0; color: #555;">Hanya angka 1-9. Total dijumlahkan. Cocok untuk pemanasan.</p>
+            
+            <h4 style="margin-top: 15px; color: var(--dark);">Lama Angka Muncul:</h4>
+            <select id="game-speed" style="width: 100%; margin-bottom: 5px; font-weight: bold;">
+                <option value="1000">1 Detik (Sangat Cepat)</option>
+                <option value="2000" selected>2 Detik (Normal)</option>
+                <option value="3000">3 Detik (Lambat)</option>
+                <option value="4000">4 Detik (Sangat Lambat)</option>
+                <option value="5000">5 Detik (Ekstra Waktu)</option>
+            </select>
+        </div>
+
+        <p><strong>Cara Bermain:</strong></p>
+        <ul>
+            <li>Klik <strong>Mulai</strong>. Perhatikan letak kotak yang menyala dan angka yang muncul! (Angka akan muncul terus hingga ke-30).</li>
+            <li>Kamu bisa menghitung total jumlah angkanya di dalam kepala (<em>Mental Math</em>).</li>
+            <li>Jika merasa sudah siap menjawab, klik tombol <strong>Recall</strong> kapanpun kamu mau.</li>
+            <li>Pilih <strong>Level</strong> (contoh: Level 5 berarti kamu akan menebak 5 posisi pertama dan menjumlahkan 5 angka pertama).</li>
+            <li>Klik urutan posisi kotaknya, lalu masukkan hasil penjumlahan angkanya!</li>
+        </ul>
+    </div>
+
+    <!-- Area Game -->
+    <div id="game-area">
+        <div id="status-text">Siap untuk menguji memori dan berhitung?</div>
+        
+        <div id="grid-container">
+            <!-- 9 Kotak Grid -->
+            <div class="cell" id="cell-0" onclick="onCellClick(0)"></div>
+            <div class="cell" id="cell-1" onclick="onCellClick(1)"></div>
+            <div class="cell" id="cell-2" onclick="onCellClick(2)"></div>
+            <div class="cell" id="cell-3" onclick="onCellClick(3)"></div>
+            <div class="cell" id="cell-4" onclick="onCellClick(4)"></div>
+            <div class="cell" id="cell-5" onclick="onCellClick(5)"></div>
+            <div class="cell" id="cell-6" onclick="onCellClick(6)"></div>
+            <div class="cell" id="cell-7" onclick="onCellClick(7)"></div>
+            <div class="cell" id="cell-8" onclick="onCellClick(8)"></div>
+        </div>
+
+        <!-- Tombol Kontrol Utama -->
+        <button id="btn-start" class="btn btn-primary" onclick="startGame()">▶ Mulai Bermain</button>
+        <button id="btn-recall" class="btn btn-warning hidden" onclick="triggerRecall()">🛑 Stop & Recall</button>
+        <button id="btn-restart" class="btn hidden" onclick="resetAndShowIntro()">🔄 Main Lagi</button>
+
+        <!-- Area Pemilihan Level -->
+        <div id="level-selection-area" class="hidden">
+            <p style="font-size: 18px; font-weight: bold; margin-top:0;">Hebat! Mau menantang diri di level berapa?</p>
+            <select id="level-select"></select>
+            <button class="btn btn-primary" onclick="confirmLevel()">Pilih Level</button>
+        </div>
+
+        <!-- Area Input Matematika -->
+        <div id="math-area" class="hidden">
+            <p style="font-size: 18px; font-weight: bold; margin-top:0;" id="math-question">Berapa jumlah angka dari urutan tersebut?</p>
+            <input type="number" id="math-input" placeholder="Total" onkeypress="handleEnter(event)">
+            <button class="btn btn-primary" onclick="checkMath()">Jawab!</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Variabel Status Game
+    let sequence = [];
+    let currentIndex = 0; 
+    let intervalId = null;
+    let gameState = 'idle'; 
+    let selectedLevel = 1;
+    let currentRecallStep = 0; 
+
+    // Data untuk Mode 3 & 4 (Eksponen & Akar)
+    const complexItems = [
+        { v: 4, t: "2<sup>2</sup>" }, { v: 8, t: "2<sup>3</sup>" }, { v: 16, t: "2<sup>4</sup>" }, { v: 32, t: "2<sup>5</sup>" },
+        { v: 9, t: "3<sup>2</sup>" }, { v: 27, t: "3<sup>3</sup>" },
+        { v: 16, t: "4<sup>2</sup>" }, { v: 25, t: "5<sup>2</sup>" },
+        { v: 2, t: "&radic;4" }, { v: 3, t: "&radic;9" }, { v: 4, t: "&radic;16" }, { v: 5, t: "&radic;25" }, { v: 6, t: "&radic;36" },
+        { v: 7, t: "&radic;49" }, { v: 8, t: "&radic;64" }, { v: 9, t: "&radic;81" }, { v: 10, t: "&radic;100" },
+        { v: 2, t: "<sup>3</sup>&radic;8" }, { v: 3, t: "<sup>3</sup>&radic;27" }, { v: 4, t: "<sup>3</sup>&radic;64" },
+        { v: 5, t: "<sup>3</sup>&radic;125" }, { v: 10, t: "<sup>3</sup>&radic;1000" }, { v: 11, t: "<sup>3</sup>&radic;1331" }
+    ];
+
+    // Event Listener untuk Deskripsi Mode
+    document.getElementById('game-mode')?.addEventListener('change', function(e) {
+        const desc = document.getElementById('mode-desc');
+        switch(e.target.value) {
+            case '1': desc.innerText = "Hanya angka 1-9. Total dijumlahkan. Cocok untuk pemanasan."; break;
+            case '2': desc.innerText = "Angka belasan hingga puluhan. Total dijumlahkan. Butuh konsentrasi ekstra."; break;
+            case '3': desc.innerText = "Mengingat hasil dari bilangan berpangkat dan bentuk akar, lalu dijumlahkan semuanya."; break;
+            case '4': desc.innerText = "Angka muncul beserta operasi (+, -, x, :). Hitung terus hasil sementaranya secara berurutan!"; break;
+        }
+    });
+
+    // Fungsi untuk menghasilkan urutan acak 30 item berdasarkan Mode
+    function generateSequence() {
+        sequence = [];
+        let lastPos = -1;
+        let mode = document.getElementById('game-mode') ? document.getElementById('game-mode').value : '1';
+        let runTotal = 0;
+
+        for(let i = 0; i < 30; i++) {
+            let pos;
+            do {
+                pos = Math.floor(Math.random() * 9);
+            } while (pos === lastPos);
+            lastPos = pos;
+            
+            let val, text, stepTotal;
+
+            if (mode === '1') {
+                val = Math.floor(Math.random() * 9) + 1;
+                text = val.toString();
+                runTotal += val;
+                stepTotal = runTotal;
+            } else if (mode === '2') {
+                val = Math.floor(Math.random() * 90) + 10; // 10-99
+                text = val.toString();
+                runTotal += val;
+                stepTotal = runTotal;
+            } else if (mode === '3') {
+                let item = complexItems[Math.floor(Math.random() * complexItems.length)];
+                val = item.v;
+                text = item.t;
+                runTotal += val;
+                stepTotal = runTotal;
+            } else if (mode === '4') {
+                if (i === 0) {
+                    // Item pertama hanya angka awal (bisa berupa angka biasa atau notasi rumit)
+                    let item = Math.random() > 0.5 ? {v: Math.floor(Math.random()*20)+1, t: ''} : complexItems[Math.floor(Math.random() * complexItems.length)];
+                    if(item.t === '') item.t = item.v.toString();
+                    val = item.v;
+                    text = item.t;
+                    runTotal = val;
+                    stepTotal = runTotal;
+                } else {
+                    // Item berikutnya muncul dengan operasi
+                    let ops = ['+', '-'];
+                    // Perkalian dibatasi untuk bilangan yang tidak terlalu besar agar mental math tidak pecah
+                    if (runTotal > -50 && runTotal <= 50) ops.push('x');
+                    // Pembagian hanya muncul jika hasilnya pasti bulat (tidak ada desimal)
+                    if (runTotal % 2 === 0) ops.push(':2');
+                    
+                    let op = ops[Math.floor(Math.random() * ops.length)];
+                    let item;
+                    
+                    if (op === '+') {
+                        item = Math.random() > 0.5 ? {v: Math.floor(Math.random()*20)+1, t: ''} : complexItems[Math.floor(Math.random() * complexItems.length)];
+                        if(item.t === '') item.t = item.v.toString();
+                        val = item.v;
+                        text = "+ " + item.t;
+                        runTotal += val;
+                    } else if (op === '-') {
+                        item = Math.random() > 0.5 ? {v: Math.floor(Math.random()*20)+1, t: ''} : complexItems[Math.floor(Math.random() * complexItems.length)];
+                        if(item.t === '') item.t = item.v.toString();
+                        val = item.v;
+                        text = "- " + item.t;
+                        runTotal -= val;
+                    } else if (op === 'x') {
+                        let small = [2, 3, 4, 5];
+                        val = small[Math.floor(Math.random()*small.length)];
+                        text = "x " + val;
+                        runTotal *= val;
+                    } else if (op === ':2') {
+                        val = 2;
+                        // Variasi tampilan untuk visualisasi: dibagi 2 atau dikali setengah
+                        text = Math.random() > 0.5 ? ": 2" : "x &frac12;"; 
+                        runTotal /= 2;
+                    }
+                    stepTotal = runTotal;
+                }
+            }
+            
+            // Menyimpan akumulasi total spesifik di setiap langkah
+            sequence.push({ pos, text, stepTotal }); 
+        }
+    }
+
+    // Fungsi Mulai Game
+    function startGame() {
+        document.getElementById('intro').style.display = 'none';
+        resetUI();
+        generateSequence();
+        
+        gameState = 'watching';
+        currentIndex = 0;
+        let mode = document.getElementById('game-mode').value;
+        if(mode === '4') {
+            document.getElementById('status-text').innerText = "Hitung operasi beruntunnya di kepala!";
+        } else {
+            document.getElementById('status-text').innerText = "Perhatikan urutan nyala dan jumlahkan angkanya terus menerus!";
+        }
+        document.getElementById('status-text').style.color = "var(--dark)";
+        
+        document.getElementById('btn-start').classList.add('hidden');
+        document.getElementById('btn-restart').classList.add('hidden');
+        document.getElementById('btn-recall').classList.remove('hidden');
+
+        playNextInSequence();
+    }
+
+    // Fungsi Memainkan Urutan Angka
+    function playNextInSequence() {
+        if (currentIndex >= 30 || gameState !== 'watching') {
+            if (gameState === 'watching') triggerRecall();
+            return;
+        }
+
+        clearGrid();
+
+        setTimeout(() => {
+            if(gameState !== 'watching') return;
+            
+            let item = sequence[currentIndex];
+            let cell = document.getElementById('cell-' + item.pos);
+            // Menggunakan innerHTML karena kita memakai tag HTML untuk pangkat dan akar
+            cell.innerHTML = item.text; 
+            cell.classList.add('active');
+
+            currentIndex++;
+            
+            // Ambil nilai kecepatan yang dipilih (dalam milidetik)
+            let speedMs = parseInt(document.getElementById('game-speed').value) || 2000;
+            intervalId = setTimeout(playNextInSequence, speedMs); 
+        }, 300);
+    }
+
+    // Fungsi Saat Tombol Recall Ditekan
+    function triggerRecall() {
+        if (currentIndex === 0) {
+            alert("Tunggu angkanya muncul dulu ya!");
+            return;
+        }
+        clearTimeout(intervalId);
+        gameState = 'selecting_level';
+        clearGrid();
+        
+        document.getElementById('btn-recall').classList.add('hidden');
+        document.getElementById('status-text').innerText = `Kamu telah melihat ${currentIndex} angka/operasi berturut-turut!`;
+        
+        let levelSelect = document.getElementById('level-select');
+        levelSelect.innerHTML = '';
+        for(let i = 1; i <= currentIndex; i++) {
+            let opt = document.createElement('option');
+            opt.value = i;
+            opt.innerText = `Level ${i} (${i} langkah)`;
+            levelSelect.appendChild(opt);
+        }
+        levelSelect.value = currentIndex; 
+
+        document.getElementById('level-selection-area').classList.remove('hidden');
+    }
+
+    // Fungsi Konfirmasi Level
+    function confirmLevel() {
+        selectedLevel = parseInt(document.getElementById('level-select').value);
+        document.getElementById('level-selection-area').classList.add('hidden');
+        
+        gameState = 'recalling_pos';
+        currentRecallStep = 0;
+        
+        document.getElementById('status-text').innerText = `Level ${selectedLevel}: Klik posisi kotak urutan ke-1 sampai ke-${selectedLevel}!`;
+    }
+
+    // Fungsi Saat Anak Menekan Grid
+    function onCellClick(pos) {
+        if (gameState !== 'recalling_pos') return;
+
+        let targetPos = sequence[currentRecallStep].pos;
+
+        if (pos === targetPos) {
+            let cell = document.getElementById('cell-' + pos);
+            cell.classList.add('correct');
+            setTimeout(() => {
+                if(gameState === 'recalling_pos') cell.classList.remove('correct');
+            }, 300);
+
+            currentRecallStep++;
+            
+            if (currentRecallStep >= selectedLevel) {
+                setTimeout(startMathPhase, 400);
+            }
+        } else {
+            let cell = document.getElementById('cell-' + pos);
+            cell.classList.add('wrong');
+            
+            let correctCell = document.getElementById('cell-' + targetPos);
+            correctCell.classList.add('correct');
+
+            gameState = 'end';
+            document.getElementById('status-text').innerText = `Oops! Posisinya salah. Posisi ke-${currentRecallStep + 1} yang benar ada di kotak hijau.`;
+            document.getElementById('status-text').style.color = "var(--danger)";
+            document.getElementById('btn-restart').classList.remove('hidden');
+        }
+    }
+
+    // Fungsi Transisi ke Fase Berhitung
+    function startMathPhase() {
+        gameState = 'answering_math';
+        clearGrid();
+        
+        let mode = document.getElementById('game-mode').value;
+        document.getElementById('status-text').innerText = `Luar Biasa! Ingatan visuo-spasialmu tajam.`;
+        document.getElementById('status-text').style.color = "var(--success)";
+        
+        if(mode === '4') {
+            document.getElementById('math-question').innerText = `Sekarang, berapa HASIL AKHIR dari ${selectedLevel} operasi hitung tersebut secara berurutan?`;
+        } else {
+            document.getElementById('math-question').innerText = `Sekarang, berapa JUMLAH dari ${selectedLevel} angka tersebut?`;
+        }
+        
+        document.getElementById('math-input').value = '';
+        document.getElementById('math-area').classList.remove('hidden');
+        document.getElementById('math-input').focus();
+    }
+
+    // Fungsi Mengecek Jawaban Matematika
+    function checkMath() {
+        if(document.getElementById('math-input').value === '') return;
+
+        // stepTotal dari array sequence menyimpan total kumulatif persis di langkah tersebut!
+        let correctAnswer = sequence[selectedLevel - 1].stepTotal;
+        let userAnswer = parseInt(document.getElementById('math-input').value);
+
+        if (userAnswer === correctAnswer) {
+            document.getElementById('status-text').innerText = `⭐ SEMPURNA! ⭐\nPosisi Benar & Hasilnya memang ${correctAnswer}!`;
+            document.getElementById('status-text').style.color = "var(--success)";
+        } else {
+            document.getElementById('status-text').innerText = `Posisi sudah tepat, tapi hasil perhitungan salah. Jawaban yang benar adalah ${correctAnswer}.`;
+            document.getElementById('status-text').style.color = "var(--danger)";
+        }
+        
+        gameState = 'end';
+        document.getElementById('math-area').classList.add('hidden');
+        document.getElementById('btn-restart').classList.remove('hidden');
+    }
+
+    // Fungsi utilitas membersihkan grid
+    function clearGrid() {
+        for(let i = 0; i < 9; i++) {
+            let cell = document.getElementById('cell-' + i);
+            cell.innerHTML = ''; // Pastikan innerHTML yang di-reset
+            cell.className = 'cell';
+        }
+    }
+
+    // Fungsi utilitas mereset UI
+    function resetUI() {
+        clearGrid();
+        document.getElementById('level-selection-area').classList.add('hidden');
+        document.getElementById('math-area').classList.add('hidden');
+        document.getElementById('btn-recall').classList.add('hidden');
+        document.getElementById('btn-start').classList.remove('hidden');
+        document.getElementById('btn-restart').classList.add('hidden');
+        document.getElementById('status-text').innerText = "Siap untuk menguji memori dan berhitung?";
+        document.getElementById('status-text').style.color = "var(--dark)";
+    }
+
+    // Kembali ke menu awal
+    function resetAndShowIntro() {
+        resetUI();
+        document.getElementById('intro').style.display = 'block';
+    }
+
+    // Handle Enter
+    function handleEnter(e) {
+        if(e.key === 'Enter') checkMath();
+    }
+
+</script>
+</body>
+</html>
