@@ -259,17 +259,31 @@
         .btn:hover { transform: translateY(-1px); }
         .btn:active { transform: translateY(1px); }
 
-        .btn-start   { background:linear-gradient(135deg,#003d57,#005a80); color:var(--neon-blue);   border:1px solid var(--neon-blue);   box-shadow:0 0 14px rgba(0,212,255,0.25); }
-        .btn-recall  { background:linear-gradient(135deg,#3d2000,#5a3000); color:var(--neon-yellow); border:1px solid var(--neon-yellow); box-shadow:0 0 14px rgba(255,229,0,0.2); }
-        .btn-rewatch { background:linear-gradient(135deg,#1a002e,#2a0045); color:var(--neon-purple); border:1px solid var(--neon-purple); box-shadow:0 0 14px rgba(180,79,255,0.2); }
-        .btn-retry   { background:linear-gradient(135deg,#2a1500,#402000); color:var(--neon-orange); border:1px solid var(--neon-orange); box-shadow:0 0 14px rgba(255,140,0,0.2); }
-        .btn-restart { background:linear-gradient(135deg,#002030,#003048); color:var(--neon-blue);   border:1px solid var(--neon-blue);   box-shadow:0 0 14px rgba(0,212,255,0.2); }
+        .btn-start    { background:linear-gradient(135deg,#003d57,#005a80); color:var(--neon-blue);   border:1px solid var(--neon-blue);   box-shadow:0 0 14px rgba(0,212,255,0.25); }
+        .btn-recall   { background:linear-gradient(135deg,#3d2000,#5a3000); color:var(--neon-yellow); border:1px solid var(--neon-yellow); box-shadow:0 0 14px rgba(255,229,0,0.2); }
+        .btn-rewatch  { background:linear-gradient(135deg,#1a002e,#2a0045); color:var(--neon-purple); border:1px solid var(--neon-purple); box-shadow:0 0 14px rgba(180,79,255,0.2); }
+        .btn-retry    { background:linear-gradient(135deg,#2a1500,#402000); color:var(--neon-orange); border:1px solid var(--neon-orange); box-shadow:0 0 14px rgba(255,140,0,0.2); }
+        .btn-restart  { background:linear-gradient(135deg,#002030,#003048); color:var(--neon-blue);   border:1px solid var(--neon-blue);   box-shadow:0 0 14px rgba(0,212,255,0.2); }
+        .btn-continue { background:linear-gradient(135deg,#003320,#005030); color:var(--neon-green);  border:1px solid var(--neon-green);  box-shadow:0 0 14px rgba(0,255,157,0.25); }
 
-        .btn-start:hover   { box-shadow:0 0 26px rgba(0,212,255,0.45); }
-        .btn-recall:hover  { box-shadow:0 0 26px rgba(255,229,0,0.4); }
-        .btn-rewatch:hover { box-shadow:0 0 26px rgba(180,79,255,0.4); }
-        .btn-retry:hover   { box-shadow:0 0 26px rgba(255,140,0,0.4); }
-        .btn-restart:hover { box-shadow:0 0 26px rgba(0,212,255,0.4); }
+        .btn-start:hover    { box-shadow:0 0 26px rgba(0,212,255,0.45); }
+        .btn-recall:hover   { box-shadow:0 0 26px rgba(255,229,0,0.4); }
+        .btn-rewatch:hover  { box-shadow:0 0 26px rgba(180,79,255,0.4); }
+        .btn-retry:hover    { box-shadow:0 0 26px rgba(255,140,0,0.4); }
+        .btn-restart:hover  { box-shadow:0 0 26px rgba(0,212,255,0.4); }
+        .btn-continue:hover { box-shadow:0 0 26px rgba(0,255,157,0.45); }
+
+        /* Progress chips row */
+        #checkpoint-row {
+            display: flex; flex-wrap: wrap; gap: 6px;
+            justify-content: center; margin: 10px 0 4px;
+        }
+        .checkpoint-chip {
+            font-family: 'Orbitron', monospace; font-size: 8px; letter-spacing: 1px;
+            padding: 3px 9px; border-radius: 20px;
+            background: rgba(0,255,157,0.08); border: 1px solid rgba(0,255,157,0.3);
+            color: var(--neon-green);
+        }
 
         /* Select panel */
         .select-panel {
@@ -403,13 +417,17 @@
         <div id="grid-container"></div>
     </div>
 
+    <!-- Checkpoint chips -->
+    <div id="checkpoint-row"></div>
+
     <!-- Buttons -->
     <div class="btn-row">
-        <button id="btn-start"   class="btn btn-start"           onclick="startGame()">&#9654; MULAI BERMAIN</button>
-        <button id="btn-recall"  class="btn btn-recall  hidden"  onclick="triggerRecall()">&#9608; STOP &amp; RECALL</button>
-        <button id="btn-rewatch" class="btn btn-rewatch hidden"  onclick="rewatchSequence()">&#8635; REWATCH</button>
-        <button id="btn-retry"   class="btn btn-retry   hidden"  onclick="retrySubmit()">&#8635; RETRY</button>
-        <button id="btn-restart" class="btn btn-restart hidden"  onclick="resetAndShowIntro()">&#8635; MAIN LAGI</button>
+        <button id="btn-start"    class="btn btn-start"            onclick="startGame()">&#9654; MULAI BERMAIN</button>
+        <button id="btn-recall"   class="btn btn-recall   hidden"  onclick="triggerRecall()">&#9608; STOP &amp; RECALL</button>
+        <button id="btn-continue" class="btn btn-continue hidden"  onclick="continueWatching()">&#9654;&#9654; LANJUT HAFAL</button>
+        <button id="btn-rewatch"  class="btn btn-rewatch  hidden"  onclick="rewatchSequence()">&#8635; REWATCH</button>
+        <button id="btn-retry"    class="btn btn-retry    hidden"  onclick="retrySubmit()">&#8635; RETRY</button>
+        <button id="btn-restart"  class="btn btn-restart  hidden"  onclick="resetAndShowIntro()">&#8635; MAIN LAGI</button>
     </div>
 
     <!-- Level selection -->
@@ -435,6 +453,7 @@
     let sequence = [], currentIndex = 0, intervalId = null;
     let gameState = 'idle', selectedLevel = 1, currentRecallStep = 0;
     let currentGridSize = 3, lives = 3, maxLives = 3;
+    let checkpoints = []; // [{level, total}] — daftar checkpoint yang sudah berhasil dijawab
 
     const complexItems = [
         {v:4,t:"2^2"},{v:8,t:"2^3"},{v:16,t:"2^4"},{v:32,t:"2^5"},
@@ -470,6 +489,14 @@
         let html = '<span style="font-family:Orbitron,monospace;font-size:9px;letter-spacing:3px;margin-right:8px;">LIVES</span>';
         for (let i=0;i<maxLives;i++) html+=`<span class="heart${i>=lives?' lost':''}">&#9829;</span>`;
         el.innerHTML = html;
+    }
+
+    function renderCheckpoints() {
+        const row = document.getElementById('checkpoint-row');
+        if (checkpoints.length === 0) { row.innerHTML=''; return; }
+        row.innerHTML = checkpoints.map(cp =>
+            `<span class="checkpoint-chip">&#10003; LV${cp.level} = ${cp.total}</span>`
+        ).join('');
     }
 
     function createGrid() {
@@ -561,6 +588,7 @@
         maxLives=parseInt(document.getElementById('game-lives').value)||3;
         lives=maxLives;
         createGrid(); resetUI(); renderLives(); generateSequence();
+        checkpoints = []; renderCheckpoints();
         gameState='watching'; currentIndex=0; updateProgress();
         const mode=document.getElementById('game-mode').value;
         document.getElementById('status-text').textContent=mode==='4'
@@ -593,14 +621,22 @@
         if (currentIndex===0) { alert('Tunggu angkanya muncul dulu!'); return; }
         clearTimeout(intervalId); gameState='selecting_level'; clearGrid();
         document.getElementById('btn-recall').classList.add('hidden');
+
+        const lastCheckpoint = checkpoints.length > 0 ? checkpoints[checkpoints.length-1].level : 0;
+        const minLevel = lastCheckpoint + 1;
+
         document.getElementById('status-text').textContent=`${currentIndex} urutan terdeteksi. Tentukan level tantanganmu!`;
         const ls=document.getElementById('level-select'); ls.innerHTML='';
-        for (let i=1;i<=currentIndex;i++) {
+        for (let i=minLevel;i<=currentIndex;i++) {
             const o=document.createElement('option'); o.value=i;
-            o.textContent=`Level ${i}  (${i} langkah)`; ls.appendChild(o);
+            o.textContent=`Level ${i}  (${i} langkah)${i===minLevel?' ← min':''}`;
+            ls.appendChild(o);
         }
         ls.value=currentIndex;
-        document.getElementById('level-seen-text').textContent=`Kamu telah melihat ${currentIndex} urutan. Tantang diri di level berapa?`;
+        document.getElementById('level-seen-text').textContent=
+            lastCheckpoint > 0
+            ? `Checkpoint terakhir: Level ${lastCheckpoint}. Tantang diri mulai dari level ${minLevel}!`
+            : `Kamu telah melihat ${currentIndex} urutan. Tantang diri di level berapa?`;
         document.getElementById('level-selection-area').classList.remove('hidden');
     }
 
@@ -657,15 +693,31 @@
         if (document.getElementById('math-input').value==='') return;
         const correct=sequence[selectedLevel-1].stepTotal;
         const user=parseInt(document.getElementById('math-input').value);
+        document.getElementById('math-area').classList.add('hidden');
+
         if (user===correct) {
-            document.getElementById('status-text').textContent=`\u2b50 SEMPURNA! Posisi benar & total = ${correct}. Otak kamu luar biasa!`;
-            document.getElementById('status-text').style.color='var(--neon-green)';
-            gameState='end';
-            document.getElementById('math-area').classList.add('hidden');
-            document.getElementById('btn-restart').classList.remove('hidden');
+            // Simpan checkpoint
+            checkpoints.push({level: selectedLevel, total: correct});
+            renderCheckpoints();
+
+            if (selectedLevel >= 30) {
+                // SELESAI SEMPURNA!
+                document.getElementById('status-text').textContent=`\u2b50 MASTER! Semua 30 urutan berhasil dihafal & dihitung!`;
+                document.getElementById('status-text').style.color='var(--neon-green)';
+                gameState='end';
+                document.getElementById('btn-restart').classList.remove('hidden');
+            } else {
+                // Masih bisa lanjut ke step berikutnya
+                const remaining = 30 - selectedLevel;
+                document.getElementById('status-text').textContent=
+                    `\u2705 Benar! Level ${selectedLevel} selesai.\nMasih ada ${remaining} urutan lagi. Lanjut hafal?`;
+                document.getElementById('status-text').style.color='var(--neon-green)';
+                gameState='between_rounds';
+                document.getElementById('btn-continue').classList.remove('hidden');
+                document.getElementById('btn-restart').classList.remove('hidden');
+            }
         } else {
             lives--; renderLives(); gameState='end';
-            document.getElementById('math-area').classList.add('hidden');
             if (lives>0) {
                 document.getElementById('status-text').textContent='Hasil perhitungan salah!\nMau Rewatch urutan, atau langsung Retry?';
                 document.getElementById('status-text').style.color='var(--neon-red)';
@@ -677,6 +729,22 @@
                 document.getElementById('btn-restart').classList.remove('hidden');
             }
         }
+    }
+
+    // Lanjut menonton sequence dari awal, setelah checkpoint berhasil
+    function continueWatching() {
+        document.getElementById('btn-continue').classList.add('hidden');
+        document.getElementById('btn-restart').classList.add('hidden');
+        // Reset index ke 0 agar nonton dari awal lagi, sequence SAMA
+        currentIndex = 0;
+        gameState = 'watching';
+        clearGrid();
+        const mode = document.getElementById('game-mode').value;
+        document.getElementById('status-text').textContent =
+            `Putaran baru! Sudah di level ${selectedLevel}. Tonton sampai kamu siap recall lebih jauh!`;
+        document.getElementById('status-text').style.color = 'var(--text)';
+        document.getElementById('btn-recall').classList.remove('hidden');
+        playNextInSequence();
     }
 
     function rewatchSequence() {
@@ -710,9 +778,10 @@
     function resetUI() {
         clearGrid();
         ['level-selection-area','math-area'].forEach(id=>document.getElementById(id).classList.add('hidden'));
-        ['btn-recall','btn-rewatch','btn-retry','btn-restart'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+        ['btn-recall','btn-rewatch','btn-retry','btn-restart','btn-continue'].forEach(id=>document.getElementById(id).classList.add('hidden'));
         document.getElementById('btn-start').classList.remove('hidden');
         document.getElementById('lives-display').classList.add('hidden');
+        document.getElementById('checkpoint-row').innerHTML='';
         document.getElementById('status-text').textContent='Siap menguji memori dan berhitung?';
         document.getElementById('status-text').style.color='var(--text)';
         currentIndex=0; updateProgress();
