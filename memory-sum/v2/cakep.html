@@ -105,15 +105,18 @@
             display: block; font-family: 'Orbitron', monospace; font-size: 8px;
             letter-spacing: 3px; color: var(--text-dim); margin-bottom: 5px;
         }
-        .setting-group select {
+        .setting-group select, .setting-group input[type="number"] {
             width: 100%; background: var(--bg2); color: var(--neon-blue);
             border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px;
             font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600;
+            outline: none; transition: border-color 0.2s;
+        }
+        .setting-group select {
             cursor: pointer; appearance: none; -webkit-appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2300d4ff'/%3E%3C/svg%3E");
             background-repeat: no-repeat; background-position: right 10px center;
         }
-        .setting-group select:focus { outline: none; border-color: var(--neon-blue); }
+        .setting-group select:focus, .setting-group input[type="number"]:focus { border-color: var(--neon-blue); }
         .setting-group.full { grid-column: 1 / -1; }
         .mode-desc {
             background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.15);
@@ -407,7 +410,11 @@
                     <option value="5000">5 Detik — Ekstra</option>
                 </select>
             </div>
-            <div class="setting-group full">
+            <div class="setting-group">
+                <label>Jumlah Langkah</label>
+                <input type="number" id="game-steps" min="3" max="30" value="30">
+            </div>
+            <div class="setting-group">
                 <label>Jumlah Nyawa</label>
                 <select id="game-lives">
                     <option value="1">1 Nyawa — Tanpa Ampun</option>
@@ -474,7 +481,7 @@
 <script>
     let sequence = [], currentIndex = 0, intervalId = null;
     let gameState = 'idle', selectedLevel = 1, currentRecallStep = 0;
-    let currentGridSize = 3, lives = 3, maxLives = 3;
+    let currentGridSize = 3, lives = 3, maxLives = 3, maxSteps = 30;
     let checkpoints = []; // [{level, total}] — daftar checkpoint yang sudah berhasil dijawab
 
     const complexItems = [
@@ -499,9 +506,9 @@
     });
 
     function updateProgress() {
-        const pct = Math.round((currentIndex/30)*100);
+        const pct = Math.round((currentIndex/maxSteps)*100);
         document.getElementById('progress-fill').style.width = pct+'%';
-        document.getElementById('step-badge').textContent = `STEP ${currentIndex} / 30`;
+        document.getElementById('step-badge').textContent = `STEP ${currentIndex} / ${maxSteps}`;
         document.getElementById('pct-label').textContent = pct+'%';
     }
 
@@ -587,7 +594,7 @@
                 { text: ":\\,5", calc: t => t / 5 }
             ];
 
-            for (let i = 0; i < 30; i++) {
+            for (let i = 0; i < maxSteps; i++) {
                 let pos; do { pos=Math.floor(Math.random()*total); } while(pos===lastPos); lastPos=pos;
                 const op = simOps[i];
                 runTotal = op.calc(runTotal);
@@ -598,7 +605,7 @@
 
         } else {
             // Mode 1, 2, 3, 4
-            for (let i=0;i<30;i++) {
+            for (let i=0;i<maxSteps;i++) {
                 let pos; do { pos=Math.floor(Math.random()*total); } while(pos===lastPos); lastPos=pos;
                 let val, text, useLatex=false;
 
@@ -667,6 +674,13 @@
 
     function startGame() {
         document.getElementById('intro').style.display='none';
+        
+        let inputSteps = parseInt(document.getElementById('game-steps').value);
+        if (isNaN(inputSteps) || inputSteps < 3) inputSteps = 3;
+        if (inputSteps > 30) inputSteps = 30;
+        maxSteps = inputSteps;
+        document.getElementById('game-steps').value = maxSteps;
+
         currentGridSize=parseInt(document.getElementById('grid-size').value)||3;
         maxLives=parseInt(document.getElementById('game-lives').value)||3;
         lives=maxLives;
@@ -684,7 +698,7 @@
     }
 
     function playNextInSequence() {
-        if (currentIndex>=30||gameState!=='watching') {
+        if (currentIndex>=maxSteps||gameState!=='watching') {
             if (gameState==='watching') triggerRecall(); return;
         }
         clearGrid();
@@ -797,15 +811,15 @@
             checkpoints.push({level: selectedLevel, total: correctRounded});
             renderCheckpoints();
 
-            if (selectedLevel >= 30) {
+            if (selectedLevel >= maxSteps) {
                 // SELESAI SEMPURNA!
-                document.getElementById('status-text').textContent=`\u2b50 MASTER! Semua 30 urutan berhasil dihafal & dihitung!`;
+                document.getElementById('status-text').textContent=`\u2b50 MASTER! Semua ${maxSteps} urutan berhasil dihafal & dihitung!`;
                 document.getElementById('status-text').style.color='var(--neon-green)';
                 gameState='end';
                 document.getElementById('btn-restart').classList.remove('hidden');
             } else {
                 // Masih bisa lanjut ke step berikutnya
-                const remaining = 30 - selectedLevel;
+                const remaining = maxSteps - selectedLevel;
                 document.getElementById('status-text').textContent=
                     `\u2705 Benar! Level ${selectedLevel} selesai.\nMasih ada ${remaining} urutan lagi. Lanjut hafal?`;
                 document.getElementById('status-text').style.color='var(--neon-green)';
