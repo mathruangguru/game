@@ -142,6 +142,24 @@
             font-weight: 700; color: var(--text); letter-spacing: 0.5px;
             line-height: 1.6; min-height: 22px; white-space: pre-line; transition: color 0.3s;
         }
+        
+        /* Recall Dots Indicator */
+        .recall-dots {
+            display: flex; justify-content: center; gap: 8px; 
+            margin: 10px 0 6px; flex-wrap: wrap; min-height: 14px;
+        }
+        .recall-dot {
+            width: 12px; height: 12px; border-radius: 50%;
+            border: 2px solid var(--border); background: var(--bg2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: inset 0 0 4px rgba(0,0,0,0.5);
+        }
+        .recall-dot.active {
+            background: var(--neon-blue); border-color: #fff;
+            box-shadow: 0 0 10px var(--neon-blue), inset 0 0 4px rgba(255,255,255,0.5);
+            transform: scale(1.15);
+        }
+
         .step-row {
             display: flex; justify-content: space-between;
             align-items: center; margin-top: 10px; margin-bottom: 4px;
@@ -204,7 +222,7 @@
         .grid-5 .cell-inner { font-size: clamp(9px,2.8vw,13px); }
 
         /* KaTeX inside cells */
-        .cell .katex { color: inherit !important; font-size: 1em !important; }
+        .cell .katex { color: inherit !important; font-size: 1.1em !important; }
         .cell .katex-display { margin: 0 !important; }
 
         .cell::before {
@@ -366,9 +384,9 @@
                     <option value="1">Mode 1 — Angka 1 Digit (Mudah)</option>
                     <option value="2">Mode 2 — Angka 2 Digit (Sedang)</option>
                     <option value="3">Mode 3 — Pangkat &amp; Akar (Sulit)</option>
-                    <option value="4">Mode 4 — Operasi Beruntun (Ekstrem)</option>
+                    <option value="4" selected>Mode 4 — Operasi Beruntun (Ekstrem)</option>
                 </select>
-                <div class="mode-desc" id="mode-desc">Hanya angka 1–9. Total dijumlahkan. Cocok untuk pemanasan.</div>
+                <div class="mode-desc" id="mode-desc">Angka muncul beserta operasi (+,–,×,÷). Hitung hasilnya secara berurutan!</div>
             </div>
             <div class="setting-group">
                 <label>Ukuran Grid</label>
@@ -405,6 +423,8 @@
     <!-- Status -->
     <div class="status-bar">
         <div id="status-text">Siap menguji memori dan berhitung?</div>
+        <!-- Progress Recall Dots -->
+        <div id="recall-dots" class="recall-dots hidden"></div>
         <div class="step-row">
             <div class="step-badge" id="step-badge">STEP 0 / 30</div>
             <div class="pct-label" id="pct-label">0%</div>
@@ -538,11 +558,13 @@
                 const item=complexItems[Math.floor(Math.random()*complexItems.length)];
                 val=item.v; text=item.t; useLatex=true; runTotal+=val;
             } else if (mode==='4') {
+                // DI MODIFIKASI: Semua operasi menggunakan LaTeX agar rapih
+                useLatex = true; 
                 if (i===0) {
                     const useComplex=Math.random()>0.5;
                     if (useComplex) {
                         const item=complexItems[Math.floor(Math.random()*complexItems.length)];
-                        val=item.v; text=item.t; useLatex=true;
+                        val=item.v; text=item.t;
                     } else {
                         val=Math.floor(Math.random()*20)+1; text=val.toString();
                     }
@@ -557,29 +579,38 @@
                         const useComplex=Math.random()>0.5;
                         if (useComplex) {
                             const item=complexItems[Math.floor(Math.random()*complexItems.length)];
-                            val=item.v; text='+\\,'+item.t; useLatex=true; runTotal+=val;
+                            val=item.v; text='+\\,'+item.t; runTotal+=val;
                         } else {
-                            val=Math.floor(Math.random()*20)+1; text='+ '+val; runTotal+=val;
+                            val=Math.floor(Math.random()*20)+1; text='+\\,'+val; runTotal+=val;
                         }
                     } else if (op==='-') {
                         const useComplex=Math.random()>0.5;
                         if (useComplex) {
                             const item=complexItems[Math.floor(Math.random()*complexItems.length)];
-                            val=item.v; text='-\\,'+item.t; useLatex=true; runTotal-=val;
+                            val=item.v; text='-\\,'+item.t; runTotal-=val;
                         } else {
-                            val=Math.floor(Math.random()*20)+1; text='- '+val; runTotal-=val;
+                            val=Math.floor(Math.random()*20)+1; text='-\\,'+val; runTotal-=val;
                         }
                     } else if (op==='x') {
                         val=[2,3,4,5][Math.floor(Math.random()*4)];
-                        text='\\times '+val; useLatex=true; runTotal*=val;
+                        text='\\times\\,'+val; runTotal*=val;
                     } else {
-                        text=Math.random()>0.5?'\\div 2':'\\times \\tfrac{1}{2}';
-                        useLatex=true; runTotal/=2;
+                        text=Math.random()>0.5?'\\div\\,2':'\\times\\,\\tfrac{1}{2}';
+                        runTotal/=2;
                     }
                 }
             }
             sequence.push({pos, text, useLatex, stepTotal: runTotal});
         }
+    }
+
+    function renderRecallDots() {
+        const container = document.getElementById('recall-dots');
+        container.innerHTML = '';
+        for(let i=0; i<selectedLevel; i++) {
+            container.innerHTML += `<div class="recall-dot" id="dot-${i}"></div>`;
+        }
+        container.classList.remove('hidden');
     }
 
     function startGame() {
@@ -621,6 +652,7 @@
         if (currentIndex===0) { alert('Tunggu angkanya muncul dulu!'); return; }
         clearTimeout(intervalId); gameState='selecting_level'; clearGrid();
         document.getElementById('btn-recall').classList.add('hidden');
+        document.getElementById('recall-dots').classList.add('hidden'); // Sembunyikan dots saat pilih level
 
         const lastCheckpoint = checkpoints.length > 0 ? checkpoints[checkpoints.length-1].level : 0;
         const minLevel = lastCheckpoint + 1;
@@ -646,6 +678,7 @@
         gameState='recalling_pos'; currentRecallStep=0;
         document.getElementById('status-text').textContent=`Level ${selectedLevel} — Klik urutan posisi ke-1 sampai ke-${selectedLevel}!`;
         document.getElementById('status-text').style.color='var(--text)';
+        renderRecallDots(); // Tampilkan poin progres recall
     }
 
     function onCellClick(pos) {
@@ -654,6 +687,11 @@
         if (pos===targetPos) {
             const cell=document.getElementById('cell-'+pos);
             cell.classList.add('correct');
+            
+            // Nyalakan dot progres
+            const dot = document.getElementById('dot-'+currentRecallStep);
+            if(dot) dot.classList.add('active');
+
             setTimeout(()=>{ if(gameState==='recalling_pos') cell.classList.remove('correct'); },300);
             currentRecallStep++;
             document.getElementById('status-text').textContent=`✓ Benar! Langkah ke-${currentRecallStep} / ${selectedLevel}`;
@@ -678,6 +716,7 @@
 
     function startMathPhase() {
         gameState='answering_math'; clearGrid();
+        document.getElementById('recall-dots').classList.add('hidden'); // Sembunyikan dots progres
         document.getElementById('status-text').textContent='✓ Ingatan visual sempurna! Sekarang uji kemampuan hitungmu.';
         document.getElementById('status-text').style.color='var(--neon-green)';
         const mode=document.getElementById('game-mode').value;
@@ -751,6 +790,7 @@
         document.getElementById('btn-rewatch').classList.add('hidden');
         document.getElementById('btn-retry').classList.add('hidden');
         document.getElementById('math-area').classList.add('hidden');
+        document.getElementById('recall-dots').classList.add('hidden');
         currentIndex=0; gameState='watching'; clearGrid();
         document.getElementById('status-text').textContent='Memutar ulang urutan yang sama. Perhatikan baik-baik!';
         document.getElementById('status-text').style.color='var(--text)';
@@ -765,6 +805,7 @@
         gameState='recalling_pos'; currentRecallStep=0; clearGrid();
         document.getElementById('status-text').textContent=`Ayo coba lagi! Level ${selectedLevel}: klik urutan ke-1 sampai ke-${selectedLevel}!`;
         document.getElementById('status-text').style.color='var(--text)';
+        renderRecallDots(); // Render ulang dot kosong
     }
 
     function clearGrid() {
@@ -777,7 +818,7 @@
 
     function resetUI() {
         clearGrid();
-        ['level-selection-area','math-area'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+        ['level-selection-area','math-area','recall-dots'].forEach(id=>document.getElementById(id).classList.add('hidden'));
         ['btn-recall','btn-rewatch','btn-retry','btn-restart','btn-continue'].forEach(id=>document.getElementById(id).classList.add('hidden'));
         document.getElementById('btn-start').classList.remove('hidden');
         document.getElementById('lives-display').classList.add('hidden');
