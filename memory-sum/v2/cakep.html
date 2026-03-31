@@ -336,7 +336,7 @@
         #math-question { font-size: 13px; color: var(--text); margin-bottom: 12px; line-height: 1.5; }
         .math-input-row { display: flex; justify-content: center; align-items: center; gap: 10px; }
         #math-input {
-            width: 110px; background: var(--bg2); color: var(--neon-green);
+            width: 130px; background: var(--bg2); color: var(--neon-green);
             border: 1px solid var(--neon-green); border-radius: 6px; padding: 10px;
             font-family: 'Orbitron',monospace; font-size: 18px; font-weight: 700;
             text-align: center; outline: none; box-shadow: 0 0 10px rgba(0,255,157,0.12);
@@ -385,6 +385,7 @@
                     <option value="2">Mode 2 — Angka 2 Digit (Sedang)</option>
                     <option value="3">Mode 3 — Pangkat &amp; Akar (Sulit)</option>
                     <option value="4" selected>Mode 4 — Operasi Beruntun (Ekstrem)</option>
+                    <option value="5">Mode 5 — Simulasi</option>
                 </select>
                 <div class="mode-desc" id="mode-desc">Angka muncul beserta operasi (+,–,×,÷). Hitung hasilnya secara berurutan!</div>
             </div>
@@ -463,7 +464,8 @@
         <div class="panel-title">// KALKULASI AKHIR</div>
         <p id="math-question">Berapa jumlah angka dari urutan tersebut?</p>
         <div class="math-input-row">
-            <input type="number" id="math-input" placeholder="?" onkeypress="handleEnter(event)">
+            <!-- Diubah ke type text + inputmode decimal agar gampang ngetik koma jika desimal -->
+            <input type="text" inputmode="decimal" id="math-input" placeholder="?" onkeypress="handleEnter(event)">
             <button class="btn-answer" onclick="checkMath()">JAWAB &#9658;</button>
         </div>
     </div>
@@ -490,7 +492,8 @@
             '1':'Hanya angka 1–9. Total dijumlahkan. Cocok untuk pemanasan.',
             '2':'Angka belasan hingga puluhan. Total dijumlahkan. Butuh konsentrasi ekstra.',
             '3':'Mengingat hasil bilangan berpangkat dan bentuk akar, lalu dijumlahkan.',
-            '4':'Angka muncul beserta operasi (+,–,×,÷). Hitung hasilnya secara berurutan!'
+            '4':'Angka muncul beserta operasi (+,–,×,÷). Hitung hasilnya secara berurutan!',
+            '5':'Mode khusus Simulasi. Operasi beruntun menggunakan urutan spesifik dari gambar referensi!'
         };
         document.getElementById('mode-desc').textContent = descs[e.target.value] || '';
     });
@@ -514,9 +517,12 @@
     function renderCheckpoints() {
         const row = document.getElementById('checkpoint-row');
         if (checkpoints.length === 0) { row.innerHTML=''; return; }
-        row.innerHTML = checkpoints.map(cp =>
-            `<span class="checkpoint-chip">&#10003; LV${cp.level} = ${cp.total}</span>`
-        ).join('');
+        row.innerHTML = checkpoints.map(cp => {
+            // Memformat output agar koma digunakan sebagai desimal pemisah (untuk UX Indonesia)
+            let displayTotal = Math.round(cp.total * 100) / 100;
+            displayTotal = displayTotal.toString().replace('.', ',');
+            return `<span class="checkpoint-chip">&#10003; LV${cp.level} = ${displayTotal}</span>`;
+        }).join('');
     }
 
     function createGrid() {
@@ -546,61 +552,107 @@
         const total = currentGridSize*currentGridSize;
         let runTotal = 0;
 
-        for (let i=0;i<30;i++) {
-            let pos; do { pos=Math.floor(Math.random()*total); } while(pos===lastPos); lastPos=pos;
-            let val, text, useLatex=false;
+        if (mode === '5') {
+            // Mode Simulasi dengan 30 Langkah Konkrit
+            const simOps = [
+                { text: "\\sqrt[3]{512}", calc: t => 8 },
+                { text: "+\\,42", calc: t => t + 42 },
+                { text: ":\\,\\frac{1}{2}", calc: t => t / 0.5 },
+                { text: "-\\,72", calc: t => t - 72 },
+                { text: "-\\,(-32)", calc: t => t - (-32) },
+                { text: "-\\,\\sqrt{16}", calc: t => t - 4 },
+                { text: "\\times\\,2", calc: t => t * 2 },
+                { text: "+\\,92", calc: t => t + 92 },
+                { text: "+\\,5^2", calc: t => t + 25 },
+                { text: "\\sqrt{\\dots}", calc: t => Math.sqrt(Math.max(0, t)) },
+                { text: "\\times\\,\\frac{1}{5}", calc: t => t * (1/5) },
+                { text: "\\times\\,225", calc: t => t * 225 },
+                { text: "\\div\\,15", calc: t => t / 15 },
+                { text: "+\\,2^5", calc: t => t + 32 },
+                { text: "-\\,(-48)", calc: t => t - (-48) },
+                { text: ":\\,\\frac{1}{6}", calc: t => t / (1/6) },
+                { text: "-\\,(-38)", calc: t => t - (-38) },
+                { text: "+\\,27", calc: t => t + 27 },
+                { text: "-\\,5", calc: t => t - 5 },
+                { text: ":\\,66", calc: t => t / 66 },
+                { text: "\\times\\,\\sqrt{64}", calc: t => t * 8 },
+                { text: "-\\,(-20)", calc: t => t - (-20) },
+                { text: "+\\,827", calc: t => t + 827 },
+                { text: "\\times\\,\\frac{1}{3}", calc: t => t * (1/3) },
+                { text: "-\\,59", calc: t => t - 59 },
+                { text: "-\\,5^3", calc: t => t - 125 },
+                { text: "\\times\\,8", calc: t => t * 8 },
+                { text: "\\times\\,3{,}25", calc: t => t * 3.25 },
+                { text: "-\\,125", calc: t => t - 125 },
+                { text: ":\\,5", calc: t => t / 5 }
+            ];
 
-            if (mode==='1') {
-                val=Math.floor(Math.random()*9)+1; text=val.toString(); runTotal+=val;
-            } else if (mode==='2') {
-                val=Math.floor(Math.random()*90)+10; text=val.toString(); runTotal+=val;
-            } else if (mode==='3') {
-                const item=complexItems[Math.floor(Math.random()*complexItems.length)];
-                val=item.v; text=item.t; useLatex=true; runTotal+=val;
-            } else if (mode==='4') {
-                // DI MODIFIKASI: Semua operasi menggunakan LaTeX agar rapih
-                useLatex = true; 
-                if (i===0) {
-                    const useComplex=Math.random()>0.5;
-                    if (useComplex) {
-                        const item=complexItems[Math.floor(Math.random()*complexItems.length)];
-                        val=item.v; text=item.t;
-                    } else {
-                        val=Math.floor(Math.random()*20)+1; text=val.toString();
-                    }
-                    runTotal=val;
-                } else {
-                    const ops=['+','-'];
-                    if (runTotal>-50&&runTotal<=50) ops.push('x');
-                    if (runTotal%2===0) ops.push(':2');
-                    const op=ops[Math.floor(Math.random()*ops.length)];
+            for (let i = 0; i < 30; i++) {
+                let pos; do { pos=Math.floor(Math.random()*total); } while(pos===lastPos); lastPos=pos;
+                const op = simOps[i];
+                runTotal = op.calc(runTotal);
+                // Round untuk menghindari error float presisi tinggi (e.g. 15.000000000001)
+                runTotal = Math.round(runTotal * 10000) / 10000;
+                sequence.push({pos, text: op.text, useLatex: true, stepTotal: runTotal});
+            }
 
-                    if (op==='+') {
+        } else {
+            // Mode 1, 2, 3, 4
+            for (let i=0;i<30;i++) {
+                let pos; do { pos=Math.floor(Math.random()*total); } while(pos===lastPos); lastPos=pos;
+                let val, text, useLatex=false;
+
+                if (mode==='1') {
+                    val=Math.floor(Math.random()*9)+1; text=val.toString(); runTotal+=val;
+                } else if (mode==='2') {
+                    val=Math.floor(Math.random()*90)+10; text=val.toString(); runTotal+=val;
+                } else if (mode==='3') {
+                    const item=complexItems[Math.floor(Math.random()*complexItems.length)];
+                    val=item.v; text=item.t; useLatex=true; runTotal+=val;
+                } else if (mode==='4') {
+                    useLatex = true; 
+                    if (i===0) {
                         const useComplex=Math.random()>0.5;
                         if (useComplex) {
                             const item=complexItems[Math.floor(Math.random()*complexItems.length)];
-                            val=item.v; text='+\\,'+item.t; runTotal+=val;
+                            val=item.v; text=item.t;
                         } else {
-                            val=Math.floor(Math.random()*20)+1; text='+\\,'+val; runTotal+=val;
+                            val=Math.floor(Math.random()*20)+1; text=val.toString();
                         }
-                    } else if (op==='-') {
-                        const useComplex=Math.random()>0.5;
-                        if (useComplex) {
-                            const item=complexItems[Math.floor(Math.random()*complexItems.length)];
-                            val=item.v; text='-\\,'+item.t; runTotal-=val;
-                        } else {
-                            val=Math.floor(Math.random()*20)+1; text='-\\,'+val; runTotal-=val;
-                        }
-                    } else if (op==='x') {
-                        val=[2,3,4,5][Math.floor(Math.random()*4)];
-                        text='\\times\\,'+val; runTotal*=val;
+                        runTotal=val;
                     } else {
-                        text=Math.random()>0.5?'\\div\\,2':'\\times\\,\\tfrac{1}{2}';
-                        runTotal/=2;
+                        const ops=['+','-'];
+                        if (runTotal>-50&&runTotal<=50) ops.push('x');
+                        if (runTotal%2===0) ops.push(':2');
+                        const op=ops[Math.floor(Math.random()*ops.length)];
+
+                        if (op==='+') {
+                            const useComplex=Math.random()>0.5;
+                            if (useComplex) {
+                                const item=complexItems[Math.floor(Math.random()*complexItems.length)];
+                                val=item.v; text='+\\,'+item.t; runTotal+=val;
+                            } else {
+                                val=Math.floor(Math.random()*20)+1; text='+\\,'+val; runTotal+=val;
+                            }
+                        } else if (op==='-') {
+                            const useComplex=Math.random()>0.5;
+                            if (useComplex) {
+                                const item=complexItems[Math.floor(Math.random()*complexItems.length)];
+                                val=item.v; text='-\\,'+item.t; runTotal-=val;
+                            } else {
+                                val=Math.floor(Math.random()*20)+1; text='-\\,'+val; runTotal-=val;
+                            }
+                        } else if (op==='x') {
+                            val=[2,3,4,5][Math.floor(Math.random()*4)];
+                            text='\\times\\,'+val; runTotal*=val;
+                        } else {
+                            text=Math.random()>0.5?'\\div\\,2':'\\times\\,\\tfrac{1}{2}';
+                            runTotal/=2;
+                        }
                     }
                 }
+                sequence.push({pos, text, useLatex, stepTotal: runTotal});
             }
-            sequence.push({pos, text, useLatex, stepTotal: runTotal});
         }
     }
 
@@ -622,7 +674,7 @@
         checkpoints = []; renderCheckpoints();
         gameState='watching'; currentIndex=0; updateProgress();
         const mode=document.getElementById('game-mode').value;
-        document.getElementById('status-text').textContent=mode==='4'
+        document.getElementById('status-text').textContent=(mode==='4'||mode==='5')
             ?'Hitung operasi beruntunnya di kepala!'
             :'Perhatikan urutan nyala dan jumlahkan angkanya!';
         document.getElementById('status-text').style.color='var(--text)';
@@ -720,7 +772,7 @@
         document.getElementById('status-text').textContent='✓ Ingatan visual sempurna! Sekarang uji kemampuan hitungmu.';
         document.getElementById('status-text').style.color='var(--neon-green)';
         const mode=document.getElementById('game-mode').value;
-        document.getElementById('math-question').textContent=mode==='4'
+        document.getElementById('math-question').textContent=(mode==='4'||mode==='5')
             ?`Berapa HASIL AKHIR dari ${selectedLevel} operasi hitung tersebut secara berurutan?`
             :`Berapa TOTAL dari ${selectedLevel} angka yang muncul?`;
         document.getElementById('math-input').value='';
@@ -729,14 +781,20 @@
     }
 
     function checkMath() {
-        if (document.getElementById('math-input').value==='') return;
-        const correct=sequence[selectedLevel-1].stepTotal;
-        const user=parseInt(document.getElementById('math-input').value);
+        const rawInput = document.getElementById('math-input').value.trim().replace(',', '.');
+        if (rawInput === '') return;
+        
+        const correct = sequence[selectedLevel-1].stepTotal;
+        const user = parseFloat(rawInput);
         document.getElementById('math-area').classList.add('hidden');
 
-        if (user===correct) {
+        // Pembulatan 2 digit desimal untuk mencocokkan jika ada margin float, atau operasi x 3.25
+        const correctRounded = Math.round(correct * 100) / 100;
+        const displayCorrect = correctRounded.toString().replace('.', ',');
+
+        if (!isNaN(user) && Math.abs(user - correctRounded) <= 0.01) {
             // Simpan checkpoint
-            checkpoints.push({level: selectedLevel, total: correct});
+            checkpoints.push({level: selectedLevel, total: correctRounded});
             renderCheckpoints();
 
             if (selectedLevel >= 30) {
@@ -763,7 +821,7 @@
                 document.getElementById('btn-rewatch').classList.remove('hidden');
                 document.getElementById('btn-retry').classList.remove('hidden');
             } else {
-                document.getElementById('status-text').textContent=`Perhitungan salah. Jawaban benar: ${correct}.\nNyawa Habis! GAME OVER.`;
+                document.getElementById('status-text').textContent=`Perhitungan salah. Jawaban benar: ${displayCorrect}.\nNyawa Habis! GAME OVER.`;
                 document.getElementById('status-text').style.color='var(--neon-red)';
                 document.getElementById('btn-restart').classList.remove('hidden');
             }
