@@ -612,6 +612,16 @@
         } else { inner.textContent = text; }
     }
 
+    // Fungsi tambahan khusus untuk bisa membaca pecahan (garis miring /)
+    function parseCustomNumber(str) {
+        let s = str.replace(',', '.').trim();
+        if (s.includes('/')) {
+            let p = s.split('/');
+            return parseFloat(p[0]) / parseFloat(p[1]);
+        }
+        return parseFloat(s);
+    }
+
     function generateSequence() {
         sequence = []; let lastPos=-1;
         const mode = document.getElementById('game-mode').value;
@@ -695,22 +705,28 @@
                             
                             if (valText.startsWith('v') || valText.startsWith('sqrt')) {
                                 let numStr = valText.replace(/^(v|sqrt)/, '');
-                                let num = parseFloat(numStr);
+                                let num = parseCustomNumber(numStr);
                                 if(!isNaN(num)) {
                                     val = Math.sqrt(num);
-                                    valLatex = `\\sqrt{${numStr}}`;
+                                    valLatex = `\\sqrt{${numStr.includes('/') ? '\\frac{'+numStr.split('/')[0]+'}{'+numStr.split('/')[1]+'}' : numStr.replace('.', '{,}')}}`;
                                 }
                             } else if (valText.startsWith('3v') || valText.startsWith('cbrt')) {
                                 let numStr = valText.replace(/^(3v|cbrt)/, '');
-                                let num = parseFloat(numStr);
+                                let num = parseCustomNumber(numStr);
                                 if(!isNaN(num)) {
                                     val = Math.cbrt(num);
-                                    valLatex = `\\sqrt[3]{${numStr}}`;
+                                    valLatex = `\\sqrt[3]{${numStr.includes('/') ? '\\frac{'+numStr.split('/')[0]+'}{'+numStr.split('/')[1]+'}' : numStr.replace('.', '{,}')}}`;
                                 }
                             } else {
-                                val = parseFloat(valText); 
+                                val = parseCustomNumber(valText); 
                                 if (isNaN(val)) val = 0;
-                                valLatex = valText;
+                                // Merapikan tampilan pecahan untuk LaTeX
+                                if (valText.includes('/')) {
+                                    let parts = valText.split('/');
+                                    valLatex = `\\frac{${parts[0]}}{${parts[1]}}`;
+                                } else {
+                                    valLatex = valText.replace('.', '{,}');
+                                }
                             }
 
                             if (op === '+') { runTotal += val; text = `+\\,${valLatex}`; } 
@@ -726,17 +742,18 @@
                         let val = 0;
                         if (lowerText.startsWith('v') || lowerText.startsWith('sqrt')) {
                             let numStr = lowerText.replace(/^(v|sqrt)/, '');
-                            val = Math.sqrt(parseFloat(numStr));
-                            text = `\\sqrt{${numStr}}`;
+                            val = Math.sqrt(parseCustomNumber(numStr));
+                            text = `\\sqrt{${numStr.includes('/') ? '\\frac{'+numStr.split('/')[0]+'}{'+numStr.split('/')[1]+'}' : numStr}}`;
                             useLatex = true;
                         } else if (lowerText.startsWith('3v') || lowerText.startsWith('cbrt')) {
                             let numStr = lowerText.replace(/^(3v|cbrt)/, '');
-                            val = Math.cbrt(parseFloat(numStr));
-                            text = `\\sqrt[3]{${numStr}}`;
+                            val = Math.cbrt(parseCustomNumber(numStr));
+                            text = `\\sqrt[3]{${numStr.includes('/') ? '\\frac{'+numStr.split('/')[0]+'}{'+numStr.split('/')[1]+'}' : numStr}}`;
                             useLatex = true;
                         } else {
-                            val = parseFloat(rawText);
-                            text = rawText;
+                            val = parseCustomNumber(rawText);
+                            text = rawText.includes('/') ? `\\frac{${rawText.split('/')[0]}}{${rawText.split('/')[1]}}` : rawText.replace('.', ',');
+                            if (rawText.includes('/')) useLatex = true;
                         }
                         if (!isNaN(val)) runTotal += val;
                     }
