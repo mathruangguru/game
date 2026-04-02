@@ -322,23 +322,11 @@
         .btn-continue { background:linear-gradient(135deg,#003320,#005030); color:var(--neon-green);  border:1px solid var(--neon-green);  box-shadow:0 0 14px rgba(0,255,157,0.25); }
 
         .btn-start:hover    { box-shadow:0 0 26px rgba(0,212,255,0.45); }
-        .btn-recall:hover   { box-shadow:0 0 26px rgba(255,229,0,0.4); }
+        .btn-recall:hover    { box-shadow:0 0 26px rgba(255,229,0,0.4); }
         .btn-rewatch:hover  { box-shadow:0 0 26px rgba(180,79,255,0.4); }
         .btn-retry:hover    { box-shadow:0 0 26px rgba(255,140,0,0.4); }
         .btn-restart:hover  { box-shadow:0 0 26px rgba(0,212,255,0.4); }
         .btn-continue:hover { box-shadow:0 0 26px rgba(0,255,157,0.45); }
-
-        /* Progress chips row */
-        #checkpoint-row {
-            display: flex; flex-wrap: wrap; gap: 6px;
-            justify-content: center; margin: 10px 0 4px;
-        }
-        .checkpoint-chip {
-            font-family: 'Orbitron', monospace; font-size: 8px; letter-spacing: 1px;
-            padding: 3px 9px; border-radius: 20px;
-            background: rgba(0,255,157,0.08); border: 1px solid rgba(0,255,157,0.3);
-            color: var(--neon-green);
-        }
 
         /* Select panel */
         .select-panel {
@@ -493,9 +481,6 @@
         <div id="grid-container"></div>
     </div>
 
-    <!-- Checkpoint chips -->
-    <div id="checkpoint-row"></div>
-
     <!-- Buttons -->
     <div class="btn-row">
         <button id="btn-start"    class="btn btn-start"            onclick="startGame()">&#9654; MULAI BERMAIN</button>
@@ -519,7 +504,6 @@
         <div class="panel-title">// KALKULASI AKHIR</div>
         <p id="math-question">Berapa jumlah angka dari urutan tersebut?</p>
         <div class="math-input-row">
-            <!-- Diubah ke type text + inputmode decimal agar gampang ngetik koma jika desimal -->
             <input type="text" inputmode="decimal" id="math-input" placeholder="?" onkeypress="handleEnter(event)">
             <button class="btn-answer" onclick="checkMath()">JAWAB &#9658;</button>
         </div>
@@ -530,8 +514,8 @@
     let sequence = [], currentIndex = 0, highestIndexSeen = 0, intervalId = null;
     let gameState = 'idle', selectedLevel = 1, currentRecallStep = 0;
     let currentGridSize = 3, lives = 3, maxLives = 3, maxSteps = 30;
-    let checkpoints = []; // [{level, total}] — daftar checkpoint yang sudah berhasil dijawab
-    let highestScore = 0; // Skor tertinggi (level maksimal yang berhasil dicapai)
+    let checkpoints = []; 
+    let highestScore = 0; 
     
     // Timer Variables
     let totalMemorizeTime = 0, memorizeStartTime = 0, memorizeTimerActive = false;
@@ -559,7 +543,6 @@
         };
         document.getElementById('mode-desc').textContent = descs[e.target.value] || '';
         
-        // Sembunyikan input custom jika Mode 5 atau 6 (Simulasi) yang dipilih
         const customGroup = document.getElementById('custom-group');
         if (e.target.value === '5' || e.target.value === '6') {
             customGroup.classList.add('hidden');
@@ -568,7 +551,6 @@
         }
     });
 
-    // Fungsi untuk mengubah ms menjadi teks waktu yang rapi (End Screen)
     function formatTime(ms) {
         let totalSeconds = Math.floor(ms / 1000);
         let minutes = Math.floor(totalSeconds / 60);
@@ -579,7 +561,6 @@
         return `${seconds} detik`;
     }
 
-    // Fungsi format jam live di UI
     function formatTimeClock(ms) {
         let totalSeconds = Math.floor(ms / 1000);
         let m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
@@ -607,14 +588,12 @@
         updateTimerUI();
     }
 
-    // Fungsi untuk memperbarui jumlah kotak input custom secara dinamis
     function updateCustomInputs() {
         const container = document.getElementById('custom-inputs-container');
         let steps = parseInt(document.getElementById('game-steps').value);
         if (isNaN(steps) || steps < 3) steps = 3;
         if (steps > 30) steps = 30;
 
-        // Simpan nilai input yang sudah ada agar tidak hilang saat mengubah jumlah
         const currentInputs = Array.from(container.querySelectorAll('.custom-step-input')).map(inp => inp.value);
         container.innerHTML = '';
 
@@ -622,7 +601,7 @@
             const input = document.createElement('input');
             input.type = 'text';
             input.className = 'custom-step-input';
-            input.placeholder = `L-${i+1}`;
+            input.placeholder = `L-1`;
             if (currentInputs[i] !== undefined) {
                 input.value = currentInputs[i];
             }
@@ -630,11 +609,8 @@
         }
     }
 
-    // Event listener untuk memicu update kotak jika field 'game-steps' diubah
     document.getElementById('game-steps').addEventListener('input', updateCustomInputs);
     document.getElementById('game-steps').addEventListener('change', updateCustomInputs);
-    
-    // Inisialisasi kotak saat halaman pertama kali dimuat
     window.addEventListener('DOMContentLoaded', updateCustomInputs);
 
     function updateProgress() {
@@ -653,15 +629,9 @@
         el.innerHTML = html;
     }
 
+    // Tampilan visual checkpoint di bawah grid dihapus untuk meningkatkan tantangan mental math
     function renderCheckpoints() {
-        const row = document.getElementById('checkpoint-row');
-        if (checkpoints.length === 0) { row.innerHTML=''; return; }
-        row.innerHTML = checkpoints.map(cp => {
-            // Memformat output agar koma digunakan sebagai desimal pemisah (untuk UX Indonesia)
-            let displayTotal = Math.round(cp.total * 100) / 100;
-            displayTotal = displayTotal.toString().replace('.', ',');
-            return `<span class="checkpoint-chip">&#10003; LV${cp.level} = ${displayTotal}</span>`;
-        }).join('');
+        // Fungsi visual ditiadakan atas permintaan user
     }
 
     function createGrid() {
@@ -685,7 +655,6 @@
         } else { inner.textContent = text; }
     }
 
-    // Fungsi tambahan khusus untuk bisa membaca pecahan (garis miring /)
     function parseCustomNumber(str) {
         let s = str.replace(',', '.').trim();
         if (s.includes('/')) {
@@ -701,18 +670,14 @@
         const total = currentGridSize*currentGridSize;
         let runTotal = 0;
 
-        // Ambil semua value dari grid input custom
         const customInputsElements = document.querySelectorAll('.custom-step-input');
         const customInputs = Array.from(customInputsElements).map(el => el.value.trim());
 
-        // Array posisi tetap untuk Mode 6
-        // Dirancang agar 5 posisi pertama rapi (sudut & tengah), sisanya diacak secara permanen tanpa pola yang jelas
         const fixedPos3x3 = [0, 8, 2, 6, 4, 1, 7, 5, 2, 8, 3, 0, 6, 1, 4, 7, 3, 5, 0, 2, 6, 8, 1, 4, 7, 5, 3, 0, 2, 8];
         const fixedPos4x4 = [0, 15, 3, 12, 5, 10, 2, 8, 14, 1, 7, 11, 4, 13, 6, 9, 0, 15, 8, 3, 12, 1, 10, 5, 14, 2, 7, 11, 4, 13];
         const fixedPos5x5 = [0, 24, 4, 20, 12, 7, 18, 1, 14, 22, 9, 16, 3, 11, 23, 5, 19, 2, 15, 8, 21, 6, 17, 10, 13, 1, 24, 0, 20, 4];
 
         if (mode === '5' || mode === '6') {
-            // Mode Simulasi dengan Langkah Konkrit (Mengabaikan Custom Input)
             const simOps = [
                 { text: "\\sqrt[3]{512}", calc: t => 8 },
                 { text: "+\\,42", calc: t => t + 42 },
@@ -748,12 +713,10 @@
 
             for (let i = 0; i < maxSteps; i++) {
                 let pos;
-                
-                // Menentukan posisi berdasarkan mode 5 (acak) atau mode 6 (tetap)
                 if (mode === '6') {
                     if (currentGridSize === 3) pos = fixedPos3x3[i % fixedPos3x3.length];
                     else if (currentGridSize === 4) pos = fixedPos4x4[i % fixedPos4x4.length];
-                    else pos = fixedPos5x5[i % fixedPos5x5.length]; // fallback grid 5x5
+                    else pos = fixedPos5x5[i % fixedPos5x5.length];
                 } else {
                     do { pos=Math.floor(Math.random()*total); } while(pos===lastPos); lastPos=pos;
                 }
@@ -765,7 +728,6 @@
             }
 
         } else {
-            // Mode 1, 2, 3, 4 (Campuran Custom Input dan Acak)
             for (let i = 0; i < maxSteps; i++) {
                 let pos; do { pos=Math.floor(Math.random()*total); } while(pos===lastPos); lastPos=pos;
                 let rawText = customInputs[i] || '';
@@ -774,7 +736,6 @@
                 let lowerText = rawText.toLowerCase();
 
                 if (rawText !== '') {
-                    // --- LOGIKA JIKA KOTAK CUSTOM DIISI ---
                     if (lowerText === 'v' || lowerText === 'sqrt' || lowerText === 'akar') {
                         runTotal = Math.sqrt(Math.max(0, runTotal));
                         text = "\\sqrt{\\dots}";
@@ -809,7 +770,6 @@
                             } else {
                                 val = parseCustomNumber(valText); 
                                 if (isNaN(val)) val = 0;
-                                // Merapikan tampilan pecahan untuk LaTeX
                                 if (valText.includes('/')) {
                                     let parts = valText.split('/');
                                     valLatex = `\\frac{${parts[0]}}{${parts[1]}}`;
@@ -824,10 +784,9 @@
                             else if (op === '/' || op === ':') { runTotal /= val; text = `\\div\\,${valLatex}`; } 
                             else { runTotal = val; text = valLatex; }
                         } else {
-                            runTotal = 0; text = rawText; // Fallback jika format tidak dikenali
+                            runTotal = 0; text = rawText; 
                         }
                     } else {
-                        // Mode 1, 2, 3 Custom
                         let val = 0;
                         if (lowerText.startsWith('v') || lowerText.startsWith('sqrt')) {
                             let numStr = lowerText.replace(/^(v|sqrt)/, '');
@@ -847,7 +806,6 @@
                         if (!isNaN(val)) runTotal += val;
                     }
                 } else {
-                    // --- LOGIKA JIKA KOTAK KOSONG (RANDOMIZE SESUAI MODE) ---
                     let val;
                     if (mode==='1') {
                         val=Math.floor(Math.random()*9)+1; text=val.toString(); runTotal+=val;
@@ -899,8 +857,6 @@
                         }
                     }
                 }
-                
-                // Pastikan tidak ada pecahan float yang terlalu panjang
                 runTotal = Math.round(runTotal * 10000) / 10000;
                 sequence.push({pos, text, useLatex, stepTotal: runTotal});
             }
@@ -928,13 +884,10 @@
         maxLives=parseInt(document.getElementById('game-lives').value)||3;
         lives=maxLives;
         
-        // Memastikan sequence tergenerate dan maxSteps menyesuaikan jika ada custom input
         generateSequence(); 
-        
         createGrid(); resetUI(); renderLives(); 
-        checkpoints = []; renderCheckpoints();
+        checkpoints = []; 
         
-        // Reset and start memorize timer
         totalMemorizeTime = 0; totalRecallTime = 0;
         memorizeStartTime = Date.now(); memorizeTimerActive = true; recallTimerActive = false;
         document.getElementById('timer-display').classList.remove('hidden');
@@ -955,9 +908,6 @@
 
     function playNextInSequence() {
         if (gameState !== 'watching') return;
-
-        // -- LOGIKA LOOPING OTOMATIS --
-        // Jika animasi sudah mencapai langkah terakhir, kembalikan ke awal
         if (currentIndex >= maxSteps) {
             currentIndex = 0; 
         }
@@ -971,7 +921,6 @@
             cell.classList.add('active');
             
             currentIndex++; 
-            // Mencatat level maksimum yang sudah ditonton oleh user (meskipun sedang looping)
             if (currentIndex > highestIndexSeen) highestIndexSeen = currentIndex;
             
             updateProgress();
@@ -982,7 +931,6 @@
 
     function triggerRecall() {
         if (highestIndexSeen === 0) { 
-            alert('Tunggu angkanya muncul dulu!'); 
             return; 
         }
 
@@ -990,11 +938,9 @@
         const minLevel = lastCheckpoint + 1;
 
         if (highestIndexSeen < minLevel) {
-            alert(`Tonton minimal sampai langkah ke-${minLevel} untuk melanjutkan!`);
             return;
         }
 
-        // Pause memorize timer
         if (memorizeTimerActive) {
             totalMemorizeTime += (Date.now() - memorizeStartTime);
             memorizeTimerActive = false;
@@ -1003,20 +949,17 @@
 
         clearTimeout(intervalId); gameState='selecting_level'; clearGrid();
         document.getElementById('btn-recall').classList.add('hidden');
-        document.getElementById('recall-dots').classList.add('hidden'); // Sembunyikan dots saat pilih level
+        document.getElementById('recall-dots').classList.add('hidden');
 
-        document.getElementById('status-text').textContent=`${highestIndexSeen} urutan terdeteksi. Tentukan level tantanganmu!`;
+        document.getElementById('status-text').textContent=`Siap untuk Recall. Tentukan level tantanganmu!`;
         const ls=document.getElementById('level-select'); ls.innerHTML='';
         for (let i=minLevel;i<=highestIndexSeen;i++) {
             const o=document.createElement('option'); o.value=i;
-            o.textContent=`Level ${i}  (${i} langkah)${i===minLevel?' ← min':''}`;
+            o.textContent=`Level ${i} (${i} langkah)`;
             ls.appendChild(o);
         }
         ls.value=highestIndexSeen;
-        document.getElementById('level-seen-text').textContent=
-            lastCheckpoint > 0
-            ? `Checkpoint terakhir: Level ${lastCheckpoint}. Tantang diri mulai dari level ${minLevel}!`
-            : `Kamu telah melihat ${highestIndexSeen} urutan. Tantang diri di level berapa?`;
+        document.getElementById('level-seen-text').textContent = `Pilih level yang ingin kamu buktikan hafalannya.`;
         document.getElementById('level-selection-area').classList.remove('hidden');
     }
 
@@ -1024,11 +967,10 @@
         selectedLevel=parseInt(document.getElementById('level-select').value);
         document.getElementById('level-selection-area').classList.add('hidden');
         gameState='recalling_pos'; currentRecallStep=0;
-        document.getElementById('status-text').textContent=`Level ${selectedLevel} — Klik urutan posisi ke-1 sampai ke-${selectedLevel}!`;
+        document.getElementById('status-text').textContent=`Recall Visual — Klik urutan posisi kotak!`;
         document.getElementById('status-text').style.color='var(--text)';
-        renderRecallDots(); // Tampilkan poin progres recall
+        renderRecallDots(); 
         
-        // Memulai Timer Recall
         recallStartTime = Date.now();
         recallTimerActive = true;
         document.getElementById('rec-box').classList.add('active');
@@ -1041,19 +983,16 @@
             const cell=document.getElementById('cell-'+pos);
             cell.classList.add('correct');
             
-            // Nyalakan dot progres
             const dot = document.getElementById('dot-'+currentRecallStep);
             if(dot) dot.classList.add('active');
 
             setTimeout(()=>{ if(gameState==='recalling_pos') cell.classList.remove('correct'); },300);
             currentRecallStep++;
-            document.getElementById('status-text').textContent=`✓ Benar! Langkah ke-${currentRecallStep} / ${selectedLevel}`;
+            document.getElementById('status-text').textContent=`✓ Sempurna! (${currentRecallStep}/${selectedLevel})`;
             if (currentRecallStep>=selectedLevel) setTimeout(startMathPhase, 450);
         } else {
-            // Logika baru: tidak menampilkan hint kotak hijau, merekam waktu total juga
             document.getElementById('cell-'+pos).classList.add('wrong');
             
-            // Pause recall timer
             if (recallTimerActive) {
                 totalRecallTime += (Date.now() - recallStartTime);
                 recallTimerActive = false;
@@ -1064,14 +1003,14 @@
             let timeStrRec = formatTime(totalRecallTime);
 
             lives--; renderLives(); gameState='end';
-            const msg=`Posisi ke-${currentRecallStep+1} salah.`;
+            const msg=`Urutan visual salah.`;
             if (lives>0) {
                 document.getElementById('status-text').textContent=msg+'\nMau Rewatch urutan, atau langsung Retry?';
                 document.getElementById('status-text').style.color='var(--neon-red)';
                 document.getElementById('btn-rewatch').classList.remove('hidden');
                 document.getElementById('btn-retry').classList.remove('hidden');
             } else {
-                document.getElementById('status-text').textContent=msg+`\nNyawa Habis! GAME OVER.\n🏆 Skor Tertinggi: ${highestScore}\n⏱️ Waktu Memori: ${timeStrMem} | ⏱️ Waktu Recall: ${timeStrRec}`;
+                document.getElementById('status-text').textContent=msg+`\nNyawa Habis! GAME OVER.\n⏱️ Memori: ${timeStrMem} | ⏱️ Recall: ${timeStrRec}`;
                 document.getElementById('status-text').style.color='var(--neon-red)';
                 document.getElementById('btn-restart').classList.remove('hidden');
             }
@@ -1080,13 +1019,13 @@
 
     function startMathPhase() {
         gameState='answering_math'; clearGrid();
-        document.getElementById('recall-dots').classList.add('hidden'); // Sembunyikan dots progres
-        document.getElementById('status-text').textContent='✓ Ingatan visual sempurna! Sekarang uji kemampuan hitungmu.';
+        document.getElementById('recall-dots').classList.add('hidden'); 
+        document.getElementById('status-text').textContent='Ingatan visual akurat! Sekarang masukkan hasil hitunganmu.';
         document.getElementById('status-text').style.color='var(--neon-green)';
         const mode=document.getElementById('game-mode').value;
         document.getElementById('math-question').textContent=(mode==='4'||mode==='5'||mode==='6')
-            ?`Berapa HASIL AKHIR dari ${selectedLevel} operasi hitung tersebut secara berurutan?`
-            :`Berapa TOTAL dari ${selectedLevel} angka yang muncul?`;
+            ?`Berapa HASIL AKHIR dari operasi beruntun yang kamu ingat?`
+            :`Berapa TOTAL dari seluruh angka yang muncul?`;
         document.getElementById('math-input').value='';
         document.getElementById('math-area').classList.remove('hidden');
         document.getElementById('math-input').focus();
@@ -1096,7 +1035,6 @@
         const rawInput = document.getElementById('math-input').value.trim().replace(',', '.');
         if (rawInput === '') return;
         
-        // Pause recall timer
         if (recallTimerActive) {
             totalRecallTime += (Date.now() - recallStartTime);
             recallTimerActive = false;
@@ -1110,29 +1048,20 @@
         const user = parseFloat(rawInput);
         document.getElementById('math-area').classList.add('hidden');
 
-        // Pembulatan 2 digit desimal untuk mencocokkan jika ada margin float, atau operasi x 3.25
         const correctRounded = Math.round(correct * 100) / 100;
-        const displayCorrect = correctRounded.toString().replace('.', ',');
 
         if (!isNaN(user) && Math.abs(user - correctRounded) <= 0.01) {
-            // Update skor tertinggi
             if (selectedLevel > highestScore) highestScore = selectedLevel;
-
-            // Simpan checkpoint
+            // Data tetap disimpan secara internal namun tidak ditampilkan ke user
             checkpoints.push({level: selectedLevel, total: correctRounded});
-            renderCheckpoints();
 
             if (selectedLevel >= maxSteps) {
-                // SELESAI SEMPURNA!
-                document.getElementById('status-text').textContent=`\u2b50 MASTER! Semua ${maxSteps} urutan berhasil dihafal & dihitung!\n🏆 Skor Akhir: ${highestScore}\n⏱️ Waktu Memori: ${timeStrMem} | ⏱️ Waktu Recall: ${timeStrRec}`;
+                document.getElementById('status-text').textContent=`\u2b50 MASTER! Kamu berhasil menyelesaikan tantangan penuh.\n⏱️ Memori: ${timeStrMem} | ⏱️ Recall: ${timeStrRec}`;
                 document.getElementById('status-text').style.color='var(--neon-green)';
                 gameState='end';
                 document.getElementById('btn-restart').classList.remove('hidden');
             } else {
-                // Masih bisa lanjut ke step berikutnya
-                const remaining = maxSteps - selectedLevel;
-                document.getElementById('status-text').textContent=
-                    `\u2705 Benar! Level ${selectedLevel} selesai.\nMasih ada ${remaining} urutan lagi. Lanjut hafal?`;
+                document.getElementById('status-text').textContent = `\u2705 Perhitungan Akurat!\nIngin lanjut menghafal urutan berikutnya?`;
                 document.getElementById('status-text').style.color='var(--neon-green)';
                 gameState='between_rounds';
                 document.getElementById('btn-continue').classList.remove('hidden');
@@ -1141,36 +1070,31 @@
         } else {
             lives--; renderLives(); gameState='end';
             if (lives>0) {
-                document.getElementById('status-text').textContent='Hasil perhitungan salah!\nMau Rewatch urutan, atau langsung Retry?';
+                document.getElementById('status-text').textContent='Hasil perhitungan kurang tepat.\nCoba lagi dengan Rewatch atau Retry.';
                 document.getElementById('status-text').style.color='var(--neon-red)';
                 document.getElementById('btn-rewatch').classList.remove('hidden');
                 document.getElementById('btn-retry').classList.remove('hidden');
             } else {
-                document.getElementById('status-text').textContent=`Perhitungan salah. Jawaban benar: ${displayCorrect}.\nNyawa Habis! GAME OVER.\n🏆 Skor Tertinggi: ${highestScore}\n⏱️ Waktu Memori: ${timeStrMem} | ⏱️ Waktu Recall: ${timeStrRec}`;
+                document.getElementById('status-text').textContent=`Perhitungan salah.\nNyawa Habis! GAME OVER.\n⏱️ Memori: ${timeStrMem} | ⏱️ Recall: ${timeStrRec}`;
                 document.getElementById('status-text').style.color='var(--neon-red)';
                 document.getElementById('btn-restart').classList.remove('hidden');
             }
         }
     }
 
-    // Lanjut menonton sequence dari awal, setelah checkpoint berhasil
     function continueWatching() {
         document.getElementById('btn-continue').classList.add('hidden');
         document.getElementById('btn-restart').classList.add('hidden');
-        // Reset index ke 0 agar nonton dari awal lagi, sequence SAMA
         currentIndex = 0; 
-        highestIndexSeen = 0; // Reset agar harus nonton lagi sebelum Recall
+        highestIndexSeen = 0; 
         gameState = 'watching';
         
-        // Resume memorize timer
         memorizeStartTime = Date.now();
         memorizeTimerActive = true;
         document.getElementById('mem-box').classList.add('active');
 
         clearGrid();
-        const mode = document.getElementById('game-mode').value;
-        document.getElementById('status-text').textContent =
-            `Putaran baru! Sudah di level ${selectedLevel}. Tonton sampai kamu siap recall lebih jauh!`;
+        document.getElementById('status-text').textContent = `Lanjut! Tonton sampai kamu siap Recall lebih jauh.`;
         document.getElementById('status-text').style.color = 'var(--text)';
         document.getElementById('btn-recall').classList.remove('hidden');
         playNextInSequence();
@@ -1183,12 +1107,11 @@
         document.getElementById('recall-dots').classList.add('hidden');
         currentIndex=0; highestIndexSeen=0; gameState='watching'; clearGrid();
         
-        // Restart memorize timer
         memorizeStartTime = Date.now();
         memorizeTimerActive = true;
         document.getElementById('mem-box').classList.add('active');
 
-        document.getElementById('status-text').textContent='Memutar ulang urutan yang sama. Perhatikan baik-baik!';
+        document.getElementById('status-text').textContent='Memutar ulang urutan. Perhatikan baik-baik!';
         document.getElementById('status-text').style.color='var(--text)';
         document.getElementById('btn-recall').classList.remove('hidden');
         playNextInSequence();
@@ -1199,11 +1122,10 @@
         document.getElementById('btn-retry').classList.add('hidden');
         document.getElementById('math-area').classList.add('hidden');
         gameState='recalling_pos'; currentRecallStep=0; clearGrid();
-        document.getElementById('status-text').textContent=`Ayo coba lagi! Level ${selectedLevel}: klik urutan ke-1 sampai ke-${selectedLevel}!`;
+        document.getElementById('status-text').textContent=`Ayo coba lagi! Klik urutan posisi kotaknya.`;
         document.getElementById('status-text').style.color='var(--text)';
-        renderRecallDots(); // Render ulang dot kosong
+        renderRecallDots(); 
         
-        // Mulai ulang timer untuk sesi retry ini
         recallStartTime = Date.now();
         recallTimerActive = true;
         document.getElementById('rec-box').classList.add('active');
@@ -1223,7 +1145,6 @@
         ['btn-recall','btn-rewatch','btn-retry','btn-restart','btn-continue'].forEach(id=>document.getElementById(id).classList.add('hidden'));
         document.getElementById('btn-start').classList.remove('hidden');
         document.getElementById('lives-display').classList.add('hidden');
-        document.getElementById('checkpoint-row').innerHTML='';
         document.getElementById('status-text').textContent='Siap menguji memori dan berhitung?';
         document.getElementById('status-text').style.color='var(--text)';
         
