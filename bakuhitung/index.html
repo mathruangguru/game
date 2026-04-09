@@ -230,7 +230,7 @@
             display: flex;
             flex-direction: column;
             width: 220px;
-            padding: 12px 12px 5px 12px;
+            padding: 18px 12px 8px 12px; /* Ditambah padding atas agar tidak nabrak badge */
             border-radius: 12px;
             background: rgba(0,0,0,0.03);
             position: relative;
@@ -277,12 +277,26 @@
         .active-turn.p2-stats { background: var(--p2-bg); }
         .inactive-turn { opacity: 0.6; filter: grayscale(60%); }
 
-        .player-name { font-weight: bold; font-size: 16px; margin-top: 0; }
-        .player-score { font-family: 'Fredoka', cursive; font-size: 32px; line-height: 1; margin: 2px 0; }
+        .player-name { font-weight: bold; font-size: 14px; margin-top: 0; color: #444; }
+        
+        /* Baris Skor dan Hati agar sejajar */
+        .stats-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 2px;
+        }
+        .p2-stats .stats-row { flex-direction: row-reverse; }
+
+        .player-score { 
+            font-family: 'Fredoka', cursive; 
+            font-size: 26px; 
+            line-height: 1; 
+            color: #111; 
+        }
         
         .hearts { display: flex; gap: 3px; }
-        .p2-stats .hearts { justify-content: flex-end; }
-        .heart { font-size: 16px; color: #ff3333; }
+        .heart { font-size: 14px; color: #ff3333; }
         .heart.lost { opacity: 0.2; filter: grayscale(100%); }
 
         .target-box {
@@ -322,20 +336,51 @@
         .card.correct-anim { background: #88ff00 !important; border-color: #7acc00 !important; }
         .card.wrong-anim { background: #ff3333 !important; color: #fff !important; animation: shake 0.4s; }
 
+        /* --- SOUND CONTROL BTN --- */
+        #sound-toggle {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 200;
+            background: #fff;
+            border: 2px solid #ddd;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+        }
+
         body.single-mode .p2-elements { display: none !important; }
         body.single-mode #p1-zone {
             max-width: 700px; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(4, 1fr);
         }
 
         footer {
-            height: 40px; display: flex; align-items: center; justify-content: center;
-            background: rgba(255,255,255,0.8); border-top: 1px solid rgba(0,0,0,0.1);
+            height: 55px; 
+            display: flex; 
+            align-items: flex-start; 
+            justify-content: center;
+            background: rgba(255,255,255,0.8); 
+            border-top: 1px solid rgba(0,0,0,0.1);
+            padding-top: 10px; 
         }
         #mode-info { color: #666; font-size: 14px; font-weight: bold; }
 
         .copyright-global {
-            position: absolute; bottom: 5px; width: 100%; text-align: center;
-            font-size: 10px; color: #888; pointer-events: none;
+            position: absolute; 
+            bottom: 8px; 
+            width: 100%; 
+            text-align: center;
+            font-size: 10px; 
+            color: #888; 
+            pointer-events: none;
+            font-family: 'Nunito', sans-serif;
+            z-index: 150;
         }
 
         .ingame-logo {
@@ -355,6 +400,11 @@
     <audio id="bg-music" loop src="bakuhitung.mp3"></audio>
 
     <div id="game-app">
+        <!-- SOUND TOGGLE -->
+        <button id="sound-toggle" onclick="uiSetup.toggleMute()" title="Mute/Unmute">
+            <span id="sound-icon">🔊</span>
+        </button>
+
         <img id="ingame-logo" src="https://imgix3.ruangguru.com/assets/miscellaneous/png_zekej2_3984.png" class="ingame-logo hidden" alt="Ruangguru">
 
         <!-- SETUP WIZARD SCREEN -->
@@ -434,12 +484,12 @@
                 <div class="turn-badge p2-elements">GILIRANMU</div>
                 <span id="p1-time-display" class="player-timer">03:00</span>
                 <span class="player-name" id="hud-name-p1">PEMAIN PERTAMA</span>
-                <div class="hearts" id="p1-hearts">
-                    <span class="heart">❤</span><span class="heart">❤</span><span class="heart">❤</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: flex-end; width: 100%;">
+                <div class="stats-row">
+                    <div class="hearts" id="p1-hearts">
+                        <span class="heart">❤</span><span class="heart">❤</span><span class="heart">❤</span>
+                    </div>
                     <span class="player-score" id="p1-score">0</span>
-                    <span id="p1-progress" class="hidden" style="color: var(--p1-color); font-weight: bold; font-size: 14px; margin-bottom: 5px;">Soal: 0/10</span>
+                    <span id="p1-progress" class="hidden" style="color: var(--p1-color); font-weight: bold; font-size: 11px; margin-left: auto;">0/10</span>
                 </div>
             </div>
 
@@ -452,10 +502,12 @@
                 <div class="turn-badge">GILIRANMU</div>
                 <span id="p2-time-display" class="player-timer">03:00</span>
                 <span class="player-name" id="hud-name-p2">PEMAIN KEDUA</span>
-                <div class="hearts" id="p2-hearts">
-                    <span class="heart">❤</span><span class="heart">❤</span><span class="heart">❤</span>
+                <div class="stats-row">
+                    <div class="hearts" id="p2-hearts">
+                        <span class="heart">❤</span><span class="heart">❤</span><span class="heart">❤</span>
+                    </div>
+                    <span class="player-score" id="p2-score">0</span>
                 </div>
-                <span class="player-score" id="p2-score">0</span>
             </div>
         </header>
 
@@ -469,6 +521,7 @@
             <span id="mode-info">Mode: Single | Level: Medium</span>
         </footer>
 
+        <!-- COPYRIGHT INFO -->
         <div class="copyright-global">
             Copyright Ⓒ 2026 - PT Ruang Raya Indonesia - All Rights Reserved.
         </div>
@@ -490,10 +543,11 @@
 
         // --- AUDIO CONTROLLER ---
         const bgMusic = document.getElementById('bg-music');
+        let isMuted = false;
         
         // Autoplay Enabler
         document.addEventListener('click', () => {
-            if (bgMusic.paused && !gameRunning) {
+            if (bgMusic.paused) {
                 bgMusic.play().catch(e => console.log("BGM Error:", e));
             }
         }, { once: true });
@@ -503,6 +557,7 @@
         let gameRunning = false;
 
         function playSound(type) {
+            if (isMuted) return; 
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
@@ -558,13 +613,18 @@
                 const li = document.getElementById('rule-mode-specific');
                 li.innerHTML = this.mode === 'single' ? "<strong>Mode Single:</strong> Jawab 10 soal secepat mungkin." : "<strong>Mode 2 Players:</strong> Beradu cepat menjawab secara bergiliran.";
             },
+            toggleMute() {
+                isMuted = !isMuted;
+                bgMusic.muted = isMuted;
+                document.getElementById('sound-icon').textContent = isMuted ? '🔇' : '🔊';
+            },
             resetToHome() {
                 gameRunning = false;
                 document.getElementById('game-over-screen').classList.add('hidden');
                 document.getElementById('wizard-screen').classList.remove('hidden');
                 document.getElementById('ingame-logo').classList.add('hidden');
                 this.step = 1; this.updateStepView();
-                bgMusic.play();
+                if (!isMuted) bgMusic.play();
             }
         };
 
@@ -599,7 +659,6 @@
             }
             start() {
                 gameRunning = true;
-                bgMusic.pause(); bgMusic.currentTime = 0;
                 document.getElementById('ingame-logo').classList.remove('hidden');
                 document.getElementById('wizard-screen').classList.add('hidden');
                 this.math.diff = uiSetup.difficulty;
@@ -659,7 +718,7 @@
                 document.getElementById('p2-score').textContent = this.state.p2.score;
                 document.getElementById('p1-time-display').textContent = fmt(this.state.p1.time);
                 document.getElementById('p2-time-display').textContent = fmt(this.state.p2.time);
-                document.getElementById('p1-progress').textContent = `Soal: ${this.state.p1.score}/10`;
+                document.getElementById('p1-progress').textContent = `${this.state.p1.score}/10`;
                 ['p1','p2'].forEach(p => {
                     const h = document.getElementById(`${p}-hearts`).children;
                     for(let i=0; i<3; i++) h[i].classList.toggle('lost', i >= this.state[p].lives);
