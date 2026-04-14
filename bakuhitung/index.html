@@ -331,16 +331,21 @@
         .card {
             background: var(--card-bg); border-radius: 6px;
             display: flex; justify-content: center; align-items: center;
-            font-size: 16px; font-weight: bold; cursor: pointer;
+            font-size: 15px; /* Dikecilkan sedikit dari aslinya yang 16px */
+            font-weight: bold; cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.08); border: 2px solid #eaeaea;
-            /* Perbaikan 3: Tambah padding dan batasi ruang agar persamaan tidak terpotong tepi */
-            padding: 8px;
+            padding: 6px; /* Disesuaikan agar ruang persamaan lebih pas */
             text-align: center;
             overflow: hidden;
         }
         .card:active { transform: translateY(3px); }
         .card.correct-anim { background: #88ff00 !important; border-color: #7acc00 !important; }
         .card.wrong-anim { background: #ff3333 !important; color: #fff !important; animation: shake 0.4s; }
+        
+        /* Memastikan MathJax menyesuaikan ukurannya di dalam kartu */
+        .card mjx-container {
+            font-size: 100% !important;
+        }
 
         /* --- NAV BTNS (SOUND & HOME) --- */
         #sound-toggle {
