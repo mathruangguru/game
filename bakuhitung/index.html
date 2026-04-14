@@ -230,7 +230,7 @@
             display: flex;
             flex-direction: column;
             width: 220px;
-            padding: 18px 12px 8px 12px; /* Ditambah padding atas agar tidak nabrak badge */
+            padding: 18px 12px 8px 12px;
             border-radius: 12px;
             background: rgba(0,0,0,0.03);
             position: relative;
@@ -301,7 +301,9 @@
 
         .target-box {
             width: 120px; height: 90px;
-            background: #fff; border: 4px solid var(--gold); border-radius: 12px;
+            /* Perbaikan 2: Latar belakang warna kuning muda agar kontras */
+            background: #fffde7; 
+            border: 4px solid var(--gold); border-radius: 12px;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             box-shadow: 0 4px 0 #d39e00; z-index: 10;
         }
@@ -331,28 +333,47 @@
             display: flex; justify-content: center; align-items: center;
             font-size: 16px; font-weight: bold; cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.08); border: 2px solid #eaeaea;
+            /* Perbaikan 3: Tambah padding dan batasi ruang agar persamaan tidak terpotong tepi */
+            padding: 8px;
+            text-align: center;
+            overflow: hidden;
         }
         .card:active { transform: translateY(3px); }
         .card.correct-anim { background: #88ff00 !important; border-color: #7acc00 !important; }
         .card.wrong-anim { background: #ff3333 !important; color: #fff !important; animation: shake 0.4s; }
 
-        /* --- SOUND CONTROL BTN --- */
+        /* --- NAV BTNS (SOUND & HOME) --- */
         #sound-toggle {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            z-index: 200;
-            background: #fff;
-            border: 2px solid #ddd;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: absolute; top: 15px; right: 15px;
+            z-index: 200; background: #fff; border: 2px solid #ddd;
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             transition: all 0.2s;
+        }
+        #sound-toggle:hover { background: #f0f0f0; transform: scale(1.05); }
+
+        /* Perbaikan 4: Styling Tombol Home Baru */
+        #home-container {
+            position: absolute; top: 22px; left: 340px; transform: translateX(-50%);
+            z-index: 200; display: flex; flex-direction: column; align-items: center;
+            cursor: pointer; width: 90px;
+        }
+        #home-container.hidden { display: none !important; }
+        #home-container:hover #home-toggle { background: #f0f0f0; transform: scale(1.05); }
+
+        #home-toggle {
+            background: #fff; border: 2px solid #ddd;
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.2s; font-size: 20px;
+            margin-bottom: 5px;
+        }
+
+        .home-label {
+            font-size: 10px; font-weight: 800; color: #888;
+            text-align: center; line-height: 1.2; text-transform: uppercase;
         }
 
         body.single-mode .p2-elements { display: none !important; }
@@ -361,31 +382,16 @@
         }
 
         footer {
-            height: 55px; 
-            display: flex; 
-            align-items: flex-start; 
-            justify-content: center;
-            background: rgba(255,255,255,0.8); 
-            border-top: 1px solid rgba(0,0,0,0.1);
+            height: 55px; display: flex; align-items: flex-start; justify-content: center;
+            background: rgba(255,255,255,0.8); border-top: 1px solid rgba(0,0,0,0.1);
             padding-top: 10px; 
         }
         #mode-info { color: #666; font-size: 14px; font-weight: bold; }
 
         .copyright-global {
-            position: absolute; 
-            bottom: 8px; 
-            width: 100%; 
-            text-align: center;
-            font-size: 10px; 
-            color: #888; 
-            pointer-events: none;
-            font-family: 'Nunito', sans-serif;
-            z-index: 150;
-        }
-
-        .ingame-logo {
-            position: absolute; top: 45px; left: 340px; transform: translateX(-50%);
-            height: 45px; z-index: 90; opacity: 0.9; pointer-events: none;
+            position: absolute; bottom: 8px; width: 100%; text-align: center;
+            font-size: 10px; color: #888; pointer-events: none;
+            font-family: 'Nunito', sans-serif; z-index: 150;
         }
 
         @keyframes shake {
@@ -400,12 +406,16 @@
     <audio id="bg-music" loop src="bakuhitung.mp3"></audio>
 
     <div id="game-app">
-        <!-- SOUND TOGGLE -->
+        <!-- NAVIGATION UI (SOUND & HOME) -->
         <button id="sound-toggle" onclick="uiSetup.toggleMute()" title="Mute/Unmute">
             <span id="sound-icon">🔊</span>
         </button>
-
-        <img id="ingame-logo" src="https://imgix3.ruangguru.com/assets/miscellaneous/png_zekej2_3984.png" class="ingame-logo hidden" alt="Ruangguru">
+        
+        <!-- Tombol Home In-Game yang Baru -->
+        <div id="home-container" class="hidden" onclick="uiSetup.resetToHome()" title="Kembali ke Menu Utama">
+            <div id="home-toggle">🏠</div>
+            <span class="home-label">kembali ke<br>menu utama</span>
+        </div>
 
         <!-- SETUP WIZARD SCREEN -->
         <div id="wizard-screen" class="flex-center">
@@ -620,11 +630,20 @@
             },
             resetToHome() {
                 gameRunning = false;
+                
+                // Hentikan timer jika ada yang sedang berjalan
+                if (game && game.timer) {
+                    clearInterval(game.timer);
+                }
+
                 document.getElementById('game-over-screen').classList.add('hidden');
                 document.getElementById('wizard-screen').classList.remove('hidden');
-                document.getElementById('ingame-logo').classList.add('hidden');
+                document.getElementById('home-container').classList.add('hidden'); // Sembunyikan tombol home
+                
                 this.step = 1; this.updateStepView();
-                if (!isMuted) bgMusic.play();
+                if (!isMuted) {
+                    bgMusic.play().catch(e => console.log("BGM Error:", e));
+                }
             }
         };
 
@@ -659,14 +678,21 @@
             }
             start() {
                 gameRunning = true;
-                document.getElementById('ingame-logo').classList.remove('hidden');
+                
+                // Perbaikan 4: Tampilkan tombol back/home saat in-game
+                document.getElementById('home-container').classList.remove('hidden');
                 document.getElementById('wizard-screen').classList.add('hidden');
+                
                 this.math.diff = uiSetup.difficulty;
                 
                 document.body.classList.toggle('single-mode', uiSetup.mode === 'single');
                 this.state = { p1: { score:0, lives:3, time:180 }, p2: { score:0, lives:3, time:180 }, active: 'p1' };
                 this.updateUI();
                 this.newRound();
+                
+                // Clear existing timer if any
+                if(this.timer) clearInterval(this.timer);
+                
                 this.timer = setInterval(() => {
                     this.state[this.state.active].time--;
                     this.updateUI();
@@ -733,6 +759,7 @@
             end(msg) {
                 clearInterval(this.timer);
                 document.getElementById('game-over-screen').classList.remove('hidden');
+                document.getElementById('home-container').classList.add('hidden'); // Sembunyikan home di hasil akhir
                 document.getElementById('winner-text').textContent = msg;
                 document.getElementById('final-single-score').textContent = `${this.state.p1.score}/10`;
                 document.getElementById('final-p1').textContent = this.state.p1.score;
