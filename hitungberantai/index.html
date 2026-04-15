@@ -18,6 +18,7 @@
             --text-color: #333333;
             --danger: #ff4757;
             --success: #2ed573;
+            --veryhard: #2f3542;
         }
 
         * {
@@ -100,10 +101,10 @@
         .btn-start:active { transform: translateY(3px); box-shadow: 0 2px 0 #d39e00; }
 
         .btn-level {
-            width: 250px;
+            width: 280px;
             font-size: 20px;
-            padding: 15px;
-            margin: 10px;
+            padding: 12px;
+            margin: 8px;
             border-radius: 15px;
             border: 3px solid #ddd;
             font-family: 'Fredoka', cursive;
@@ -114,6 +115,7 @@
         .btn-level.easy { border-color: var(--success); color: var(--success); }
         .btn-level.medium { border-color: var(--gold); color: #b08000; }
         .btn-level.hard { border-color: var(--danger); color: var(--danger); }
+        .btn-level.veryhard { border-color: var(--veryhard); color: var(--veryhard); }
         .btn-level:hover { transform: scale(1.05); background: #f0f0f0; }
 
         /* --- HUD --- */
@@ -178,6 +180,13 @@
             line-height: 1;
             margin-bottom: 25px;
             text-shadow: 4px 4px 0px rgba(0,0,0,0.05);
+            transition: opacity 0.3s ease;
+        }
+
+        /* Kelas untuk menyembunyikan angka di level Sangat Sulit */
+        .hidden-value {
+            visibility: hidden;
+            opacity: 0;
         }
 
         .timer-container {
@@ -268,6 +277,7 @@
         <button class="btn-level easy" onclick="game.setLevel('easy')">🟢 MUDAH (10 Detik)</button>
         <button class="btn-level medium" onclick="game.setLevel('medium')">🟡 SEDANG (8 Detik)</button>
         <button class="btn-level hard" onclick="game.setLevel('hard')">🔴 SULIT (5 Detik)</button>
+        <button class="btn-level veryhard" onclick="game.setLevel('veryhard')">⚫ SANGAT SULIT (Mode Buta)</button>
     </div>
 
     <!-- RULES SCREEN -->
@@ -276,7 +286,8 @@
         <div style="text-align: left; max-width: 600px; font-size: 18px; line-height: 1.6; margin: 20px 0; background: #f0f7ff; padding: 25px; border-radius: 20px; border: 2px solid #cce4ff;">
             <ul>
                 <li>Dengarkan instruksi operasi matematika.</li>
-                <li>Lihat angka utama yang muncul besar di tengah.</li>
+                <li>Lihat angka utama atau ingat hasil sebelumnya.</li>
+                <li id="rule-blind" style="color: var(--danger); font-weight: bold;" class="hidden">⚠️ Mode Buta: Angka hanya muncul di awal, selanjutnya kamu harus ingat sendiri!</li>
                 <li>Pilih hasil akhir yang benar dari 3 pilihan di bawah.</li>
                 <li>Jawab <strong>20 soal benar</strong> untuk menang!</li>
                 <li>Gagal menjawab = Hilang 1 Nyawa ❤️ (Maksimal 3 kali).</li>
@@ -360,6 +371,7 @@
         timeLeft: 8,
         timer: null,
         isTransitioning: false,
+        isFirstStep: true,
         ops: ['+', '-', 'x', ':'],
 
         showScreen(screenId) {
@@ -371,7 +383,10 @@
             this.level = lvl;
             if(lvl === 'easy') this.duration = 10;
             else if(lvl === 'medium') this.duration = 8;
-            else this.duration = 5;
+            else if(lvl === 'hard') this.duration = 5;
+            else if(lvl === 'veryhard') this.duration = 5;
+            
+            document.getElementById('rule-blind').classList.toggle('hidden', lvl !== 'veryhard');
             this.showScreen('rules-screen');
         },
 
@@ -379,15 +394,26 @@
             document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
             this.score = 0;
             this.lives = 3;
+            this.isFirstStep = true;
             this.currentValue = Math.floor(Math.random() * 10) + 5;
             this.updateUI();
-            this.nextQuestion(`Mulai dengan ${this.currentValue}`, true);
+            this.nextQuestion(`Mulai dari ${this.currentValue}`, true);
         },
 
         updateUI() {
             document.getElementById('score-display').textContent = this.score;
             document.getElementById('remaining-display').textContent = Math.max(0, WIN_TARGET - this.score);
-            document.getElementById('current-total-display').textContent = this.currentValue;
+            
+            const displayEl = document.getElementById('current-total-display');
+            displayEl.textContent = this.currentValue;
+            
+            // Sembunyikan angka hanya jika level Sangat Sulit DAN bukan langkah awal
+            if (this.level === 'veryhard' && !this.isFirstStep) {
+                displayEl.classList.add('hidden-value');
+            } else {
+                displayEl.classList.remove('hidden-value');
+            }
+
             const hearts = document.querySelectorAll('.heart');
             hearts.forEach((h, i) => h.classList.toggle('lost', i >= this.lives));
         },
@@ -444,17 +470,21 @@
             this.isTransitioning = false;
             let q;
             if (isFirst) {
-                q = { label: "Siap!", result: this.currentValue };
+                q = { label: initialLabel, result: this.currentValue };
                 this.correctAnswer = this.currentValue;
             } else {
+                this.isFirstStep = false; // Setelah "Siap", angka akan disembunyikan di Very Hard
                 q = this.generateQuestion();
             }
 
             document.getElementById('question-text').textContent = q.label;
+            this.updateUI(); // Pastikan visibilitas angka diperbarui berdasarkan isFirstStep
             
             let voiceText = q.label;
             if (!isFirst) {
                 voiceText = voiceText.replace(':', 'dibagi').replace('x', 'dikali').replace('+', 'ditambah').replace('-', 'dikurang');
+            } else {
+                voiceText = "Mulai dari " + this.currentValue;
             }
             this.speak(voiceText);
             
