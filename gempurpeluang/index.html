@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gempur Peluang: Edisi TV (Ruangguru)</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;600&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <!-- MathJax -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            /* Tema Gelap / Dark Arena */
+            --bg-color: #0f172a;
+            --game-bg: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+            --p1-color: #38bdf8; /* Light Blue */
+            --p2-color: #ef4444; /* Red */
+            --heal-color: #4ade80; /* Light Green */
+            --gold: #fbbf24;
+            --combo-color: #a855f7; /* Purple for combo */
+            --text-color: #f8fafc;
+            --card-bg: #1e293b;
+            --card-border: #334155;
+            --modal-bg: rgba(15, 23, 42, 0.95);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0; padding: 0; background-color: #000; color: var(--text-color);
+            font-family: 'Nunito', sans-serif; overflow: hidden;
+            height: 100vh; width: 100vw; display: flex; justify-content: center; align-items: center;
+        }
+
+        /* --- THE GAME CONTAINER --- */
+        #game-app {
+            width: 1280px; height: 720px; position: relative;
+            background-color: var(--bg-color); background-image: var(--game-bg);
+            overflow: hidden; box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            display: flex; flex-direction: column; transform-origin: center;
+        }
+
+        .hidden { display: none !important; }
+        .flex-center { display: flex; justify-content: center; align-items: center; }
+        
+        /* --- WIZARD & MODAL SCREENS --- */
+        .overlay-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--modal-bg); backdrop-filter: blur(10px);
+            z-index: 100; flex-direction: column; text-align: center; padding: 20px;
+        }
+
+        h1 {
+            font-family: 'Fredoka', cursive; font-size: 56px; text-transform: uppercase;
+            letter-spacing: 2px; margin-bottom: 5px; color: var(--text-color);
+            text-shadow: 3px 3px 0px #000, 0 0 15px rgba(56, 189, 248, 0.4); line-height: 1.1; margin-top: 0;
+        }
+
+        .created-by {
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            gap: 8px; margin-bottom: 20px; font-size: 16px; font-weight: 700; color: #94a3b8;
+        }
+        .created-by img { height: 45px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.2)); }
+
+        h2.step-title { font-family: 'Fredoka', cursive; color: var(--gold); font-size: 28px; margin-bottom: 10px; margin-top: 0; }
+
+        .wizard-step { display: none; flex-direction: column; align-items: center; width: 100%; animation: fadeIn 0.4s ease-in-out; }
+        .wizard-step.active { display: flex; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        .mode-selector { display: flex; gap: 20px; margin-bottom: 25px; }
+        .btn-mode {
+            background: var(--card-bg); border: 3px solid var(--card-border); padding: 15px 40px;
+            font-family: 'Fredoka', cursive; font-size: 24px; color: #cbd5e1; border-radius: 20px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .btn-mode.active { border-color: var(--gold); background: rgba(251, 191, 36, 0.1); color: var(--gold); transform: scale(1.05); }
+
+        /* --- AVATAR SELECTION --- */
+        .avatar-group { margin-bottom: 20px; }
+        .avatar-group h3 { font-family: 'Fredoka', cursive; color: #cbd5e1; font-size: 20px; margin-bottom: 10px; text-transform: uppercase; }
+        .avatar-options { display: flex; gap: 20px; justify-content: center; }
+        .avatar-btn {
+            font-size: 50px; background: rgba(0,0,0,0.3); border: 3px solid var(--card-border);
+            border-radius: 20px; padding: 10px 20px; cursor: pointer; transition: all 0.2s;
+            filter: grayscale(80%); opacity: 0.6;
+        }
+        .avatar-btn:hover { transform: translateY(-5px); opacity: 0.8; }
+        .avatar-btn.active {
+            border-color: var(--gold); filter: grayscale(0%); opacity: 1;
+            background: rgba(251, 191, 36, 0.2); transform: scale(1.1); box-shadow: 0 5px 15px rgba(251, 191, 36, 0.3);
+        }
+
+        .rules-list {
+            text-align: left; background: rgba(0,0,0,0.4); border: 2px solid var(--card-border);
+            padding: 15px 30px; border-radius: 20px; font-size: 18px; line-height: 1.5;
+            width: 800px; margin-bottom: 15px; color: #e2e8f0;
+        }
+
+        .nav-buttons { display: flex; gap: 20px; margin-top: 5px; }
+        .btn-nav { font-family: 'Fredoka', cursive; background: transparent; border: 2px solid #64748b; padding: 8px 30px; font-size: 18px; color: #cbd5e1; border-radius: 50px; cursor: pointer; transition: 0.2s;}
+        .btn-nav:hover { background: #334155; }
+        .btn-start {
+            font-family: 'Fredoka', cursive; background: linear-gradient(180deg, var(--gold), #d97706); border: 3px solid #fff;
+            padding: 8px 40px; font-size: 22px; font-weight: 600; color: #451a03; border-radius: 60px;
+            cursor: pointer; box-shadow: 0 5px 0 #92400e; transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .btn-start:active { transform: translateY(5px); box-shadow: 0 0 0 #92400e; }
+
+        /* --- HEADER & HUD --- */
+        header {
+            height: 150px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: flex-start;
+            padding: 20px 50px 0 50px; background: rgba(15, 23, 42, 0.8); border-bottom: 2px solid #334155; gap: 20px;
+        }
+
+        .player-stats {
+            display: flex; flex-direction: column; width: 380px; padding: 15px 20px;
+            border-radius: 15px; background: rgba(0,0,0,0.3); position: relative; border: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .p1-stats { border-color: #1e293b; justify-self: start; }
+        .p2-stats { border-color: #1e293b; text-align: right; justify-self: end; }
+        
+        .active-turn.p1-stats { border-color: var(--p1-color); background: rgba(56, 189, 248, 0.1); box-shadow: 0 0 20px rgba(56, 189, 248, 0.2); }
+        .active-turn.p2-stats { border-color: var(--p2-color); background: rgba(239, 68, 68, 0.1); box-shadow: 0 0 20px rgba(239, 68, 68, 0.2); }
+        .inactive-turn { opacity: 0.5; filter: grayscale(50%); }
+
+        .turn-badge {
+            position: absolute; top: -15px; background: var(--gold); color: #000; padding: 4px 15px;
+            border-radius: 10px; font-size: 12px; font-weight: bold; font-family: 'Fredoka', sans-serif;
+            opacity: 0; transition: opacity 0.3s; text-transform: uppercase; border: 2px solid #fff;
+        }
+        .p1-stats .turn-badge { left: 20px; }
+        .p2-stats .turn-badge { right: 20px; }
+        .active-turn .turn-badge { opacity: 1; }
+
+        .player-name { font-weight: 900; font-family: 'Fredoka', cursive; font-size: 24px; margin-bottom: 8px; color: var(--text-color); text-transform: uppercase; text-shadow: 1px 1px 2px #000; }
+        .p1-stats .player-name { color: var(--p1-color); }
+        .p2-stats .player-name { color: var(--p2-color); }
+        
+        .hp-bar-bg { width: 100%; height: 26px; background: #000; border-radius: 13px; overflow: hidden; border: 2px solid #334155; }
+        .hp-bar-fill { height: 100%; transition: width 0.5s ease-out; }
+        #p1-hp-fill { background: linear-gradient(90deg, #0284c7, var(--p1-color)); }
+        #p2-hp-fill { background: linear-gradient(90deg, #b91c1c, var(--p2-color)); }
+        
+        .hp-text { font-family: 'Fredoka', monospace; font-size: 18px; font-weight: bold; margin-top: 5px; color: #94a3b8; }
+
+        .vs-box {
+            font-family: 'Fredoka', sans-serif; font-size: 48px; font-weight: 900; color: #475569;
+            text-shadow: 2px 2px 0 #000; align-self: center; margin-top: 25px; transition: color 0.3s;
+        }
+
+        /* --- ARENA & CARDS --- */
+        #arena { flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 20px 50px 60px 50px; position: relative; }
+        
+        .sprites-container { display: flex; justify-content: space-between; align-items: flex-end; flex: 1; padding: 0 100px; }
+        .sprite { font-size: 140px; filter: drop-shadow(0 20px 20px rgba(0,0,0,0.5)); transition: transform 0.2s; }
+        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        
+        #card-deck { display: flex; justify-content: center; gap: 20px; margin-top: 20px; }
+        .action-card {
+            background: var(--card-bg); border: 3px solid var(--card-border); border-radius: 20px; width: 200px; padding: 15px;
+            text-align: center; cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.4); transition: all 0.2s; position: relative;
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+        }
+        .action-card:hover { transform: translateY(-10px); background: #334155; border-color: #cbd5e1; box-shadow: 0 15px 30px rgba(0,0,0,0.6); }
+        .action-card:active { transform: translateY(0); }
+        .action-card.disabled { opacity: 0.3; pointer-events: none; filter: grayscale(100%); }
+
+        .card-icon { font-size: 45px; margin-bottom: 5px; text-shadow: 0 0 15px rgba(255,255,255,0.2); }
+        .card-title { font-family: 'Fredoka', cursive; font-size: 20px; font-weight: bold; color: var(--text-color); line-height: 1.1; margin-bottom: 5px; }
+        
+        .card-effect { font-family: 'Fredoka', monospace; font-size: 18px; font-weight: 900; margin-bottom: 10px; padding: 2px 10px; border-radius: 8px; background: rgba(0,0,0,0.5); }
+        .effect-dmg { color: #fca5a5; }
+        .effect-heal { color: #86efac; }
+
+        .card-stock { background: #000; padding: 4px 10px; border-radius: 10px; font-size: 14px; font-weight: bold; color: #cbd5e1; border: 1px solid #334155; width: 100%; }
+
+        .card-combo { border-bottom: 8px solid var(--combo-color); }
+        .card-normal { border-bottom: 8px solid var(--p2-color); }
+        .card-slow { border-bottom: 8px solid var(--p1-color); }
+        .card-heal { border-bottom: 8px solid var(--heal-color); }
+
+        /* --- MODALS (Question & Result) --- */
+        #question-modal .modal-content {
+            background: #1e293b; width: 1050px; border-radius: 30px; padding: 40px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8); border: 4px solid var(--gold); position: relative;
+        }
+        
+        .timer-bar-container { position: absolute; top: 0; left: 0; width: 100%; height: 10px; border-top-left-radius: 25px; border-top-right-radius: 25px; overflow: hidden; background: #0f172a; }
+        #timer-bar { height: 100%; background: var(--p2-color); width: 100%; transition: width 1s linear; }
+
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .modal-title { font-family: 'Fredoka', cursive; font-size: 36px; color: var(--gold); margin: 0; }
+        #digital-clock { font-family: 'Fredoka', monospace; font-size: 36px; font-weight: bold; color: #fff; background: var(--p2-color); padding: 5px 20px; border-radius: 15px; border: 2px solid #7f1d1d; }
+
+        /* Penyesuaian Font Size agar cerita panjang cukup */
+        #question-text { font-size: 26px; line-height: 1.4; font-weight: 700; color: #f8fafc; margin-bottom: 30px; text-align: left; padding: 25px; background: #0f172a; border-radius: 15px; border-left: 8px solid var(--p1-color); min-height: 120px; max-height: 250px; overflow-y: auto; }
+        
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .col-span-2 { grid-column: span 2; } /* Menambahkan class span untuk opsi E */
+
+        .option-btn {
+            background: #0f172a; border: 3px solid #334155; padding: 15px 30px; font-size: 22px; font-weight: bold;
+            border-radius: 20px; text-align: left; cursor: pointer; transition: all 0.2s; color: #e2e8f0; font-family: 'Nunito', sans-serif;
+            box-shadow: 0 5px 0 #020617; display: flex; align-items: center; justify-content: flex-start;
+        }
+        .option-btn:hover { border-color: var(--p1-color); background: rgba(56, 189, 248, 0.1); box-shadow: 0 5px 0 var(--p1-color); color: #fff; transform: translateY(-3px); }
+        .option-btn:active { transform: translateY(2px); box-shadow: 0 0 0 var(--p1-color); }
+        .opt-letter { font-family: 'Fredoka', cursive; color: var(--gold); font-size: 24px; margin-right: 15px; background: #000; padding: 5px 15px; border-radius: 10px; }
+        .opt-value { display: inline-block; width: 100%; text-align: center; }
+
+        #result-modal .modal-content {
+            background: #1e293b; width: 750px; border-radius: 30px; padding: 50px; text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8); border: 4px solid #334155;
+        }
+        #result-status { font-family: 'Fredoka', cursive; font-size: 64px; margin: 0 0 10px 0; text-transform: uppercase; text-shadow: 2px 2px 0 #000; }
+        .status-benar { color: var(--heal-color); }
+        .status-salah { color: var(--p2-color); }
+        #result-effect { font-size: 24px; font-weight: bold; color: #cbd5e1; margin-bottom: 30px; }
+
+        /* --- HOME BUTTON & FOOTER --- */
+        #home-container {
+            position: absolute; top: 35px; left: 50%; transform: translateX(-120px);
+            z-index: 200; display: flex; flex-direction: column; align-items: center; cursor: pointer;
+        }
+        #home-container:hover #home-toggle { background: #334155; transform: scale(1.05); border-color: #fff; }
+        #home-toggle {
+            background: #1e293b; border: 2px solid #475569; width: 50px; height: 50px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            transition: all 0.2s; font-size: 24px; margin-bottom: 5px; color: #fff;
+        }
+        .home-label { font-size: 12px; font-weight: 800; color: #94a3b8; text-align: center; line-height: 1.2; text-transform: uppercase; text-shadow: 1px 1px 2px #000; }
+
+        /* --- SOUND TOGGLE --- */
+        #sound-toggle {
+            position: absolute; top: 25px; right: 40px;
+            z-index: 200; background: #1e293b; border: 2px solid #475569;
+            width: 50px; height: 50px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            transition: all 0.2s; font-size: 24px; color: #fff;
+        }
+        #sound-toggle:hover { background: #334155; transform: scale(1.05); border-color: #fff; }
+
+        .copyright-global {
+            position: absolute; bottom: 10px; width: 100%; text-align: center;
+            font-size: 13px; font-weight: bold; color: #ffffff; text-shadow: 1px 1px 3px #000; pointer-events: none; z-index: 150;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-15px) rotate(-5deg); }
+            40%, 80% { transform: translateX(15px) rotate(5deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Slot Audio BGM -->
+    <audio id="bg-music" loop src="probability_battle.mp3"></audio>
+
+    <div id="game-app">
+        <!-- NAVIGATION UI (SOUND) -->
+        <button id="sound-toggle" onclick="uiSetup.toggleMute()" title="Mute/Unmute">
+            <span id="sound-icon">🔊</span>
+        </button>
+
+        <!-- Tombol Home In-Game -->
+        <div id="home-container" class="hidden" onclick="uiSetup.resetToHome()" title="Kembali ke Menu Utama">
+            <div id="home-toggle">🏠</div>
+            <span class="home-label">menu utama</span>
+        </div>
+
+        <!-- SETUP WIZARD SCREEN -->
+        <div id="wizard-screen" class="overlay-screen flex-center">
+            <h1>Gempur Peluang<br><span style="font-size:0.4em; color:var(--gold); font-family:'Nunito';">Matematika Seru!</span></h1>
+            
+            <div class="created-by">
+                <span>created by :</span>
+                <img src="https://imgix3.ruangguru.com/assets/miscellaneous/png_zekej2_3984.png" alt="Ruangguru">
+            </div>
+            
+            <!-- Step 1: Pilih Mode -->
+            <div id="step-1" class="wizard-step active">
+                <h2 class="step-title">Pilih Mode Permainan</h2>
+                <div class="mode-selector">
+                    <button id="btn-mode-1p" class="btn-mode active" onclick="uiSetup.setMode('1p')">👤 1 Player (vs Boss)</button>
+                    <button id="btn-mode-2p" class="btn-mode" onclick="uiSetup.setMode('2p')">👥 2 Players (PvP)</button>
+                </div>
+                <div class="nav-buttons">
+                    <button class="btn-start" onclick="uiSetup.nextStep()">LANJUT ➔</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Pilih Avatar -->
+            <div id="step-2" class="wizard-step">
+                <h2 class="step-title">Pilih Avatar</h2>
+                <div id="p1-avatar-selection" class="avatar-group">
+                    <h3 id="p1-avatar-title">PEMAIN PERTAMA</h3>
+                    <div class="avatar-options">
+                        <div class="avatar-btn p1-avatar active" onclick="uiSetup.selectAvatar(1, '🦸‍♂️', this)">🦸‍♂️</div>
+                        <div class="avatar-btn p1-avatar" onclick="uiSetup.selectAvatar(1, '🥷', this)">🥷</div>
+                        <div class="avatar-btn p1-avatar" onclick="uiSetup.selectAvatar(1, '🧙‍♂️', this)">🧙‍♂️</div>
+                    </div>
+                </div>
+                <div id="p2-avatar-selection" class="avatar-group hidden">
+                    <h3>PEMAIN KEDUA</h3>
+                    <div class="avatar-options">
+                        <div class="avatar-btn p2-avatar active" onclick="uiSetup.selectAvatar(2, '🧛‍♀️', this)">🧛‍♀️</div>
+                        <div class="avatar-btn p2-avatar" onclick="uiSetup.selectAvatar(2, '🧟', this)">🧟</div>
+                        <div class="avatar-btn p2-avatar" onclick="uiSetup.selectAvatar(2, '🦹', this)">🦹</div>
+                    </div>
+                </div>
+                <div class="nav-buttons">
+                    <button class="btn-nav" onclick="uiSetup.prevStep()">🔙 Kembali</button>
+                    <button class="btn-start" onclick="uiSetup.nextStep()">LANJUT ➔</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Rules -->
+            <div id="step-3" class="wizard-step">
+                <h2 class="step-title">Cara Bermain</h2>
+                <div class="rules-list" id="rules-content">
+                    <!-- Rules dynamically inserted here -->
+                </div>
+                <div class="nav-buttons">
+                    <button class="btn-nav" onclick="uiSetup.prevStep()">🔙 Kembali</button>
+                    <button class="btn-start" onclick="startGame()">MULAI MISSION!</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="overlay-screen hidden flex-center">
+            <h1 id="end-title" style="font-size: 72px; margin-bottom: 10px; color: var(--gold);">VICTORY!</h1>
+            <h2 id="end-desc" style="color: #cbd5e1; margin-bottom: 40px; font-size: 32px;">Pertarungan selesai!</h2>
+            <button class="btn-start" onclick="uiSetup.resetToHome()">MAIN LAGI</button>
+        </div>
+
+        <!-- IN-GAME HUD -->
+        <header>
+            <div id="p1-panel" class="player-stats p1-stats active-turn">
+                <div class="turn-badge">GILIRANMU</div>
+                <span class="player-name" id="display-p1-name">PEMAIN</span>
+                <div class="hp-bar-bg"><div id="p1-hp-fill" class="hp-bar-fill" style="width: 100%;"></div></div>
+                <span class="hp-text" id="p1-hp-text">100/100 HP</span>
+            </div>
+            
+            <div class="vs-box">VS</div>
+            
+            <div id="p2-panel" class="player-stats p2-stats inactive-turn">
+                <div class="turn-badge">GILIRANMU</div>
+                <span class="player-name" id="display-p2-name">MONSTER BOSS</span>
+                <div class="hp-bar-bg"><div id="p2-hp-fill" class="hp-bar-fill" style="width: 100%;"></div></div>
+                <span class="hp-text" id="p2-hp-text">100/100 HP</span>
+            </div>
+        </header>
+
+        <!-- ARENA -->
+        <section id="arena">
+            <div class="sprites-container">
+                <div id="p1-sprite" class="sprite">🛡️</div>
+                <div id="p2-sprite" class="sprite">👹</div>
+            </div>
+            
+            <div id="card-deck">
+                <!-- Combo Attack -->
+                <div class="action-card card-combo" id="btn-combo" onclick="pickCard('combo')">
+                    <div class="card-icon">🔥</div>
+                    <div class="card-title">Combo Attack</div>
+                    <div class="card-effect effect-dmg">40 HP</div>
+                    <div class="card-stock">Stok: <span id="stock-combo">3</span></div>
+                </div>
+                <!-- Normal Attack -->
+                <div class="action-card card-normal" id="btn-normal" onclick="pickCard('normal')">
+                    <div class="card-icon">⚔️</div>
+                    <div class="card-title">Normal Attack</div>
+                    <div class="card-effect effect-dmg">20 HP</div>
+                    <div class="card-stock">Stok: <span id="stock-normal">5</span></div>
+                </div>
+                <!-- Slow Attack -->
+                <div class="action-card card-slow" id="btn-slow" onclick="pickCard('slow')">
+                    <div class="card-icon">⚡</div>
+                    <div class="card-title">Slow Attack</div>
+                    <div class="card-effect effect-dmg">10 HP</div>
+                    <div class="card-stock">Stok: <span id="stock-slow">5</span></div>
+                </div>
+                <!-- Heal -->
+                <div class="action-card card-heal" id="btn-heal" onclick="pickCard('heal')">
+                    <div class="card-icon">💖</div>
+                    <div class="card-title">Heal</div>
+                    <div class="card-effect effect-heal">15 HP</div>
+                    <div class="card-stock">Stok: <span id="stock-heal">4</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- QUESTION MODAL -->
+        <div id="question-modal" class="overlay-screen hidden flex-center">
+            <div class="modal-content">
+                <div class="timer-bar-container"><div id="timer-bar"></div></div>
+                <div class="modal-header">
+                    <h3 id="card-type-title" class="modal-title">COMBO ATTACK</h3>
+                    <div id="digital-clock">01:00</div>
+                </div>
+                <div id="question-text">Memuat pertanyaan...</div>
+                <div id="options-grid" class="options-grid"></div>
+            </div>
+        </div>
+
+        <!-- RESULT MODAL -->
+        <div id="result-modal" class="overlay-screen hidden flex-center">
+            <div class="modal-content" id="result-box">
+                <h2 id="result-status">BENAR!</h2>
+                <div id="result-effect">Serangan berhasil!</div>
+                <button class="btn-start" onclick="closeResult()" style="font-size: 24px; padding: 10px 40px;">LANJUT</button>
+            </div>
+        </div>
+
+        <!-- COPYRIGHT INFO -->
+        <div class="copyright-global">
+            Copyright Ⓒ 2026 - PT Ruang Raya Indonesia - All Rights Reserved.
+        </div>
+    </div>
+
+    <script>
+        // --- TV SCALING ---
+        function resizeGame() {
+            const gameWidth = 1280; const gameHeight = 720;
+            const windowRatio = window.innerWidth / window.innerHeight;
+            const gameRatio = gameWidth / gameHeight;
+            const gameEl = document.getElementById('game-app');
+            let scale = windowRatio > gameRatio ? window.innerHeight / gameHeight : window.innerWidth / gameWidth;
+            gameEl.style.transform = `scale(${scale})`;
+        }
+        window.addEventListener('resize', resizeGame);
+        window.addEventListener('DOMContentLoaded', resizeGame);
+
+        // --- 50 DATA BANK SOAL PELUANG (MATHJAX FORMATTED) ---
+        const bankQuestions = {
+            "level_1": [ // 10 Soal Mudah
+                {"id": 1, "question": "Pada pelemparan sebuah koin homogen, peluang munculnya sisi angka adalah...", "options": {"A": "\\( \\frac{1}{4} \\)", "B": "\\( \\frac{1}{3} \\)", "C": "\\( \\frac{1}{2} \\)", "D": "\\( \\frac{2}{3} \\)", "E": "\\( \\frac{3}{4} \\)"}, "answer": "C"},
+                {"id": 2, "question": "Peluang muncul mata dadu ganjil pada pelemparan sebuah dadu standar adalah...", "options": {"A": "\\( \\frac{1}{6} \\)", "B": "\\( \\frac{1}{3} \\)", "C": "\\( \\frac{1}{2} \\)", "D": "\\( \\frac{2}{3} \\)", "E": "\\( \\frac{5}{6} \\)"}, "answer": "C"},
+                {"id": 3, "question": "Pada pelemparan sebuah dadu bersisi enam, peluang munculnya mata dadu 6 adalah...", "options": {"A": "\\( \\frac{1}{6} \\)", "B": "\\( \\frac{1}{5} \\)", "C": "\\( \\frac{1}{4} \\)", "D": "\\( \\frac{1}{3} \\)", "E": "\\( \\frac{1}{2} \\)"}, "answer": "A"},
+                {"id": 4, "question": "Di dalam sebuah kotak terdapat 3 bola merah dan 2 bola putih. Jika diambil 1 bola secara acak, peluang terambilnya bola merah adalah...", "options": {"A": "\\( \\frac{1}{5} \\)", "B": "\\( \\frac{2}{5} \\)", "C": "\\( \\frac{3}{5} \\)", "D": "\\( \\frac{4}{5} \\)", "E": "1"}, "answer": "C"},
+                {"id": 5, "question": "Dari satu set kartu bridge (tanpa joker), diambil 1 kartu secara acak. Peluang terambilnya kartu As adalah...", "options": {"A": "\\( \\frac{1}{52} \\)", "B": "\\( \\frac{1}{26} \\)", "C": "\\( \\frac{1}{13} \\)", "D": "\\( \\frac{2}{13} \\)", "E": "\\( \\frac{4}{13} \\)"}, "answer": "C"},
+                {"id": 6, "question": "Dua buah koin dilempar secara bersamaan. Peluang munculnya angka pada kedua koin tersebut adalah...", "options": {"A": "\\( \\frac{1}{4} \\)", "B": "\\( \\frac{1}{3} \\)", "C": "\\( \\frac{1}{2} \\)", "D": "\\( \\frac{2}{3} \\)", "E": "\\( \\frac{3}{4} \\)"}, "answer": "A"},
+                {"id": 7, "question": "Jika peluang hari esok akan turun hujan adalah 0,3, maka peluang hari esok tidak turun hujan adalah...", "options": {"A": "0,1", "B": "0,3", "C": "0,5", "D": "0,7", "E": "0,9"}, "answer": "D"},
+                {"id": 8, "question": "Sebuah huruf dipilih secara acak dari kata \"MATEMATIKA\". Peluang terpilihnya huruf 'A' adalah...", "options": {"A": "\\( \\frac{1}{10} \\)", "B": "\\( \\frac{1}{5} \\)", "C": "\\( \\frac{3}{10} \\)", "D": "\\( \\frac{2}{5} \\)", "E": "\\( \\frac{1}{2} \\)"}, "answer": "C"},
+                {"id": 9, "question": "Dua buah dadu dilemparkan secara bersamaan. Peluang munculnya jumlah mata dadu 12 adalah...", "options": {"A": "\\( \\frac{1}{36} \\)", "B": "\\( \\frac{1}{18} \\)", "C": "\\( \\frac{1}{12} \\)", "D": "\\( \\frac{1}{9} \\)", "E": "\\( \\frac{1}{6} \\)"}, "answer": "A"},
+                {"id": 10, "question": "Sebuah keluarga merencanakan memiliki 2 anak. Dengan asumsi peluang lahirnya anak laki-laki dan perempuan sama besar, peluang mereka memiliki dua anak laki-laki adalah...", "options": {"A": "\\( \\frac{1}{4} \\)", "B": "\\( \\frac{1}{3} \\)", "C": "\\( \\frac{1}{2} \\)", "D": "\\( \\frac{2}{3} \\)", "E": "\\( \\frac{3}{4} \\)"}, "answer": "A"}
+            ],
+            "level_2": [ // 20 Soal Sedang
+                {"id": 11, "question": "Dua buah dadu dilempar bersamaan. Peluang jumlah kedua mata dadu sama dengan 7 adalah...", "options": {"A": "\\( \\frac{1}{12} \\)", "B": "\\( \\frac{1}{9} \\)", "C": "\\( \\frac{1}{6} \\)", "D": "\\( \\frac{1}{4} \\)", "E": "\\( \\frac{1}{3} \\)"}, "answer": "C"},
+                {"id": 12, "question": "Dua dadu dilempar secara bersamaan. Peluang munculnya mata dadu kembar (sama) adalah...", "options": {"A": "\\( \\frac{1}{12} \\)", "B": "\\( \\frac{1}{9} \\)", "C": "\\( \\frac{1}{6} \\)", "D": "\\( \\frac{1}{4} \\)", "E": "\\( \\frac{1}{3} \\)"}, "answer": "C"},
+                {"id": 13, "question": "Sebuah kotak berisi 3 bola merah dan 4 bola putih. Jika diambil 2 bola sekaligus secara acak, peluang terambil keduanya bola merah adalah...", "options": {"A": "\\( \\frac{1}{14} \\)", "B": "\\( \\frac{1}{7} \\)", "C": "\\( \\frac{2}{7} \\)", "D": "\\( \\frac{3}{14} \\)", "E": "\\( \\frac{3}{7} \\)"}, "answer": "B"},
+                {"id": 14, "question": "Dari kotak yang berisi 5 bola biru dan 3 bola kuning, diambil 2 bola secara berurutan tanpa pengembalian. Peluang terambil bola biru pada pengambilan pertama dan bola kuning pada pengambilan kedua adalah...", "options": {"A": "\\( \\frac{15}{64} \\)", "B": "\\( \\frac{15}{56} \\)", "C": "\\( \\frac{5}{8} \\)", "D": "\\( \\frac{3}{8} \\)", "E": "\\( \\frac{8}{15} \\)"}, "answer": "B"},
+                {"id": 15, "question": "Peluang siswa A lulus ujian adalah 0,8 dan peluang siswa B lulus ujian adalah 0,7. Peluang A dan B keduanya lulus ujian adalah...", "options": {"A": "0,15", "B": "0,25", "C": "0,56", "D": "0,75", "E": "0,86"}, "answer": "C"},
+                {"id": 16, "question": "Dari 1 set kartu bridge diambil 1 kartu. Peluang terambilnya kartu berwarna merah atau kartu As adalah...", "options": {"A": "\\( \\frac{1}{2} \\)", "B": "\\( \\frac{7}{13} \\)", "C": "\\( \\frac{15}{26} \\)", "D": "\\( \\frac{8}{13} \\)", "E": "\\( \\frac{17}{26} \\)"}, "answer": "B"},
+                {"id": 17, "question": "Tiga buah koin dilempar bersama-sama. Peluang munculnya minimal dua sisi angka adalah...", "options": {"A": "\\( \\frac{1}{8} \\)", "B": "\\( \\frac{1}{4} \\)", "C": "\\( \\frac{3}{8} \\)", "D": "\\( \\frac{1}{2} \\)", "E": "\\( \\frac{5}{8} \\)"}, "answer": "D"},
+                {"id": 18, "question": "Peluang Budi memenangkan suatu pertandingan adalah \\( \\frac{2}{5} \\). Jika ia bermain sebanyak 3 kali, peluang ia menang tepat 1 kali adalah...", "options": {"A": "\\( \\frac{18}{125} \\)", "B": "\\( \\frac{36}{125} \\)", "C": "\\( \\frac{54}{125} \\)", "D": "\\( \\frac{72}{125} \\)", "E": "\\( \\frac{96}{125} \\)"}, "answer": "C"},
+                {"id": 19, "question": "Suatu kelas terdiri dari 20 siswa, 12 perempuan dan 8 laki-laki. Akan dipilih 3 siswa sebagai perwakilan kelas. Peluang ketiganya adalah perempuan adalah...", "options": {"A": "\\( \\frac{11}{114} \\)", "B": "\\( \\frac{11}{57} \\)", "C": "\\( \\frac{22}{57} \\)", "D": "\\( \\frac{33}{114} \\)", "E": "\\( \\frac{44}{57} \\)"}, "answer": "B"},
+                {"id": 20, "question": "Dari angka 1, 2, 3, 4, dan 5 akan disusun bilangan yang terdiri dari 3 angka berbeda. Peluang bilangan yang terbentuk adalah bilangan ganjil adalah...", "options": {"A": "\\( \\frac{1}{5} \\)", "B": "\\( \\frac{2}{5} \\)", "C": "\\( \\frac{3}{5} \\)", "D": "\\( \\frac{4}{5} \\)", "E": "1"}, "answer": "C"},
+                {"id": 21, "question": "Pada pelemparan 2 buah dadu, peluang muncul jumlah mata dadu lebih dari 9 adalah...", "options": {"A": "\\( \\frac{1}{12} \\)", "B": "\\( \\frac{1}{9} \\)", "C": "\\( \\frac{1}{6} \\)", "D": "\\( \\frac{1}{4} \\)", "E": "\\( \\frac{1}{3} \\)"}, "answer": "C"},
+                {"id": 22, "question": "Sebanyak 5 orang duduk mengelilingi meja bundar. Peluang si A dan si B selalu duduk berdampingan adalah...", "options": {"A": "\\( \\frac{1}{5} \\)", "B": "\\( \\frac{1}{4} \\)", "C": "\\( \\frac{1}{3} \\)", "D": "\\( \\frac{1}{2} \\)", "E": "\\( \\frac{2}{3} \\)"}, "answer": "D"},
+                {"id": 23, "question": "Kotak berisi 4 bola merah, 5 bola biru, dan 6 bola hijau. Diambil 1 bola secara acak. Peluang terambil bola merah atau hijau adalah...", "options": {"A": "\\( \\frac{1}{3} \\)", "B": "\\( \\frac{2}{5} \\)", "C": "\\( \\frac{8}{15} \\)", "D": "\\( \\frac{3}{5} \\)", "E": "\\( \\frac{2}{3} \\)"}, "answer": "E"},
+                {"id": 24, "question": "Diambil 2 kartu secara berurutan dengan pengembalian dari 1 set kartu bridge. Peluang terambil kartu King lalu kartu Queen adalah...", "options": {"A": "\\( \\frac{1}{169} \\)", "B": "\\( \\frac{2}{169} \\)", "C": "\\( \\frac{1}{221} \\)", "D": "\\( \\frac{1}{26} \\)", "E": "\\( \\frac{1}{13} \\)"}, "answer": "A"},
+                {"id": 25, "question": "Peluang tembakan seorang pemburu mengenai sasaran adalah \\( \\frac{3}{4} \\). Jika ia menembak sebanyak 2 kali, peluang tepat 1 kali mengenai sasaran adalah...", "options": {"A": "\\( \\frac{1}{16} \\)", "B": "\\( \\frac{3}{16} \\)", "C": "\\( \\frac{3}{8} \\)", "D": "\\( \\frac{1}{2} \\)", "E": "\\( \\frac{3}{4} \\)"}, "answer": "C"},
+                {"id": 26, "question": "Dalam suatu kelas, 40% siswa gagal Matematika, 30% gagal Fisika, dan 20% gagal keduanya. Jika seorang siswa dipilih secara acak, peluang siswa tersebut gagal Matematika ATAU Fisika adalah...", "options": {"A": "0,5", "B": "0,6", "C": "0,7", "D": "0,8", "E": "0,9"}, "answer": "A"},
+                {"id": 27, "question": "Dari data pada soal sebelumnya, peluang siswa yang terpilih tersebut lulus pada kedua mata pelajaran adalah...", "options": {"A": "0,2", "B": "0,3", "C": "0,4", "D": "0,5", "E": "0,6"}, "answer": "D"},
+                {"id": 28, "question": "Sebuah dompet berisi 3 koin Rp500 dan 4 koin Rp1000. Jika diambil 2 koin sekaligus secara acak, peluang total nilainya Rp1500 adalah...", "options": {"A": "\\( \\frac{2}{7} \\)", "B": "\\( \\frac{3}{7} \\)", "C": "\\( \\frac{4}{7} \\)", "D": "\\( \\frac{5}{7} \\)", "E": "\\( \\frac{6}{7} \\)"}, "answer": "C"},
+                {"id": 29, "question": "Peluang seorang bayi lahir berjenis kelamin laki-laki adalah 0,5. Dalam sebuah keluarga dengan 4 anak, peluang terdapat 2 anak laki-laki dan 2 anak perempuan adalah...", "options": {"A": "\\( \\frac{1}{4} \\)", "B": "\\( \\frac{3}{8} \\)", "C": "\\( \\frac{1}{2} \\)", "D": "\\( \\frac{5}{8} \\)", "E": "\\( \\frac{3}{4} \\)"}, "answer": "B"},
+                {"id": 30, "question": "Huruf-huruf dari kata \"SURABAYA\" diacak secara sembarang. Peluang huruf vokal selalu terkumpul menjadi satu (berdampingan seluruhnya) adalah...", "options": {"A": "\\( \\frac{1}{28} \\)", "B": "\\( \\frac{1}{14} \\)", "C": "\\( \\frac{3}{28} \\)", "D": "\\( \\frac{1}{7} \\)", "E": "\\( \\frac{5}{28} \\)"}, "answer": "B"}
+            ],
+            "level_3": [ // 20 Soal Sulit
+                {"id": 31, "question": "Tiga tahanan A, B, dan C dipenjara. Gubernur memilih secara acak satu orang untuk diampuni, dan dua lainnya dieksekusi. Sipir tahu siapa yang diampuni tapi dilarang memberi tahu status tahanan yang bertanya. A bertanya pada sipir, \"Dari B dan C, sebutkan satu nama yang pasti dieksekusi.\" Jika A yang diampuni, sipir melempar koin untuk memilih menyebut B atau C. Sipir menjawab \"B\". Peluang A diampuni setelah mendengar jawaban tersebut adalah...", "options": {"A": "\\( \\frac{1}{4} \\)", "B": "\\( \\frac{1}{3} \\)", "C": "\\( \\frac{1}{2} \\)", "D": "\\( \\frac{2}{3} \\)", "E": "\\( \\frac{3}{4} \\)"}, "answer": "B"},
+                {"id": 32, "question": "Kotak I berisi 2 bola merah dan 3 bola putih. Kotak II berisi 4 bola merah dan 1 bola putih. Sebuah dadu dilempar. Jika muncul kelipatan 3, satu bola diambil dari Kotak I. Jika bukan kelipatan 3, bola diambil dari Kotak II. Peluang terambil bola merah adalah...", "options": {"A": "\\( \\frac{1}{3} \\)", "B": "\\( \\frac{7}{15} \\)", "C": "\\( \\frac{8}{15} \\)", "D": "\\( \\frac{3}{5} \\)", "E": "\\( \\frac{2}{3} \\)"}, "answer": "E"},
+                {"id": 33, "question": "Terdapat 10 koin di atas meja: 9 koin normal (Angka, Gambar) dan 1 koin palsu (kedua sisinya Angka). Sebuah koin diambil secara acak lalu dilempar 3 kali, dan ternyata selalu muncul Angka. Peluang bahwa koin yang sedang dilempar tersebut adalah koin palsu adalah...", "options": {"A": "\\( \\frac{1}{17} \\)", "B": "\\( \\frac{4}{17} \\)", "C": "\\( \\frac{8}{17} \\)", "D": "\\( \\frac{9}{17} \\)", "E": "\\( \\frac{12}{17} \\)"}, "answer": "C"},
+                {"id": 34, "question": "Sebatang kayu dipatahkan secara acak pada dua titik, membaginya menjadi tiga potongan. Peluang ketiga potongan tersebut dapat membentuk sebuah segitiga adalah...", "options": {"A": "\\( \\frac{1}{8} \\)", "B": "\\( \\frac{1}{6} \\)", "C": "\\( \\frac{1}{4} \\)", "D": "\\( \\frac{1}{3} \\)", "E": "\\( \\frac{1}{2} \\)"}, "answer": "C"},
+                {"id": 35, "question": "Empat orang tamu menitipkan topi mereka di ruang ganti. Saat pulang, petugas yang kebingungan mengembalikan topi secara acak. Peluang tidak ada satupun tamu yang menerima topi miliknya sendiri adalah...", "options": {"A": "\\( \\frac{1}{24} \\)", "B": "\\( \\frac{1}{8} \\)", "C": "\\( \\frac{1}{4} \\)", "D": "\\( \\frac{3}{8} \\)", "E": "\\( \\frac{5}{8} \\)"}, "answer": "D"},
+                {"id": 36, "question": "Dalam satu laci terdapat 4 pasang kaus kaki yang berbeda warna. Jika diambil 4 buah kaus kaki secara acak sekaligus, peluang mendapatkan <i>tepat 1 pasang</i> kaus kaki yang cocok warnanya adalah...", "options": {"A": "\\( \\frac{12}{35} \\)", "B": "\\( \\frac{18}{35} \\)", "C": "\\( \\frac{24}{35} \\)", "D": "\\( \\frac{26}{35} \\)", "E": "\\( \\frac{28}{35} \\)"}, "answer": "C"},
+                {"id": 37, "question": "A dan B melempar sebuah dadu standar secara bergantian. A memenangkan permainan jika ia melempar angka 6. B memenangkan permainan jika ia melempar angka ganjil. Jika A mendapat giliran pertama, peluang A memenangkan permainan ini adalah...", "options": {"A": "\\( \\frac{1}{6} \\)", "B": "\\( \\frac{2}{7} \\)", "C": "\\( \\frac{1}{3} \\)", "D": "\\( \\frac{5}{12} \\)", "E": "\\( \\frac{1}{2} \\)"}, "answer": "B"},
+                {"id": 38, "question": "Sebuah jarum dijatuhkan secara acak ke dalam lingkaran berjari-jari R. Di dalam lingkaran tersebut terdapat sebuah persegi maksimum yang keempat titik sudutnya menyentuh sisi lingkaran. Peluang jarum jatuh di luar persegi namun masih di dalam lingkaran adalah...", "options": {"A": "\\( 1 - \\frac{2}{\\pi} \\)", "B": "\\( 1 - \\frac{1}{\\pi} \\)", "C": "\\( \\frac{2}{\\pi} \\)", "D": "\\( \\frac{\\pi}{4} \\)", "E": "\\( 1 - \\frac{\\pi}{4} \\)"}, "answer": "A"},
+                {"id": 39, "question": "Delapan orang duduk mengelilingi meja bundar. A dan B bermusuhan sehingga tidak mau duduk bersebelahan. Di sisi lain, C dan D harus selalu duduk bersebelahan. Peluang terjadinya susunan duduk seperti syarat tersebut adalah...", "options": {"A": "\\( \\frac{1}{21} \\)", "B": "\\( \\frac{2}{21} \\)", "C": "\\( \\frac{4}{21} \\)", "D": "\\( \\frac{5}{21} \\)", "E": "\\( \\frac{8}{21} \\)"}, "answer": "C"},
+                {"id": 40, "question": "Terdapat n bola dalam kotak, 3 diantaranya berwarna merah dan sisanya biru. Jika diambil 2 bola sekaligus, peluang terambil keduanya bola merah adalah \\( \\frac{1}{15} \\). Banyaknya bola biru di dalam kotak tersebut adalah...", "options": {"A": "5", "B": "6", "C": "7", "D": "8", "E": "9"}, "answer": "C"},
+                {"id": 41, "question": "Seekor katak berada di titik 0 pada garis bilangan. Setiap detik, ia melompat 1 langkah ke kanan dengan peluang \\( \\frac{1}{2} \\) atau 1 langkah ke kiri dengan peluang \\( \\frac{1}{2} \\). Peluang katak tersebut berada di titik +2 setelah tepat 6 detik adalah...", "options": {"A": "\\( \\frac{5}{64} \\)", "B": "\\( \\frac{15}{64} \\)", "C": "\\( \\frac{5}{32} \\)", "D": "\\( \\frac{15}{32} \\)", "E": "\\( \\frac{25}{64} \\)"}, "answer": "B"},
+                {"id": 42, "question": "Sebuah kotak berisi 10 bola bernomor 1 sampai 10. Diambil 3 bola sekaligus secara acak. Peluang bola terbesar yang terambil adalah bola bernomor 7 adalah...", "options": {"A": "\\( \\frac{1}{12} \\)", "B": "\\( \\frac{1}{10} \\)", "C": "\\( \\frac{1}{8} \\)", "D": "\\( \\frac{1}{6} \\)", "E": "\\( \\frac{1}{4} \\)"}, "answer": "C"},
+                {"id": 43, "question": "Sebuah keluarga diketahui memiliki 2 orang anak. Jika diketahui setidaknya satu dari anak mereka adalah anak laki-laki yang lahir pada hari Selasa, maka peluang bahwa kedua anak dalam keluarga tersebut adalah laki-laki adalah... (Asumsikan peluang lahir setiap hari sama).", "options": {"A": "\\( \\frac{1}{3} \\)", "B": "\\( \\frac{13}{27} \\)", "C": "\\( \\frac{1}{2} \\)", "D": "\\( \\frac{14}{27} \\)", "E": "\\( \\frac{2}{3} \\)"}, "answer": "B"},
+                {"id": 44, "question": "Sebanyak 5 bola berbeda dimasukkan secara acak ke dalam 3 kotak berbeda. Peluang tidak ada satupun kotak yang kosong adalah...", "options": {"A": "\\( \\frac{10}{27} \\)", "B": "\\( \\frac{25}{81} \\)", "C": "\\( \\frac{50}{81} \\)", "D": "\\( \\frac{20}{27} \\)", "E": "\\( \\frac{5}{9} \\)"}, "answer": "C"},
+                {"id": 45, "question": "Pada sebuah turnamen, tim A bertanding melawan tim B dengan sistem \"Best of 5\" (siapa yang menang 3 kali duluan, dia menjadi juara). Peluang A menang dalam satu pertandingan adalah 0,6 dan tidak ada hasil seri. Jika A sudah menang di pertandingan pertama, peluang tim A memenangkan turnamen tersebut pada akhirnya adalah...", "options": {"A": "\\( \\frac{112}{625} \\)", "B": "\\( \\frac{256}{625} \\)", "C": "\\( \\frac{369}{625} \\)", "D": "\\( \\frac{413}{625} \\)", "E": "\\( \\frac{513}{625} \\)"}, "answer": "E"},
+                {"id": 46, "question": "Kotak A berisi 2 koin Rp500 dan 1 koin Rp1000. Kotak B berisi 1 koin Rp500 dan 3 koin Rp1000. Sebuah koin dipindahkan secara acak dari kotak A ke kotak B, lalu 1 koin diambil dari kotak B. Peluang koin yang akhirnya terambil dari kotak B bernilai Rp1000 adalah...", "options": {"A": "\\( \\frac{1}{3} \\)", "B": "\\( \\frac{2}{5} \\)", "C": "\\( \\frac{1}{2} \\)", "D": "\\( \\frac{3}{5} \\)", "E": "\\( \\frac{2}{3} \\)"}, "answer": "E"},
+                {"id": 47, "question": "Tiga buah dadu standar dilempar secara bersamaan. Jika diketahui jumlah mata dadu yang muncul adalah 10, peluang bahwa salah satu dadu menunjukkan angka 5 adalah...", "options": {"A": "\\( \\frac{1}{3} \\)", "B": "\\( \\frac{4}{9} \\)", "C": "\\( \\frac{1}{2} \\)", "D": "\\( \\frac{5}{9} \\)", "E": "\\( \\frac{2}{3} \\)"}, "answer": "B"},
+                {"id": 48, "question": "Terdapat 10 titik yang membentuk segi-10 beraturan. Dipilih 3 titik secara acak untuk membentuk sebuah segitiga. Peluang segitiga yang terbentuk tidak memiliki satupun sisi yang sama dengan sisi segi-10 beraturan tersebut adalah...", "options": {"A": "\\( \\frac{1}{6} \\)", "B": "\\( \\frac{1}{4} \\)", "C": "\\( \\frac{1}{3} \\)", "D": "\\( \\frac{5}{12} \\)", "E": "\\( \\frac{1}{2} \\)"}, "answer": "D"},
+                {"id": 49, "question": "Dua titik x dan y dipilih secara acak berseragam pada interval bilangan real [0, 1]. Peluang bahwa jarak antara kedua titik tersebut kurang dari 0,5 (\\( |x-y| < 0,5 \\)) adalah...", "options": {"A": "\\( \\frac{1}{4} \\)", "B": "\\( \\frac{1}{3} \\)", "C": "\\( \\frac{1}{2} \\)", "D": "\\( \\frac{2}{3} \\)", "E": "\\( \\frac{3}{4} \\)"}, "answer": "E"},
+                {"id": 50, "question": "Angka 1 sampai 8 disusun secara acak dalam satu barisan lurus. Peluang tidak ada dua angka ganjil yang saling bersebelahan adalah...", "options": {"A": "\\( \\frac{1}{7} \\)", "B": "\\( \\frac{1}{14} \\)", "C": "\\( \\frac{1}{28} \\)", "D": "\\( \\frac{1}{56} \\)", "E": "\\( \\frac{3}{28} \\)"}, "answer": "B"}
+            ]
+        };
+
+        // --- GAME STATE & UI SETUP ---
+        let state = {
+            mode: '1p', // '1p' or '2p'
+            turn: 1,    // 1 (P1) or 2 (P2)
+            p1: { name: "PEMAIN", hp: 100, avatar: '🦸‍♂️', stocks: { combo: 3, normal: 5, slow: 5, heal: 4 } },
+            p2: { name: "MONSTER BOSS", hp: 100, avatar: '👹', stocks: { combo: 3, normal: 5, slow: 5, heal: 4 } },
+            timer: 60, maxTimer: 60, currentCard: null, interval: null, gameOver: false,
+            usedQuestions: []
+        };
+
+        let isMuted = false;
+
+        const uiSetup = {
+            step: 1,
+            setMode(m) {
+                state.mode = m;
+                document.getElementById('btn-mode-1p').classList.toggle('active', m === '1p');
+                document.getElementById('btn-mode-2p').classList.toggle('active', m === '2p');
+                
+                if(m === '2p') {
+                    document.getElementById('p2-avatar-selection').classList.remove('hidden');
+                    document.getElementById('p1-avatar-title').innerText = "PEMAIN PERTAMA";
+                } else {
+                    document.getElementById('p2-avatar-selection').classList.add('hidden');
+                    document.getElementById('p1-avatar-title').innerText = "PEMAIN";
+                }
+            },
+            selectAvatar(playerNum, emoji, element) {
+                if(playerNum === 1) {
+                    state.p1.avatar = emoji;
+                    document.querySelectorAll('.p1-avatar').forEach(el => el.classList.remove('active'));
+                    element.classList.add('active');
+                } else {
+                    state.p2.avatar = emoji;
+                    document.querySelectorAll('.p2-avatar').forEach(el => el.classList.remove('active'));
+                    element.classList.add('active');
+                }
+            },
+            nextStep() { 
+                if (this.step === 2) {
+                    if(state.mode === '2p') {
+                        state.p1.name = "PEMAIN PERTAMA";
+                        state.p2.name = "PEMAIN KEDUA";
+                    } else {
+                        state.p1.name = "PEMAIN";
+                        state.p2.name = "MONSTER BOSS";
+                        state.p2.avatar = '👹'; // Default boss
+                    }
+                    this.updateRulesText();
+                }
+                if (this.step < 3) { this.step++; this.updateStepView(); } 
+            },
+            prevStep() { if (this.step > 1) { this.step--; this.updateStepView(); } },
+            updateStepView() {
+                document.querySelectorAll('.wizard-step').forEach((el, index) => {
+                    el.classList.toggle('active', index + 1 === this.step);
+                });
+            },
+            updateRulesText() {
+                const rulesContainer = document.getElementById('rules-content');
+                if(state.mode === '1p') {
+                    rulesContainer.innerHTML = `
+                        <ul>
+                            <li>Kalahkan <strong style="color:var(--p2-color)">MONSTER BOSS</strong> menggunakan kartu strategi.</li>
+                            <li>Pilih jenis serangan (Combo/Normal/Slow) atau Heal. Setiap kartu memiliki <strong>soal peluang</strong>.</li>
+                            <li>Jawab <strong>BENAR</strong> untuk mengaktifkan kartu dan memberi damage ke Monster.</li>
+                            <li>Jawab <strong>SALAH</strong>, Monster akan menyerang balik dan mengurangi darahmu!</li>
+                        </ul>`;
+                } else {
+                    rulesContainer.innerHTML = `
+                        <ul>
+                            <li>Mode PvP: <strong style="color:var(--p1-color)">PEMAIN PERTAMA</strong> vs <strong style="color:var(--p2-color)">PEMAIN KEDUA</strong>.</li>
+                            <li>Pemain akan mengambil giliran secara bergantian untuk menyerang.</li>
+                            <li>Jawab soal dengan <strong>BENAR</strong> untuk menyerang lawan sesuai keterangan damage HP.</li>
+                            <li>Hati-hati! Jika <strong>SALAH</strong> menjawab, senjatamu akan makan tuan (mengurangi darah sendiri)!</li>
+                            <li>Pemain yang kehabisan darah (HP 0) akan kalah.</li>
+                        </ul>`;
+                }
+            },
+            toggleMute() {
+                isMuted = !isMuted;
+                const bgm = document.getElementById('bg-music');
+                if (bgm) bgm.muted = isMuted;
+                document.getElementById('sound-icon').textContent = isMuted ? '🔇' : '🔊';
+            },
+            resetToHome() {
+                clearInterval(state.interval);
+                document.getElementById('wizard-screen').classList.remove('hidden');
+                document.getElementById('game-over-screen').classList.add('hidden');
+                document.getElementById('home-container').classList.add('hidden');
+                this.step = 1; this.updateStepView();
+            }
+        };
+
+        function startGame() {
+            document.getElementById('display-p1-name').innerText = state.p1.name;
+            document.getElementById('display-p2-name').innerText = state.p2.name;
+            document.getElementById('wizard-screen').classList.add('hidden');
+            document.getElementById('home-container').classList.remove('hidden');
+            
+            // Set sprites based on mode and avatar selection
+            document.getElementById('p1-sprite').innerText = state.p1.avatar;
+            document.getElementById('p2-sprite').innerText = state.p2.avatar;
+            
+            // Reset State
+            state.p1.hp = 100; state.p2.hp = 100;
+            state.p1.stocks = { combo: 3, normal: 5, slow: 5, heal: 4 };
+            state.p2.stocks = { combo: 3, normal: 5, slow: 5, heal: 4 };
+            state.turn = 1;
+            state.gameOver = false; state.usedQuestions = [];
+            
+            document.getElementById('p1-sprite').style.opacity = '1';
+            document.getElementById('p2-sprite').style.opacity = '1';
+
+            // Mainkan BGM
+            const bgm = document.getElementById('bg-music');
+            if (bgm && bgm.paused) {
+                bgm.play().catch(e => console.log("Audio autoplay dicegah browser:", e));
+            }
+            
+            updateUI();
+        }
+
+        function updateUI() {
+            // Update HP Bars & Text
+            const p1HP = Math.max(0, state.p1.hp);
+            const p2HP = Math.max(0, state.p2.hp);
+            document.getElementById('p1-hp-fill').style.width = p1HP + '%';
+            document.getElementById('p2-hp-fill').style.width = p2HP + '%';
+            document.getElementById('p1-hp-text').innerText = `${p1HP}/100 HP`;
+            document.getElementById('p2-hp-text').innerText = `${p2HP}/100 HP`;
+            
+            // Update UI based on Turn
+            const activePlayer = state.turn === 1 ? state.p1 : state.p2;
+            
+            document.getElementById('p1-panel').classList.toggle('active-turn', state.turn === 1);
+            document.getElementById('p1-panel').classList.toggle('inactive-turn', state.turn !== 1);
+            document.getElementById('p2-panel').classList.toggle('active-turn', state.turn === 2);
+            document.getElementById('p2-panel').classList.toggle('inactive-turn', state.turn !== 2);
+
+            // Update Stocks display to show active player's stocks
+            document.getElementById('stock-combo').innerText = activePlayer.stocks.combo;
+            document.getElementById('stock-normal').innerText = activePlayer.stocks.normal;
+            document.getElementById('stock-slow').innerText = activePlayer.stocks.slow;
+            document.getElementById('stock-heal').innerText = activePlayer.stocks.heal;
+
+            // Handle Empty Stocks
+            ['combo', 'normal', 'slow', 'heal'].forEach(type => {
+                const btn = document.getElementById(`btn-${type}`);
+                if(activePlayer.stocks[type] <= 0) btn.classList.add('disabled');
+                else btn.classList.remove('disabled');
+            });
+
+            // Auto-replenish attacks if all empty to prevent softlock
+            if(activePlayer.stocks.combo === 0 && activePlayer.stocks.normal === 0 && activePlayer.stocks.slow === 0 && !state.gameOver) {
+                activePlayer.stocks.normal = 1; activePlayer.stocks.slow = 1;
+                updateUI();
+            }
+
+            // Check Game Over
+            if (!state.gameOver && (state.p1.hp <= 0 || state.p2.hp <= 0)) {
+                handleGameOver();
+            }
+        }
+
+        function pickCard(type) {
+            const activePlayer = state.turn === 1 ? state.p1 : state.p2;
+            if(activePlayer.stocks[type] <= 0 || state.gameOver) return;
+            
+            state.currentCard = type;
+            activePlayer.stocks[type]--;
+            showQuestion(type);
+        }
+
+        function showQuestion(type) {
+            let levelKey;
+            let maxTime = 60; // default
+            
+            // Menentukan level soal dan waktu berdasarkan jenis serangan
+            if (type === 'combo') { 
+                levelKey = 'level_3'; 
+                maxTime = 90;
+            } else if (type === 'slow') { 
+                levelKey = 'level_1'; 
+                maxTime = 50;
+            } else { 
+                levelKey = 'level_2'; 
+                maxTime = 60; // Normal Attack & Heal
+            }
+
+            let pool = bankQuestions[levelKey].filter(q => !state.usedQuestions.includes(q.id));
+            
+            if (pool.length === 0) {
+                state.usedQuestions = state.usedQuestions.filter(id => !bankQuestions[levelKey].some(q => q.id === id));
+                pool = bankQuestions[levelKey];
+            }
+
+            const qData = pool[Math.floor(Math.random() * pool.length)];
+            state.usedQuestions.push(qData.id);
+
+            const titleTitles = { combo: "🔥 COMBO ATTACK", normal: "⚔️ NORMAL ATTACK", slow: "⚡ SLOW ATTACK", heal: "💖 HEAL" };
+            document.getElementById('card-type-title').innerText = titleTitles[type];
+            document.getElementById('question-text').innerHTML = qData.question;
+            
+            const grid = document.getElementById('options-grid');
+            grid.innerHTML = '';
+            
+            // Loop kelima opsi
+            Object.entries(qData.options).forEach(([key, val]) => {
+                const btn = document.createElement('button');
+                btn.className = "option-btn";
+                // Opsi E (ke-5) akan membentang di dua kolom paling bawah
+                if(key === 'E') {
+                    btn.classList.add('col-span-2');
+                }
+                
+                // Masukkan teks opsi langsung, MathJax akan memprosesnya jika ada rumus pecahan/akar
+                btn.innerHTML = `<span class="opt-letter">${key}</span> <span class="opt-value">${val}</span>`;
+                btn.onclick = () => processAnswer(key === qData.answer);
+                grid.appendChild(btn);
+            });
+
+            document.getElementById('question-modal').classList.remove('hidden');
+            if(window.MathJax) MathJax.typesetPromise(); // Render ulang simbol matematika
+            startTimer(maxTime);
+        }
+
+        function startTimer(maxTime) {
+            state.timer = maxTime;
+            state.maxTimer = maxTime;
+            clearInterval(state.interval);
+            
+            // Set tampilan awal (00:xx)
+            const initialM = Math.floor(state.timer / 60).toString().padStart(2, '0');
+            const initialS = (state.timer % 60).toString().padStart(2, '0');
+            document.getElementById('digital-clock').innerText = `${initialM}:${initialS}`;
+            document.getElementById('timer-bar').style.width = '100%';
+            
+            state.interval = setInterval(() => {
+                state.timer--;
+                const minutes = Math.floor(state.timer / 60).toString().padStart(2, '0');
+                const seconds = (state.timer % 60).toString().padStart(2, '0');
+                
+                document.getElementById('digital-clock').innerText = `${minutes}:${seconds}`;
+                document.getElementById('timer-bar').style.width = (state.timer / state.maxTimer * 100) + '%';
+                
+                if(state.timer <= 0) processAnswer(false);
+            }, 1000);
+        }
+
+        function processAnswer(isCorrect) {
+            clearInterval(state.interval);
+            document.getElementById('question-modal').classList.add('hidden');
+            const card = state.currentCard;
+            let effectMsg = "";
+            const statusEl = document.getElementById('result-status');
+            const resultBox = document.getElementById('result-box');
+
+            const attacker = state.turn === 1 ? state.p1 : state.p2;
+            const defender = state.turn === 1 ? state.p2 : state.p1;
+            const attackerSprite = state.turn === 1 ? 'p1-sprite' : 'p2-sprite';
+            const defenderSprite = state.turn === 1 ? 'p2-sprite' : 'p1-sprite';
+            
+            const defName = state.mode === '1p' && state.turn === 1 ? "Monster" : defender.name;
+
+            if(isCorrect) {
+                statusEl.innerText = "BENAR!";
+                statusEl.className = "status-benar";
+                resultBox.style.borderColor = "var(--heal-color)";
+                
+                if(card === 'combo') { defender.hp -= 40; effectMsg = `Combo attack mematikan mengenai ${defName}! (-40 HP)`; shakeElement(defenderSprite); }
+                if(card === 'normal') { defender.hp -= 20; effectMsg = `Serangan normal berhasil mengenai ${defName}! (-20 HP)`; shakeElement(defenderSprite); }
+                if(card === 'slow') { defender.hp -= 10; effectMsg = `Serangan ringan mengenai ${defName}! (-10 HP)`; shakeElement(defenderSprite); }
+                if(card === 'heal') { attacker.hp = Math.min(100, attacker.hp + 15); effectMsg = `Energi berhasil dipulihkan! (+15 HP)`; }
+            } else {
+                statusEl.innerText = "SALAH!";
+                statusEl.className = "status-salah";
+                resultBox.style.borderColor = "var(--p2-color)";
+                
+                if(card === 'combo') { attacker.hp -= 40; effectMsg = `Serangan meleset dan berbalik padamu! (-40 HP)`; shakeElement(attackerSprite); }
+                if(card === 'normal') { attacker.hp -= 20; effectMsg = `Serangan gagal dan berbalik padamu! (-20 HP)`; shakeElement(attackerSprite); }
+                if(card === 'slow') { attacker.hp -= 10; effectMsg = `Serangan gagal dan berbalik padamu! (-10 HP)`; shakeElement(attackerSprite); }
+                if(card === 'heal') { defender.hp = Math.min(100, defender.hp + 15); effectMsg = `Pemulihan meleset dan menyembuhkan lawan! (+15 HP ke ${defName})`; }
+            }
+            
+            document.getElementById('result-effect').innerText = effectMsg;
+            document.getElementById('result-modal').classList.remove('hidden');
+        }
+
+        function closeResult() {
+            document.getElementById('result-modal').classList.add('hidden');
+            
+            // Switch turn only if in 2P mode and game is not over
+            if(state.mode === '2p' && state.p1.hp > 0 && state.p2.hp > 0) {
+                state.turn = state.turn === 1 ? 2 : 1;
+            }
+            
+            updateUI();
+        }
+
+        function shakeElement(id) { 
+            const el = document.getElementById(id); 
+            if(el) {
+                el.classList.add('shake'); 
+                setTimeout(() => el.classList.remove('shake'), 500); 
+            }
+        }
+        
+        function handleGameOver() {
+            state.gameOver = true;
+            document.getElementById('home-container').classList.add('hidden');
+            document.getElementById('game-over-screen').classList.remove('hidden');
+            
+            const endTitle = document.getElementById('end-title');
+            const endDesc = document.getElementById('end-desc');
+            
+            if (state.mode === '1p') {
+                if (state.p2.hp <= 0) {
+                    endTitle.innerText = "VICTORY!";
+                    endTitle.style.color = "var(--gold)";
+                    endDesc.innerText = "Monster telah musnah dari arena!";
+                    document.getElementById('p2-sprite').style.opacity = '0.2';
+                } else {
+                    endTitle.innerText = "DEFEAT!";
+                    endTitle.style.color = "var(--p2-color)";
+                    endDesc.innerText = "Kekuatan monster terlalu besar untuk dihadapi.";
+                    document.getElementById('p1-sprite').style.opacity = '0.2';
+                }
+            } else { // 2P Mode
+                if(state.p2.hp <= 0) {
+                    endTitle.innerText = `${state.p1.name} MENANG!`;
+                    endTitle.style.color = "var(--p1-color)";
+                    endDesc.innerText = `${state.p2.name} telah dikalahkan.`;
+                    document.getElementById('p2-sprite').style.opacity = '0.2';
+                } else {
+                    endTitle.innerText = `${state.p2.name} MENANG!`;
+                    endTitle.style.color = "var(--p2-color)";
+                    endDesc.innerText = `${state.p1.name} telah dikalahkan.`;
+                    document.getElementById('p1-sprite').style.opacity = '0.2';
+                }
+            }
+        }
+    </script>
+</body>
+</html>
