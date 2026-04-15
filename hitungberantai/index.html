@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hitung Berantai: Matematika Harmonis</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --p1-color: #0082c6;
+            --gold: #ffb800;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --danger: #ff4757;
+            --success: #2ed573;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: var(--text-color);
+            font-family: 'Nunito', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #game-app {
+            width: 960px;
+            height: 540px;
+            position: relative;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at center, #ffffff 0%, #e9ecef 100%);
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            transform-origin: center;
+        }
+
+        .hidden { display: none !important; }
+
+        /* --- SCREENS --- */
+        .screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        h1 {
+            font-family: 'Fredoka', cursive;
+            font-size: 56px;
+            color: #102a43;
+            margin: 0;
+        }
+
+        .logo-container {
+            margin-bottom: 20px;
+        }
+
+        .logo-container img { height: 120px; }
+
+        .btn-start {
+            font-family: 'Fredoka', cursive;
+            background: linear-gradient(180deg, #ffca28, #ffb300);
+            border: 3px solid #fff;
+            padding: 15px 60px;
+            font-size: 24px;
+            color: #5a3e00;
+            border-radius: 60px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #d39e00;
+            transition: all 0.1s;
+            margin: 10px;
+        }
+
+        .btn-start:active { transform: translateY(3px); box-shadow: 0 2px 0 #d39e00; }
+
+        .btn-level {
+            width: 250px;
+            font-size: 20px;
+            padding: 15px;
+            margin: 10px;
+            border-radius: 15px;
+            border: 3px solid #ddd;
+            font-family: 'Fredoka', cursive;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-level.easy { border-color: var(--success); color: var(--success); }
+        .btn-level.medium { border-color: var(--gold); color: #b08000; }
+        .btn-level.hard { border-color: var(--danger); color: var(--danger); }
+        .btn-level:hover { transform: scale(1.05); background: #f0f0f0; }
+
+        /* --- HUD --- */
+        header {
+            height: 90px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            background: white;
+            border-bottom: 2px solid rgba(0,0,0,0.05);
+        }
+
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 100px;
+        }
+
+        .stat-label { font-size: 10px; font-weight: 800; color: #888; text-transform: uppercase; }
+        .stat-value { font-family: 'Fredoka', cursive; font-size: 28px; color: var(--p1-color); }
+
+        #remaining-box {
+            background: rgba(255, 184, 0, 0.1);
+            padding: 5px 15px;
+            border-radius: 15px;
+            border: 1px solid var(--gold);
+        }
+
+        .hearts { display: flex; gap: 5px; }
+        .heart { font-size: 22px; color: var(--danger); transition: opacity 0.3s; }
+        .heart.lost { opacity: 0.1; filter: grayscale(1); }
+
+        /* --- GAMEPLAY ARENA --- */
+        #arena {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            position: relative;
+        }
+
+        #question-text {
+            font-family: 'Fredoka', cursive;
+            font-size: 32px;
+            color: var(--p1-color);
+            background: rgba(0, 130, 198, 0.1);
+            padding: 8px 40px;
+            border-radius: 50px;
+            margin-bottom: 10px;
+            min-height: 48px;
+            box-shadow: 0 4px 15px rgba(0, 130, 198, 0.1);
+        }
+
+        #current-total-display {
+            font-family: 'Fredoka', cursive;
+            font-size: 130px;
+            color: #102a43;
+            line-height: 1;
+            margin-bottom: 25px;
+            text-shadow: 4px 4px 0px rgba(0,0,0,0.05);
+        }
+
+        .timer-container {
+            width: 500px;
+            height: 12px;
+            background: #eee;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 35px;
+            border: 1px solid #ddd;
+        }
+
+        #timer-bar {
+            width: 100%;
+            height: 100%;
+            background: var(--p1-color);
+            transition: width 0.1s linear;
+        }
+
+        .options-container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .option-btn {
+            width: 200px;
+            height: 90px;
+            background: white;
+            border: 3px solid #ddd;
+            border-radius: 20px;
+            font-family: 'Fredoka', cursive;
+            font-size: 38px;
+            color: #333;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 6px 0 #ccc;
+            transition: all 0.1s;
+        }
+
+        .option-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #ccc; }
+        .option-btn.correct { background: var(--success); border-color: #26af5a; color: white; box-shadow: 0 6px 0 #1e8a47; }
+        .option-btn.wrong { background: var(--danger); border-color: #d63031; color: white; box-shadow: 0 6px 0 #af2021; }
+
+        #feedback-msg {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 120px;
+            font-weight: 900;
+            z-index: 50;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.3s;
+        }
+
+        .show-feedback { opacity: 1 !important; transform: translate(-50%, -50%) scale(1.4) !important; }
+
+        footer {
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: #888;
+            background: white;
+            border-top: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-app">
+    <!-- START SCREEN -->
+    <div id="start-screen" class="screen">
+        <div class="logo-container">
+            <img src="https://imgix3.ruangguru.com/assets/miscellaneous/png_zekej2_3984.png" alt="Ruangguru">
+        </div>
+        <h1>HITUNG BERANTAI</h1>
+        <p style="margin-bottom: 30px; color: #666; font-weight: bold;">Tantangan Berhitung Cepat Ruangguru</p>
+        <button class="btn-start" onclick="game.showScreen('level-screen')">MULAI MAIN</button>
+    </div>
+
+    <!-- LEVEL SCREEN -->
+    <div id="level-screen" class="screen hidden">
+        <h2 style="font-family:'Fredoka'; font-size: 32px; margin-bottom: 20px;">PILIH LEVEL</h2>
+        <button class="btn-level easy" onclick="game.setLevel('easy')">🟢 MUDAH (10 Detik)</button>
+        <button class="btn-level medium" onclick="game.setLevel('medium')">🟡 SEDANG (8 Detik)</button>
+        <button class="btn-level hard" onclick="game.setLevel('hard')">🔴 SULIT (5 Detik)</button>
+    </div>
+
+    <!-- RULES SCREEN -->
+    <div id="rules-screen" class="screen hidden">
+        <h2 style="font-family:'Fredoka'; font-size: 32px;">ATURAN MAIN</h2>
+        <div style="text-align: left; max-width: 600px; font-size: 18px; line-height: 1.6; margin: 20px 0; background: #f0f7ff; padding: 25px; border-radius: 20px; border: 2px solid #cce4ff;">
+            <ul>
+                <li>Dengarkan instruksi operasi matematika.</li>
+                <li>Lihat angka utama yang muncul besar di tengah.</li>
+                <li>Pilih hasil akhir yang benar dari 3 pilihan di bawah.</li>
+                <li>Jawab <strong>20 soal benar</strong> untuk menang!</li>
+                <li>Gagal menjawab = Hilang 1 Nyawa ❤️ (Maksimal 3 kali).</li>
+            </ul>
+        </div>
+        <button class="btn-start" onclick="game.init()">SAYA MENGERTI</button>
+    </div>
+
+    <!-- GAME OVER / WIN SCREEN -->
+    <div id="game-over-screen" class="screen hidden">
+        <h1 id="over-title">PERMAINAN SELESAI</h1>
+        <p id="over-msg" style="font-size: 20px;">Skor Akhir Anda:</p>
+        <div style="font-size: 80px; font-family:'Fredoka'; color: var(--p1-color); margin: 10px 0;" id="final-score">0</div>
+        <button class="btn-start" onclick="location.reload()">MAIN LAGI</button>
+    </div>
+
+    <header>
+        <div class="stat-box">
+            <span class="stat-label">Skor</span>
+            <span class="stat-value" id="score-display">0</span>
+        </div>
+        <div class="stat-box" id="remaining-box">
+            <span class="stat-label" style="color: #b08000;">Sisa Soal Menang</span>
+            <span class="stat-value" id="remaining-display" style="color: #b08000;">20</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-label">Nyawa</span>
+            <div class="hearts" id="hearts-container">
+                <span class="heart">❤</span>
+                <span class="heart">❤</span>
+                <span class="heart">❤</span>
+            </div>
+        </div>
+    </header>
+
+    <main id="arena">
+        <div id="question-text">Persiapan...</div>
+        
+        <div id="current-total-display">?</div>
+        
+        <div class="timer-container">
+            <div id="timer-bar"></div>
+        </div>
+
+        <div class="options-container" id="options-box">
+            <button class="option-btn" onclick="game.checkAnswer(0)">?</button>
+            <button class="option-btn" onclick="game.checkAnswer(1)">?</button>
+            <button class="option-btn" onclick="game.checkAnswer(2)">?</button>
+        </div>
+    </main>
+
+    <div id="feedback-msg"></div>
+
+    <footer>
+        Copyright Ⓒ 2026 - PT Ruang Raya Indonesia - All Rights Reserved.
+    </footer>
+</div>
+
+<script>
+    function resizeGame() {
+        const gameWidth = 960;
+        const gameHeight = 540;
+        const windowRatio = window.innerWidth / window.innerHeight;
+        const gameRatio = gameWidth / gameHeight;
+        const gameEl = document.getElementById('game-app');
+        let scale = windowRatio > gameRatio ? window.innerHeight / gameHeight : window.innerWidth / gameWidth;
+        gameEl.style.transform = `scale(${scale})`;
+    }
+    window.addEventListener('resize', resizeGame);
+    window.addEventListener('DOMContentLoaded', resizeGame);
+
+    const WIN_TARGET = 20;
+
+    const game = {
+        score: 0,
+        lives: 3,
+        currentValue: 0,
+        correctAnswer: 0,
+        level: 'medium',
+        duration: 8,
+        timeLeft: 8,
+        timer: null,
+        isTransitioning: false,
+        ops: ['+', '-', 'x', ':'],
+
+        showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById(screenId).classList.remove('hidden');
+        },
+
+        setLevel(lvl) {
+            this.level = lvl;
+            if(lvl === 'easy') this.duration = 10;
+            else if(lvl === 'medium') this.duration = 8;
+            else this.duration = 5;
+            this.showScreen('rules-screen');
+        },
+
+        init() {
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            this.score = 0;
+            this.lives = 3;
+            this.currentValue = Math.floor(Math.random() * 10) + 5;
+            this.updateUI();
+            this.nextQuestion(`Mulai dengan ${this.currentValue}`, true);
+        },
+
+        updateUI() {
+            document.getElementById('score-display').textContent = this.score;
+            document.getElementById('remaining-display').textContent = Math.max(0, WIN_TARGET - this.score);
+            document.getElementById('current-total-display').textContent = this.currentValue;
+            const hearts = document.querySelectorAll('.heart');
+            hearts.forEach((h, i) => h.classList.toggle('lost', i >= this.lives));
+        },
+
+        generateQuestion() {
+            let op = this.ops[Math.floor(Math.random() * this.ops.length)];
+            let val = 1;
+            let result = -1;
+
+            let attempts = 0;
+            while (result <= 0 && attempts < 100) {
+                if (op === '+') {
+                    val = Math.floor(Math.random() * 15) + 1;
+                    result = this.currentValue + val;
+                } else if (op === '-') {
+                    val = Math.floor(Math.random() * (this.currentValue - 1)) + 1;
+                    result = this.currentValue - val;
+                } else if (op === 'x') {
+                    val = Math.floor(Math.random() * 4) + 2;
+                    result = this.currentValue * val;
+                    if (result > 200) { result = -1; op = '-'; } 
+                } else if (op === ':') {
+                    let divs = [];
+                    for(let i=2; i<=this.currentValue; i++) if(this.currentValue % i === 0) divs.push(i);
+                    if (divs.length > 0) {
+                        val = divs[Math.floor(Math.random() * divs.length)];
+                        result = this.currentValue / val;
+                    } else {
+                        op = '+';
+                        result = -1;
+                    }
+                }
+                attempts++;
+            }
+
+            if (result === -1) {
+                val = 5;
+                op = '+';
+                result = this.currentValue + val;
+            }
+
+            this.correctAnswer = result;
+            let label = "";
+            switch(op) {
+                case '+': label = `+ ${val}`; break;
+                case '-': label = `- ${val}`; break;
+                case 'x': label = `x ${val}`; break;
+                case ':': label = `: ${val}`; break;
+            }
+            return { label, result, val, opName: op };
+        },
+
+        nextQuestion(initialLabel = null, isFirst = false) {
+            this.isTransitioning = false;
+            let q;
+            if (isFirst) {
+                q = { label: "Siap!", result: this.currentValue };
+                this.correctAnswer = this.currentValue;
+            } else {
+                q = this.generateQuestion();
+            }
+
+            document.getElementById('question-text').textContent = q.label;
+            
+            let voiceText = q.label;
+            if (!isFirst) {
+                voiceText = voiceText.replace(':', 'dibagi').replace('x', 'dikali').replace('+', 'ditambah').replace('-', 'dikurang');
+            }
+            this.speak(voiceText);
+            
+            this.setupOptions();
+            this.startTimer();
+        },
+
+        setupOptions() {
+            const btns = document.querySelectorAll('.option-btn');
+            let options = [this.correctAnswer];
+            while (options.length < 3) {
+                let off = Math.floor(Math.random() * 15) + 1;
+                let w = Math.random() > 0.5 ? this.correctAnswer + off : this.correctAnswer - off;
+                if (w > 0 && !options.includes(w)) options.push(w);
+            }
+            options.sort(() => Math.random() - 0.5);
+            btns.forEach((btn, i) => {
+                btn.textContent = options[i];
+                btn.className = 'option-btn';
+                btn.dataset.value = options[i];
+            });
+        },
+
+        startTimer() {
+            clearInterval(this.timer);
+            this.timeLeft = this.duration;
+            const bar = document.getElementById('timer-bar');
+            bar.style.width = '100%';
+            bar.style.backgroundColor = 'var(--p1-color)';
+
+            this.timer = setInterval(() => {
+                this.timeLeft -= 0.1;
+                let pc = (this.timeLeft / this.duration) * 100;
+                bar.style.width = pc + '%';
+                if (this.timeLeft <= 2) bar.style.backgroundColor = 'var(--danger)';
+                if (this.timeLeft <= 0) this.handleWrong("WAKTU HABIS!");
+            }, 100);
+        },
+
+        checkAnswer(idx) {
+            if (this.isTransitioning) return;
+            const selected = parseInt(document.querySelectorAll('.option-btn')[idx].dataset.value);
+            if (selected === this.correctAnswer) this.handleCorrect(idx);
+            else this.handleWrong("SALAH!", idx);
+        },
+
+        handleCorrect(idx) {
+            this.isTransitioning = true;
+            clearInterval(this.timer);
+            document.querySelectorAll('.option-btn')[idx].classList.add('correct');
+            this.showFeedback("✔", "var(--success)");
+            this.score++;
+            this.currentValue = this.correctAnswer;
+            this.updateUI();
+
+            if (this.score >= WIN_TARGET) {
+                setTimeout(() => this.gameOver("LUAR BIASA! KAMU MENANG", true), 1000);
+            } else {
+                setTimeout(() => this.nextQuestion(), 1000);
+            }
+        },
+
+        handleWrong(msg, idx = null) {
+            this.isTransitioning = true;
+            clearInterval(this.timer);
+            if (idx !== null) document.querySelectorAll('.option-btn')[idx].classList.add('wrong');
+            this.showFeedback("✘", "var(--danger)");
+            this.lives--;
+            this.updateUI();
+            if (this.lives <= 0) this.gameOver(msg, false);
+            else setTimeout(() => this.nextQuestion(), 1500);
+        },
+
+        showFeedback(char, color) {
+            const f = document.getElementById('feedback-msg');
+            f.textContent = char; f.style.color = color;
+            f.classList.add('show-feedback');
+            setTimeout(() => f.classList.remove('show-feedback'), 800);
+        },
+
+        gameOver(reason, isWin) {
+            clearInterval(this.timer);
+            const title = document.getElementById('over-title');
+            title.textContent = reason;
+            title.style.color = isWin ? "var(--success)" : "var(--danger)";
+            document.getElementById('over-msg').textContent = isWin ? "Kamu berhasil menyelesaikan tantangan!" : "Sayang sekali, nyawa kamu habis.";
+            document.getElementById('final-score').textContent = this.score;
+            this.showScreen('game-over-screen');
+        },
+
+        speak(text) {
+            if ('speechSynthesis' in window) {
+                const msg = new SpeechSynthesisUtterance();
+                msg.text = text; msg.lang = 'id-ID'; msg.rate = 1.2;
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(msg);
+            }
+        }
+    };
+</script>
+
+</body>
+</html>
