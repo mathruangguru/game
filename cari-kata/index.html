@@ -1,0 +1,677 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cari Kata: Edisi TV</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome untuk Ikon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --p1-color: #0082c6;
+            --p2-color: #ff47bc;
+            --gold: #ffb800;
+            --bg-gradient: radial-gradient(circle at center, #ffffff 0%, #f1f3f5 100%);
+            --grid-size: 10;
+            --cell-size: 32px; /* Ukuran cell diperkecil */
+        }
+
+        * { 
+            box-sizing: border-box; 
+            user-select: none; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+
+        body {
+            margin: 0; padding: 0; background-color: #121212;
+            font-family: 'Nunito', sans-serif; overflow: hidden;
+            height: 100vh; width: 100vw; display: flex; justify-content: center; align-items: center;
+        }
+
+        #game-container {
+            width: 960px; height: 540px; position: relative;
+            background: var(--bg-gradient); overflow: hidden;
+            box-shadow: 0 0 60px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; transform-origin: center center;
+        }
+
+        .hidden { display: none !important; }
+        .flex-center { display: flex; justify-content: center; align-items: center; }
+
+        #wizard-overlay, #game-over-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.97); z-index: 100;
+            flex-direction: column; text-align: center; padding: 20px; /* Padding dikurangi */
+            justify-content: center;
+        }
+
+        h1 { font-family: 'Fredoka', cursive; font-size: 46px; color: #102a43; margin: 0; letter-spacing: -1px; }
+        .brand-logo { margin-bottom: 5px; color: var(--p1-color); font-size: 32px; }
+        
+        .wizard-step { display: none; flex-direction: column; align-items: center; animation: slideIn 0.4s ease-out; }
+        .wizard-step.active { display: flex; }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .btn-group { display: flex; gap: 15px; margin: 15px 0; flex-wrap: wrap; justify-content: center; max-width: 700px; }
+        
+        .btn-option {
+            background: #fff; border: 3px solid #e2e8f0; padding: 10px 25px;
+            font-family: 'Fredoka', cursive; font-size: 16px; border-radius: 50px;
+            cursor: pointer; transition: 0.2s; color: #475569;
+        }
+        .btn-option.selected { 
+            background: var(--gold); border-color: var(--gold); color: #fff; 
+            transform: scale(1.05); box-shadow: 0 5px 15px rgba(255, 184, 0, 0.3); 
+        }
+
+        .btn-next {
+            background: linear-gradient(180deg, #00b4db, #0082c6);
+            border: none; border-bottom: 5px solid #005a8c; color: #fff;
+            padding: 8px 30px; font-size: 18px; border-radius: 50px;
+            font-family: 'Fredoka', cursive; cursor: pointer; margin-top: 5px;
+            transition: 0.2s;
+        }
+        .btn-next:active { transform: translateY(3px); border-bottom-width: 2px; }
+
+        .btn-back {
+            background: #e2e8f0; border-bottom: 5px solid #cbd5e1; color: #475569;
+        }
+        .btn-back:hover { background: #cbd5e1; }
+        .btn-back:active { border-bottom-width: 2px; }
+
+        .instr-box { 
+            background: #f8fafc; border: 2px solid #e2e8f0; padding: 15px 25px; /* Padding dikurangi */
+            border-radius: 20px; max-width: 650px; text-align: left; line-height: 1.5;
+            font-size: 15px; color: #334155;
+        }
+
+        header { 
+            height: 110px; display: flex; justify-content: space-between; align-items: center; 
+            padding: 0 40px; background: #fff; border-bottom: 2px solid #edf2f7; z-index: 10; 
+        }
+        
+        .player-card { 
+            width: 260px; padding: 10px 20px; border-radius: 20px; 
+            border: 3px solid #e2e8f0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            position: relative; opacity: 0.3; filter: grayscale(100%); transform: scale(0.9);
+        }
+
+        .player-card.active-turn { opacity: 1; filter: grayscale(0%); transform: scale(1.05); }
+        #p1-card.active-turn { border-color: var(--p1-color); background: #f0f9ff; box-shadow: 0 10px 25px rgba(0, 130, 198, 0.25); }
+        #p2-card.active-turn { border-color: var(--p2-color); background: #fff1f2; box-shadow: 0 10px 25px rgba(255, 71, 188, 0.25); }
+
+        .p1-color { color: var(--p1-color); }
+        .p2-color { color: var(--p2-color); }
+        
+        .score-box { display: flex; align-items: baseline; gap: 5px; }
+        .score-now { font-family: 'Fredoka'; font-size: 38px; font-weight: 600; }
+        .score-label { font-size: 14px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
+        .vs-badge { font-family: 'Fredoka'; font-size: 24px; color: #cbd5e1; font-weight: bold; margin-top: 20px; }
+
+        #arena { 
+            flex: 1; display: flex; gap: 30px; 
+            padding: 20px 40px;
+            justify-content: center; align-items: center;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(var(--grid-size), var(--cell-size));
+            grid-template-rows: repeat(var(--grid-size), var(--cell-size));
+            gap: 4px;
+            background: #fff;
+            padding: 10px;
+            border-radius: 16px;
+            border: 3px solid #e2e8f0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            align-self: center;
+        }
+
+        .cell {
+            width: var(--cell-size); height: var(--cell-size);
+            background: #f8fafc; border-radius: 8px;
+            display: flex; justify-content: center; align-items: center;
+            font-family: 'Fredoka', sans-serif; font-size: 18px;
+            font-weight: 600;
+            color: #334155; cursor: pointer; transition: 0.15s;
+        }
+
+        .cell:hover { background: #e2e8f0; }
+        
+        /* Status Cell */
+        .cell.highlight { background: #fef08a; color: #854d0e; transform: scale(1.1); box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 5; }
+        .cell.found-p1 { background: var(--p1-color); color: #fff; border-color: var(--p1-color); }
+        .cell.found-p2 { background: var(--p2-color); color: #fff; border-color: var(--p2-color); }
+
+        #home-btn {
+            position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 50;
+            background: #fff; border: 2px solid #e2e8f0; padding: 8px 20px; border-radius: 50px;
+            font-size: 14px; font-weight: 800; color: #64748b; cursor: pointer; 
+            display: flex; align-items: center; gap: 8px; transition: 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        #home-btn:hover { background: #f1f5f9; color: #0f172a; border-color: #cbd5e1; }
+        
+        .floating-score {
+            position: absolute; pointer-events: none; animation: floatUp 0.8s ease-out forwards;
+            font-family: 'Fredoka'; font-size: 32px; font-weight: bold; text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 200;
+        }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-60px) scale(1.5); } }
+
+        body.single-mode .p2-element { display: none !important; }
+        body.single-mode .player-card { 
+            opacity: 1 !important; filter: none !important; transform: none !important; 
+            border-color: var(--p1-color) !important; background: #f0f9ff !important; 
+        }
+
+        .turn-indicator {
+            position: absolute; bottom: -30px; top: auto; width: 100%; text-align: center;
+            font-family: 'Fredoka'; font-size: 16px; font-weight: bold;
+            animation: pulse 1.5s infinite; transition: 0.3s;
+        }
+        @keyframes pulse { 0% { opacity: 0.7; } 50% { opacity: 1; transform: scale(1.05); } 100% { opacity: 0.7; } }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="home-btn" class="hidden" onclick="location.reload()">
+            <i class="fas fa-home"></i> KEMBALI KE MENU
+        </div>
+
+        <div id="wizard-overlay" class="flex-center">
+            <i class="fas fa-search brand-logo"></i>
+            <h1>Cari Kata</h1>
+            <p style="margin: 5px 0 15px; color: #64748b; font-weight: bold;">Edisi Teka-Teki Kosakata</p>
+
+            <!-- STEP 1: Mode -->
+            <div id="step-1" class="wizard-step active">
+                <h2 style="font-family: 'Fredoka'; color: #334155; margin: 0 0 10px 0;">Pilih Mode Bermain</h2>
+                <div class="btn-group">
+                    <button class="btn-option selected" onclick="manager.setMode('single', this)">👤 1 Player</button>
+                    <button class="btn-option" onclick="manager.setMode('multi', this)">👥 2 Players</button>
+                </div>
+                <button class="btn-next" onclick="manager.next(2)">LANJUT ➔</button>
+            </div>
+
+            <!-- STEP 2: Kategori Kata -->
+            <div id="step-2" class="wizard-step">
+                <h2 style="font-family: 'Fredoka'; color: #334155; margin: 0 0 10px 0;">Pilih Kategori Kata</h2>
+                <div class="btn-group">
+                    <button class="btn-option selected" onclick="manager.setCat('benda', this)">📦 Benda (Noun)</button>
+                    <button class="btn-option" onclick="manager.setCat('kerja', this)">🏃 Kerja (Verb)</button>
+                    <button class="btn-option" onclick="manager.setCat('sifat', this)">✨ Sifat (Adj)</button>
+                    <button class="btn-option" onclick="manager.setCat('campuran', this)">🔀 Campuran</button>
+                </div>
+                <div class="btn-group" style="margin-top: 5px;">
+                    <button class="btn-next btn-back" onclick="manager.next(1)">⬅ KEMBALI</button>
+                    <button class="btn-next" onclick="manager.next(3)">LANJUT ➔</button>
+                </div>
+            </div>
+
+            <!-- STEP 3: Cara Bermain -->
+            <div id="step-3" class="wizard-step">
+                <h2 style="font-family: 'Fredoka'; color: #334155; margin: 0 0 10px 0;">Cara Bermain</h2>
+                <div class="instr-box">
+                    <ul style="padding-left: 20px; margin: 0;">
+                        <li style="margin-bottom: 6px;">🎯 <b>Tujuan:</b> Temukan <b>4 kata</b> yang tersembunyi di dalam kotak huruf acak <b>tanpa bantuan petunjuk (clue)</b>!</li>
+                        <li style="margin-bottom: 6px;">💳 <b>Cara Main:</b> Klik/Sentuh huruf pertama dari kata, <b>tahan dan geser</b> hingga ke huruf terakhir, lalu lepaskan.</li>
+                        <li style="margin-bottom: 6px;">🔄 <b>Arah:</b> Kata bisa mendatar, menurun, atau menyilang (diagonal).</li>
+                        <li>🏆 <b>Skor:</b> Setiap kata bernilai <b>10 poin</b>. (Total 40 Poin). <span class="p2-element">Kumpulkan poin lebih banyak dari lawanmu! Giliran berganti setiap kali kamu mencoba menjawab.</span></li>
+                    </ul>
+                </div>
+                <div class="btn-group" style="margin-top: 15px;">
+                    <button class="btn-next btn-back" onclick="manager.next(2)">⬅ KEMBALI</button>
+                    <button class="btn-next" style="background: var(--gold); border-color: #d99a00;" onclick="game.start()">MULAI MAIN!</button>
+                </div>
+            </div>
+        </div>
+
+        <header id="game-hud" class="hidden">
+            <div id="p1-card" class="player-card">
+                <div style="font-size: 11px; font-weight: 900; color: var(--p1-color); margin-bottom: 5px;">PLAYER 1</div>
+                <div class="score-box">
+                    <span class="score-now p1-color" id="p1-score">0</span>
+                    <span class="score-label">pts</span>
+                </div>
+                <div style="height: 6px; background: #e2e8f0; border-radius: 3px; margin-top: 8px;">
+                    <div id="p1-progress" style="height: 100%; width: 0%; background: var(--p1-color); border-radius: 3px; transition: 0.3s;"></div>
+                </div>
+            </div>
+
+            <div class="vs-badge p2-element" style="position:relative;">
+                VS
+                <div id="turn-display" class="turn-indicator p1-color">GILIRAN P1</div>
+            </div>
+            <div class="vs-badge hidden" id="single-target-label" style="font-size: 14px; color: #64748b;">TARGET: 40 PTS</div>
+
+            <div id="p2-card" class="player-card p2-element">
+                <div style="font-size: 11px; font-weight: 900; color: var(--p2-color); text-align: right; margin-bottom: 5px;">PLAYER 2</div>
+                <div class="score-box" style="justify-content: flex-end;">
+                    <span class="score-now p2-color" id="p2-score">0</span>
+                    <span class="score-label">pts</span>
+                </div>
+                <div style="height: 6px; background: #e2e8f0; border-radius: 3px; margin-top: 8px;">
+                    <div id="p2-progress" style="height: 100%; width: 0%; background: var(--p2-color); border-radius: 3px; transition: 0.3s;"></div>
+                </div>
+            </div>
+        </header>
+
+        <section id="arena" class="hidden">
+            <!-- Grid akan di-generate di sini -->
+            <div class="grid-container" id="grid"></div>
+        </section>
+
+        <div id="game-over-overlay" class="hidden flex-center">
+            <h1 id="winner-text">SELESAI!</h1>
+            <p id="game-summary" style="font-size: 20px; color: #64748b; margin: 20px 0;"></p>
+            <button class="btn-next" onclick="location.reload()"><i class="fas fa-redo"></i> MAIN LAGI</button>
+        </div>
+    </div>
+
+    <script>
+        // Filter otomatis: Kata yang panjangnya > 10 tidak dimasukkan
+        const rawDictionary = {
+            benda: [
+                {w:"ATMA", d:"Jiwa; nyawa."}, {w:"BAHTERA", d:"Kapal; perahu."}, {w:"CAKRAWALA", d:"Lengkung langit; horizon."},
+                {w:"DAKSA", d:"Tubuh; badan."}, {w:"ENTITAS", d:"Satuan yang berwujud."}, {w:"FAJAR", d:"Cahaya timur menjelang matahari terbit."},
+                {w:"GEMA", d:"Bunyi yang memantul."}, {w:"HASRAT", d:"Keinginan yang kuat."}, {w:"INOVASI", d:"Pemasukan hal-hal yang baru."},
+                {w:"JENDELA", d:"Lubang udara."}, {w:"KALBU", d:"Hati; perasaan batin."}, {w:"LENTERA", d:"Lampu kecil bertutup kaca."},
+                {w:"MEGA", d:"Awan."}, {w:"NETRA", d:"Mata."}, {w:"OASE", d:"Daerah subur di padang pasir."},
+                {w:"PUSTAKA", d:"Kitab; buku."}, {w:"RELUNG", d:"Lekuk atau ruang."}, {w:"SABDA", d:"Kata; perkataan."},
+                {w:"TARUNA", d:"Pemuda; calon perwira."}, {w:"UPAYA", d:"Usaha mencapai maksud."}, {w:"WARSA", d:"Tahun."},
+                {w:"ZAT", d:"Bahan penyusun benda."}, {w:"ABDI", d:"Pelayan; hamba."}, {w:"CERMIN", d:"Kaca memperlihatkan bayangan."},
+                {w:"DERMAGA", d:"Tempat merapat kapal."}, {w:"ESKALASI", d:"Kenaikan; pertambahan."}, {w:"FORMASI", d:"Susunan; barisan."},
+                {w:"GERGAJI", d:"Alat pemotong kayu."}, {w:"HARSA", d:"Kegembiraan."}, {w:"IRAMA", d:"Gerakan teratur."},
+                {w:"JAGAT", d:"Dunia; semesta."}, {w:"KARSA", d:"Niat; kehendak."}, {w:"LAZUARDI", d:"Warna biru muda langit."},
+                {w:"MENTARI", d:"Matahari."}, {w:"NIRMALA", d:"Tanpa cacat; suci."}, {w:"OTORITAS", d:"Hak bertindak."},
+                {w:"PARAS", d:"Wajah; rupa."}, {w:"QUAGGA", d:"Zebra yang punah."}, {w:"RASI", d:"Kumpulan bintang."},
+                {w:"SELAKSA", d:"Sepuluh ribu."}, {w:"TIRTA", d:"Air."}, {w:"UFUK", d:"Kaki langit."},
+                {w:"VANDALISME", d:"Perusakan kasar."}, {w:"WACANA", d:"Komunikasi verbal."}, {w:"YUDA", d:"Perang."},
+                {w:"ZITIR", d:"Alat musik petik kuno."}, {w:"AKSARA", d:"Sistem huruf."}, {w:"BURSA", d:"Tempat jual beli."},
+                {w:"CELAH", d:"Sela; retakan."}
+            ],
+            kerja: [
+                {w:"AMATI", d:"Melihat dengan teliti."}, {w:"BABAT", d:"Memotong rumput."}, {w:"CERNA", d:"Menghancurkan makanan."},
+                {w:"DAMBA", d:"Sangat menginginkan."}, {w:"ENYAH", d:"Pergi; lari."}, {w:"FAHAMI", d:"Mengerti."},
+                {w:"GUBAH", d:"Membuat karya."}, {w:"HAMBAT", d:"Menghalangi."}, {w:"IMAJINASI", d:"Membayangkan sesuatu."},
+                {w:"JAJAK", d:"Menelaah; memeriksa."}, {w:"KAJI", d:"Mempelajari mendalam."}, {w:"LIRIK", d:"Melihat ke samping."},
+                {w:"MEKAR", d:"Membuka (bunga)."}, {w:"NANTI", d:"Menunggu."}, {w:"PANTIK", d:"Memantik api."},
+                {w:"RAKIT", d:"Menyusun bagian."}, {w:"SAPA", d:"Menegur pembicaraan."}, {w:"TANGKIS", d:"Menahan serangan."},
+                {w:"UKIR", d:"Membuat hiasan kayu."}, {w:"VONIS", d:"Menjatuhkan putusan."}, {w:"WARIS", d:"Menerima peninggalan."},
+                {w:"ZIARAH", d:"Mengunjungi makam."}, {w:"ANULIR", d:"Membatalkan."}, {w:"BOIKOT", d:"Menolak bekerja sama."},
+                {w:"CETUS", d:"Menimbulkan sesuatu."}, {w:"DEBAT", d:"Bertukar pikiran."}, {w:"EKSPLORASI", d:"Penjelajahan lapangan."},
+                {w:"FITNAH", d:"Menjelekkan tanpa bukti."}, {w:"GAPAI", d:"Mencapai dengan tangan."}, {w:"HIMPUN", d:"Mengumpulkan."},
+                {w:"INTAI", d:"Mengamati sembunyi."}, {w:"JELAJAH", d:"Berpergian menyelidiki."}, {w:"KELOLA", d:"Mengendalikan."},
+                {w:"LUNCUR", d:"Bergerak cepat."}, {w:"MOHON", d:"Meminta hormat."}, {w:"NAUNG", d:"Berlindung."},
+                {w:"OLAH", d:"Mengubah bahan mentah."}, {w:"PILAH", d:"Memilih-milih jenis."}, {w:"RANGKUL", d:"Memeluk leher."},
+                {w:"SUNTING", d:"Mengedit tulisan."}, {w:"TANDAI", d:"Memberi bekas."}, {w:"UNDUH", d:"Mengambil data internet."},
+                {w:"VALIDASI", d:"Mengesahkan kebenaran."}, {w:"WUJUDKAN", d:"Melaksanakan nyata."}, {w:"YAKIN", d:"Percaya sungguh."},
+                {w:"ZAPIN", d:"Menari tarian Melayu."}, {w:"ALIH", d:"Berpindah."}, {w:"BAUR", d:"Bercampur."}, {w:"CIDUK", d:"Mengambil gayung."}
+            ],
+            sifat: [
+                {w:"ADIDAYA", d:"Kekuasaan besar."}, {w:"BAKA", d:"Kekal; abadi."}, {w:"CANGGUNG", d:"Kurang mahir; kaku."},
+                {w:"DUNGU", d:"Sangat bodoh."}, {w:"EKSOTIS", d:"Daya tarik aneh/asing."}, {w:"FANA", d:"Tidak kekal."},
+                {w:"GIGIH", d:"Teguh pada pendirian."}, {w:"HINA", d:"Rendah kedudukan."}, {w:"INDAH", d:"Bagus dipandang."},
+                {w:"JERNIH", d:"Bening; bersih."}, {w:"KOKOH", d:"Kuat; teguh."}, {w:"LUHUR", d:"Mulia; tinggi."},
+                {w:"MUNGIL", d:"Kecil dan elok."}, {w:"NYATA", d:"Benar-benar ada."}, {w:"OPTIMIS", d:"Berpengharapan baik."},
+                {w:"PEKA", d:"Mudah merasa."}, {w:"RAMAH", d:"Baik budi bahasanya."}, {w:"SENGIT", d:"Hebat dan dahsyat."},
+                {w:"TABAH", d:"Kuat menghadapi cobaan."}, {w:"USANG", d:"Sudah lama; rusak."}, {w:"VOKAL", d:"Berani bersuara."},
+                {w:"WASPADA", d:"Berhati-hati."}, {w:"YATIM", d:"Tidak berayah lagi."}, {w:"ZALIM", d:"Bengis; tidak adil."},
+                {w:"ASRI", d:"Indah dipandang."}, {w:"BIJAK", d:"Pandai dan hati-hati."}, {w:"CEKATAN", d:"Cepat dan ahli."},
+                {w:"DERMAWAN", d:"Suka memberi."}, {w:"ELEGAN", d:"Anggun; apik."}, {w:"FASIH", d:"Lancar berbicara."},
+                {w:"GELISAH", d:"Tidak tenang."}, {w:"HENING", d:"Sunyi; senyap."}, {w:"IRIT", d:"Hemat."},
+                {w:"JUJUR", d:"Tidak berbohong."}, {w:"KIKIR", d:"Pelit."}, {w:"LANTANG", d:"Keras dan jelas."},
+                {w:"MURAM", d:"Sedih; redup."}, {w:"NAKAL", d:"Suka berbuat kurang baik."}, {w:"OTENTIK", d:"Asli."},
+                {w:"PIAWAI", d:"Sangat pandai."}, {w:"RADIKAL", d:"Secara mendasar."}, {w:"SANTUN", d:"Sopan."},
+                {w:"TEGAR", d:"Kokoh; tidak menyerah."}, {w:"UNIK", d:"Tersendiri; beda."}, {w:"VITAL", d:"Sangat penting."},
+                {w:"WANGI", d:"Harum."}, {w:"YAKIN", d:"Percaya sepenuhnya."}, {w:"ZUHUD", d:"Meninggalkan keduniawian."},
+                {w:"AGUNG", d:"Besar; mulia."}, {w:"BERANI", d:"Tidak takut."}
+            ]
+        };
+
+        // Filter Dictionary max 10 chars
+        const dictionary = { benda: [], kerja: [], sifat: [], campuran: [] };
+        ['benda', 'kerja', 'sifat'].forEach(cat => {
+            rawDictionary[cat].forEach(item => {
+                // Hapus spasi dan filter max 10 chars
+                let word = item.w.replace(/\s+/g, '');
+                if (word.length <= 10) {
+                    dictionary[cat].push({w: word, d: item.d});
+                    dictionary.campuran.push({w: word, d: item.d});
+                }
+            });
+        });
+
+        const manager = {
+            mode: 'single', cat: 'benda',
+            next(step) {
+                document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
+                document.getElementById('step-' + step).classList.add('active');
+            },
+            setMode(m, btn) { this.mode = m; this.toggleBtn(btn); },
+            setCat(c, btn) { this.cat = c; this.toggleBtn(btn); },
+            toggleBtn(btn) { 
+                btn.parentNode.querySelectorAll('.btn-option').forEach(b => b.classList.remove('selected')); 
+                btn.classList.add('selected'); 
+            }
+        };
+
+        const game = {
+            p1: 0, p2: 0, turn: 'p1', running: false,
+            gridData: [], gridSize: 10, targetWords: [], foundWords: 0,
+            
+            // Variabel interaksi mouse/touch
+            isSelecting: false, startRow: -1, startCol: -1, currentPath: [],
+
+            start() {
+                this.running = true; this.p1 = 0; this.p2 = 0; this.turn = 'p1'; this.foundWords = 0;
+                document.getElementById('wizard-overlay').classList.add('hidden');
+                document.getElementById('game-hud').classList.remove('hidden');
+                document.getElementById('arena').classList.remove('hidden');
+                document.getElementById('home-btn').classList.remove('hidden');
+                
+                if (manager.mode === 'single') {
+                    document.body.classList.add('single-mode');
+                    document.getElementById('single-target-label').classList.remove('hidden');
+                } else {
+                    document.body.classList.remove('single-mode');
+                    document.getElementById('single-target-label').classList.add('hidden');
+                }
+                
+                this.generateLevel();
+                this.updateUI();
+                this.bindEvents();
+            },
+
+            generateLevel() {
+                // 1. Pilih 4 Kata acak dari kategori
+                let pool = [...dictionary[manager.cat]];
+                pool.sort(() => 0.5 - Math.random());
+                let selected = pool.slice(0, 4);
+                
+                this.targetWords = selected.map((item, idx) => ({ id: idx, text: item.w, desc: item.d, found: false }));
+                
+                // 2. Siapkan Grid Kosong
+                this.gridData = Array.from({ length: this.gridSize }, () => Array(this.gridSize).fill(''));
+
+                // 3. Masukkan kata ke Grid
+                const directions = [
+                    [0, 1],   // Horizontal Kanan
+                    [1, 0],   // Vertikal Bawah
+                    [1, 1],   // Diagonal Kanan Bawah
+                    [-1, 1]   // Diagonal Kanan Atas
+                ];
+
+                this.targetWords.forEach(wordObj => {
+                    let placed = false;
+                    let attempts = 0;
+                    while (!placed && attempts < 200) {
+                        let dir = directions[Math.floor(Math.random() * directions.length)];
+                        let row = Math.floor(Math.random() * this.gridSize);
+                        let col = Math.floor(Math.random() * this.gridSize);
+                        
+                        if (this.canPlaceWord(wordObj.text, row, col, dir[0], dir[1])) {
+                            this.placeWord(wordObj.text, row, col, dir[0], dir[1]);
+                            placed = true;
+                        }
+                        attempts++;
+                    }
+                    if(!placed) console.warn("Gagal menempatkan: " + wordObj.text);
+                });
+
+                // 4. Isi sisa grid dengan huruf acak
+                const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                for (let r = 0; r < this.gridSize; r++) {
+                    for (let c = 0; c < this.gridSize; c++) {
+                        if (this.gridData[r][c] === '') {
+                            this.gridData[r][c] = letters.charAt(Math.floor(Math.random() * letters.length));
+                        }
+                    }
+                }
+
+                this.renderGrid();
+            },
+
+            canPlaceWord(word, r, c, dr, dc) {
+                if (r + dr * (word.length - 1) < 0 || r + dr * (word.length - 1) >= this.gridSize) return false;
+                if (c + dc * (word.length - 1) < 0 || c + dc * (word.length - 1) >= this.gridSize) return false;
+                
+                for (let i = 0; i < word.length; i++) {
+                    let currCell = this.gridData[r + dr * i][c + dc * i];
+                    if (currCell !== '' && currCell !== word[i]) return false;
+                }
+                return true;
+            },
+
+            placeWord(word, r, c, dr, dc) {
+                for (let i = 0; i < word.length; i++) {
+                    this.gridData[r + dr * i][c + dc * i] = word[i];
+                }
+            },
+
+            renderGrid() {
+                const gridEl = document.getElementById('grid');
+                gridEl.innerHTML = '';
+                for (let r = 0; r < this.gridSize; r++) {
+                    for (let c = 0; c < this.gridSize; c++) {
+                        let cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.textContent = this.gridData[r][c];
+                        cell.dataset.r = r;
+                        cell.dataset.c = c;
+                        gridEl.appendChild(cell);
+                    }
+                }
+            },
+
+            bindEvents() {
+                const gridEl = document.getElementById('grid');
+                
+                // Mouse Events
+                gridEl.addEventListener('mousedown', e => this.startSelect(e));
+                window.addEventListener('mousemove', e => this.moveSelect(e));
+                window.addEventListener('mouseup', e => this.endSelect(e));
+
+                // Touch Events (Konversi ke fungsi logika yang sama)
+                gridEl.addEventListener('touchstart', e => { e.preventDefault(); this.startSelect(e.touches[0]); }, {passive: false});
+                window.addEventListener('touchmove', e => { if(this.isSelecting) e.preventDefault(); this.moveSelect(e.touches[0]); }, {passive: false});
+                window.addEventListener('touchend', e => this.endSelect(e));
+            },
+
+            getCellFromEvent(e) {
+                // Untuk menangani transform scale, elementFromPoint sangat berguna untuk touch/mouse move
+                let el = document.elementFromPoint(e.clientX, e.clientY);
+                if (el && el.classList.contains('cell')) {
+                    return { r: parseInt(el.dataset.r), c: parseInt(el.dataset.c), el: el };
+                }
+                return null;
+            },
+
+            startSelect(e) {
+                if(!this.running) return;
+                let cellData = this.getCellFromEvent(e);
+                if(cellData) {
+                    this.isSelecting = true;
+                    this.startRow = cellData.r;
+                    this.startCol = cellData.c;
+                    this.updateHighlight(cellData.r, cellData.c);
+                }
+            },
+
+            moveSelect(e) {
+                if(!this.isSelecting) return;
+                let cellData = this.getCellFromEvent(e);
+                if(cellData) {
+                    this.updateHighlight(cellData.r, cellData.c);
+                }
+            },
+
+            updateHighlight(currR, currC) {
+                // Bersihkan highlight lama
+                document.querySelectorAll('.cell.highlight').forEach(el => el.classList.remove('highlight'));
+                this.currentPath = [];
+
+                // Hitung arah (Horiz, Vert, Diag)
+                let dr = currR - this.startRow;
+                let dc = currC - this.startCol;
+                
+                // Pastikan garis lurus (Horizontal, Vertikal, atau Diagonal Sempurna)
+                if (dr !== 0 && dc !== 0 && Math.abs(dr) !== Math.abs(dc)) return; // Bukan garis lurus
+
+                let stepR = dr === 0 ? 0 : dr / Math.abs(dr);
+                let stepC = dc === 0 ? 0 : dc / Math.abs(dc);
+                let dist = Math.max(Math.abs(dr), Math.abs(dc));
+
+                for (let i = 0; i <= dist; i++) {
+                    let r = this.startRow + (stepR * i);
+                    let c = this.startCol + (stepC * i);
+                    this.currentPath.push({r, c});
+                    
+                    let el = document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+                    if(el) el.classList.add('highlight');
+                }
+            },
+
+            endSelect(e) {
+                if(!this.isSelecting) return;
+                this.isSelecting = false;
+                
+                if (this.currentPath.length > 0) {
+                    // Ambil string dari cell yang tersorot
+                    let selectedWord = this.currentPath.map(p => this.gridData[p.r][p.c]).join('');
+                    let reversedWord = selectedWord.split('').reverse().join('');
+                    
+                    let foundObj = this.targetWords.find(w => !w.found && (w.text === selectedWord || w.text === reversedWord));
+
+                    if (foundObj) {
+                        // KATA DITEMUKAN!
+                        foundObj.found = true;
+                        this.foundWords++;
+                        this[this.turn] += 10;
+                        
+                        // Tandai UI permanen
+                        let playerClass = this.turn === 'p1' ? 'found-p1' : 'found-p2';
+                        this.currentPath.forEach(p => {
+                            let el = document.querySelector(`.cell[data-r="${p.r}"][data-c="${p.c}"]`);
+                            if(el) el.classList.add(playerClass);
+                        });
+
+                        this.showFloatingScore(document.querySelector(`.cell[data-r="${this.startRow}"][data-c="${this.startCol}"]`), 10);
+                        
+                        this.checkWinCondition();
+                    }
+                    
+                    // Ganti giliran jika multiplayer (terlepas dari benar/salah biar seru)
+                    if (manager.mode === 'multi' && this.running) {
+                        this.turn = this.turn === 'p1' ? 'p2' : 'p1';
+                    }
+                }
+                
+                // Bersihkan highlight temporary
+                document.querySelectorAll('.cell.highlight').forEach(el => el.classList.remove('highlight'));
+                this.updateUI();
+            },
+
+            showFloatingScore(element, val) {
+                if(!element) return;
+                const rect = element.getBoundingClientRect();
+                const containerRect = document.getElementById('game-container').getBoundingClientRect();
+                
+                const el = document.createElement('div');
+                el.className = 'floating-score';
+                el.textContent = `+${val}`;
+                el.style.color = '#10b981';
+                
+                // Posisi relatif thd container
+                let left = (rect.left - containerRect.left + rect.width/2 - 20) / (containerRect.width/960);
+                let top = (rect.top - containerRect.top) / (containerRect.height/540);
+                
+                el.style.left = left + 'px'; 
+                el.style.top = top + 'px';
+                document.getElementById('game-container').appendChild(el);
+                setTimeout(() => el.remove(), 800);
+            },
+
+            updateUI() {
+                document.getElementById('p1-score').textContent = this.p1;
+                document.getElementById('p2-score').textContent = this.p2;
+                document.getElementById('p1-progress').style.width = Math.min(100, (this.p1 / 40) * 100) + '%';
+                document.getElementById('p2-progress').style.width = Math.min(100, (this.p2 / 40) * 100) + '%';
+
+                const p1Card = document.getElementById('p1-card');
+                const p2Card = document.getElementById('p2-card');
+                const turnDisplay = document.getElementById('turn-display');
+
+                if (manager.mode === 'multi') {
+                    p1Card.classList.toggle('active-turn', this.turn === 'p1');
+                    p2Card.classList.toggle('active-turn', this.turn === 'p2');
+                    
+                    if(this.turn === 'p1') {
+                        turnDisplay.textContent = 'GILIRAN P1';
+                        turnDisplay.className = 'turn-indicator p1-color';
+                    } else {
+                        turnDisplay.textContent = 'GILIRAN P2';
+                        turnDisplay.className = 'turn-indicator p2-color';
+                    }
+                } else { 
+                    p1Card.classList.add('active-turn'); 
+                }
+            },
+
+            checkWinCondition() {
+                if (this.foundWords >= 4) {
+                    this.running = false;
+                    setTimeout(() => {
+                        let winner = '';
+                        let reason = '';
+                        if (manager.mode === 'single') {
+                            winner = 'p1';
+                            reason = "Kamu berhasil menemukan semua kata!";
+                        } else {
+                            if (this.p1 > this.p2) { winner = 'p1'; reason = `Player 1 menang dengan skor ${this.p1}!`; }
+                            else if (this.p2 > this.p1) { winner = 'p2'; reason = `Player 2 menang dengan skor ${this.p2}!`; }
+                            else { winner = 'tie'; reason = "Permainan Seri!"; }
+                        }
+                        this.end(winner, reason);
+                    }, 500);
+                }
+            },
+
+            end(winner, reason) {
+                const overlay = document.getElementById('game-over-overlay');
+                const winText = document.getElementById('winner-text');
+                overlay.classList.remove('hidden');
+                
+                if (winner === "tie") { 
+                    winText.textContent = "SERI!"; winText.style.color = "#64748b"; 
+                } else { 
+                    winText.textContent = (winner === 'p1' ? 'PLAYER 1' : 'PLAYER 2') + " MENANG!"; 
+                    winText.style.color = winner === 'p1' ? 'var(--p1-color)' : 'var(--p2-color)'; 
+                }
+                
+                document.getElementById('game-summary').textContent = reason;
+            }
+        };
+
+        function resize() {
+            const container = document.getElementById('game-container');
+            // Mempertahankan rasio aspek 16:9 (960x540)
+            const scale = Math.min(window.innerWidth / 960, window.innerHeight / 540);
+            container.style.transform = `scale(${scale})`;
+        }
+        
+        window.onresize = resize;
+        window.onload = () => { resize(); };
+    </script>
+</body>
+</html>
